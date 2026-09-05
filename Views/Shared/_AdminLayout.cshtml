@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] | Панель Администратора</title>
+    <!-- Локальный Bootstrap без внешних ссылок -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+            body {
+                background-color: #f8f9fc;
+                font-family: system-ui, -apple-system, sans-serif;
+            }
+
+            .sidebar {
+                background: #2c3e50;
+                min-height: 100vh;
+                color: white;
+            }
+
+            .sidebar .nav-link {
+                color: rgba(255, 255, 255, 0.75);
+                border-radius: 6px;
+                margin: 4px 12px;
+                padding: 10px 15px;
+                font-weight: 500;
+                transition: all 0.2s;
+            }
+
+            .sidebar .nav-link:hover {
+                color: white;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .sidebar .nav-link.active {
+                color: white;
+                background: #1a252f;
+                box-shadow: inset 3px 0 0 #3498db;
+            }
+
+            .card-custom {
+                border: none;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Боковое меню Администратора -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-0 shadow">
+                <div class="position-sticky pt-3">
+                    <div class="text-center py-3 m-0">
+                        <h5 class="fw-bold mb-1 text-white">Панель АДМИНА</h5>
+                        <small class="text-muted text-uppercase tracking-wider" style="font-size: 0.75rem;">Управление
+                            СДО</small>
+                        </div>
+                        <hr class="mx-3 bg-secondary">
+
+                        <ul class="nav flex-column mt-2">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="/Companies/Index">Компании</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Groups/Index">👥 Группы</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Courses/Index">Курсы</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="/Users/Index">Пользователи</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center justify-content-between"
+                                   href="/AssignmentReview/Index">
+                                    <span>📥 Проверка заданий</span>
+                                    <!-- Красный кружок-счетчик, изначально скрыт (d-none) -->
+                                    <span id="sidebarAssignmentBadge" class="badge bg-danger rounded-pill d-none"
+                                          style="font-size: 0.75rem; padding: 4px 8px;">0</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <hr class="mx-3 bg-secondary mt-4">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link text-danger" href="/Auth/Logout">Выйти из системы</a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+
+                <!-- Основное рабочее пространство -->
+                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // Автоматический опрос бэкенда для вывода количества заданий в меню
+            async function updateSidebarAssignmentCount() {
+            try {
+            const response = await fetch('/AssignmentReview/GetPendingCount');
+            const data = await response.json();
+            const badge = document.getElementById('sidebarAssignmentBadge');
+
+            if (badge && data.count > 0) {
+            badge.textContent = data.count;
+            badge.classList.remove('d-none'); // Показываем кружок, если есть задания
+            } else if (badge) {
+            badge.classList.add('d-none'); // Прячем, если всё проверено
+            }
+            } catch (err) {
+            console.error('Ошибка обновления счетчика меню:', err);
+            }
+            }
+
+            // Вызываем проверку счетчика при каждой загрузке любой страницы админки
+            document.addEventListener("DOMContentLoaded", updateSidebarAssignmentCount);
+        </script>
+    </body>
+
+</html>

@@ -1,0 +1,108 @@
+@{
+    Layout = null; // Отключаем стандартный шаблон, чтобы сделать чистую страницу входа
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Авторизация | СДО</title>
+    <!-- Подключаем Bootstrap 5 -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+        }
+        .login-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4e73df;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #2e59d9;
+            transform: translateY(-1px);
+        }
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+        }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center">
+
+    <div class="container" style="max-width: 450px;">
+        <div class="card login-card p-4 bg-white">
+            <div class="card-body">
+                <h3 class="text-center mb-4 fw-bold text-secondary">Вход в СДО</h3>
+                
+                <!-- Блок для вывода сообщений -->
+                <div id="alertMessage" class="alert d-none" role="alert"></div>
+
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label text-muted small fw-bold">ЛОГИН</label>
+                        <input type="text" class="form-control" id="username" placeholder="Введите логин" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label text-muted small fw-bold">ПАРОЛЬ</label>
+                        <input type="password" class="form-control" id="password" placeholder="Введите пароль" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Войти</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Логика отправки данных без перезагрузки -->
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const alertBox = document.getElementById('alertMessage');
+
+            // Скрываем старое сообщение
+            alertBox.classList.add('d-none');
+
+            try {
+                const response = await fetch('/Auth/Login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                });
+
+                const result = await response.json();
+
+                alertBox.textContent = result.message;
+                alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+
+                if (result.success) {
+                    alertBox.classList.add('alert-success');
+                    setTimeout(() => {
+                        window.location.href = result.redirectUrl; // Перенаправляем туда, куда сказал сервер
+                    }, 1000);
+                } else {
+                    alertBox.classList.add('alert-danger');
+                }
+
+            } catch (error) {
+                alertBox.textContent = "Произошла ошибка при отправке запроса.";
+                alertBox.classList.remove('d-none');
+                alertBox.classList.add('alert-danger');
+            }
+        });
+    </script>
+</body>
+</html>

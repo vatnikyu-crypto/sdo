@@ -1,0 +1,27 @@
+@{ 
+    Layout = null; // Для студента можно сделать свой чистый интерфейс без админского сайдбара
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Личный кабинет Слушателя</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1"><i class="bi bi-mortarboard me-2"></i>Портал Обучения СДО</span>
+            <a href="/Auth/Logout" class="btn btn-outline-light btn-sm">Выйти</a>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <div class="card border-0 shadow-sm p-5 bg-white">
+            <h1 class="fw-bold text-success">Добро пожаловать на обучение!</h1>
+            <p class="text-muted fs-5">Это ваш личный кабинет слушателя. Здесь будут отображаться назначенные вам курсы, учебные материалы и тесты.</p>
+            <div class="alert alert-info mt-4" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i> На текущий момент у вас нет активных курсов. Ожидайте назначения администратором.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+@{
+    Layout = "_AdminLayout"; // Подключаем боковое меню администратора
+    ViewData["Title"] = "Редактирование организации";
+}
+
+<!-- НАВИГАЦИОННАЯ ШАПКА -->
+<div class="mb-3 mt-2">
+    <a href="/Companies/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1">
+        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+        </svg>
+        Назад к списку
+    </a>
+    <h2 class="fw-bold text-dark mt-2 m-0">Редактирование организации</h2>
+    <small class="text-muted">Изменение регистрационных данных предприятия</small>
+</div>
+
+<!-- КАРТОЧКА С ФОРМОЙ -->
+<div class="card card-custom p-4 bg-white border-0 shadow-sm mb-4" style="max-width: 600px; border-radius: 12px;">
+    <form asp-action="Edit" asp-controller="Companies" method="post">
+        
+        <!-- Блок вывода серверных ошибок валидации ИНН -->
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger border-0 small py-2 mb-4" role="alert">
+                <div asp-validation-summary="All"></div>
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ <span class="text-danger">*</span></label>
+            <input name="Name" type="text" class="form-control" required 
+                   autocomplete="off" value="@ViewBag.Name" />
+        </div>
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">ИНН ОРГАНИЗАЦИИ <span class="text-danger">*</span></label>
+            <input name="Inn" type="text" class="form-control fw-mono" required 
+                   autocomplete="off" pattern="[0-9]{10,12}" 
+                   title="ИНН должен состоять только из 10 или 12 цифр" 
+                   value="@ViewBag.Inn" />
+        </div>
+
+        <div class="alert alert-light border text-muted small mb-4 py-2" style="background-color: #fdfdfd; border-radius: 6px;">
+            ℹ️ При изменении ИНН система выполнит проверку по всей базе данных. Если новый ИНН совпадет с ИНН уже существующей компании, изменения не будут сохранены.
+        </div>
+
+        <!-- КНОПКИ УПРАВЛЕНИЯ -->
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">Сохранить изменения</button>
+            <a href="/Companies/Index" class="btn btn-light px-4 py-2 fw-bold border text-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

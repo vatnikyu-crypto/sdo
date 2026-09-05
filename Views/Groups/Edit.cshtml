@@ -1,0 +1,447 @@
+@model SdoApp.Models.Group
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = $"Наполнение группы № {ViewBag.GroupNumber}";
+}
+
+<!-- 1. НАВИГАЦИОННАЯ ШАПКА -->
+<div class="mb-4 mt-2">
+    <a href="/Groups/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1">
+        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+        </svg>
+        Назад к списку групп
+    </a>
+    <div class="mt-2">
+        <span class="badge bg-primary px-2.5 py-1 fw-bold text-uppercase mb-1" style="font-size: 0.65rem; tracking-wider: 1px;">Управление составом</span>
+        <h2 class="fw-bold text-dark m-0">Группа № @ViewBag.GroupNumber</h2>
+        <p class="text-muted small mb-0">Наименование: <span class="fw-bold text-secondary">@ViewBag.GroupTitle</span></p>
+    </div>
+</div>
+
+<!-- 2. ЭТАП 1: ФОРМИРОВАНИЕ КОСТЯКА ГРУППЫ -->
+<div class="row g-4 mb-5">
+    
+    <!-- ЛЕВАЯ КОЛОНКА: СЛУШАТЕЛИ ГРУППЫ -->
+    <div class="col-lg-7">
+        <div class="card bg-white border-0 shadow-sm p-4 h-100" style="border-radius: 12px;">
+            <h5 class="fw-bold text-dark mb-1">👥 Состав слушателей потока</h5>
+            <p class="text-muted small mb-3">Начните вводить фамилию сотрудника для добавления его в этот список</p>
+            
+            <!-- Поле живого поиска -->
+            <div class="position-relative mb-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted">🔍</span>
+                    <input type="text" id="studentSearchInput" class="form-control" placeholder="Введите фамилию или имя (например: Иванов)..." autocomplete="off" />
+                </div>
+                <!-- Фиксированный контейнер (без капризов Bootstrap) -->
+                <ul id="searchDropdown" class="list-unstyled bg-white shadow rounded border mt-1 position-absolute w-100" 
+                    style="max-height: 280px; overflow-y: auto; z-index: 1050; display: none; padding: 0;">
+                    <!-- Рендерится через JS -->
+                </ul>
+            </div>
+
+            <!-- Списочная таблица выбранных людей -->
+            <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                <table class="table table-sm table-hover align-middle m-0" id="selectedStudentsTable">
+                    <thead class="table-light text-muted small fw-bold text-uppercase">
+                        <tr>
+                            <th>ФИО Слушателя</th>
+                            <th>Организация / Должность</th>
+                            <th style="width: 50px;" class="text-end">Искл.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="skeletonStudentsBody">
+                        <!-- Рендерится через JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- ПРАВАЯ КОЛОНКА: КУРСЫ ГРУППЫ -->
+    <div class="col-lg-5">
+        <div class="card bg-white border-0 shadow-sm p-4 h-100" style="border-radius: 12px; min-height: 480px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h5 class="fw-bold text-dark mb-1">📖 Назначенные учебные программы</h5>
+                <p class="text-muted small mb-3">Выберите курс из каталога для привязки к этой группе</p>
+
+                <div class="mb-4">
+                    <select id="courseSelectInput" class="form-select fw-bold text-dark">
+                        <option value="" disabled selected>-- Выберите курс из списка --</option>
+                        @foreach (var c in ViewBag.AllAvailableCourses)
+                        {
+                            <option value="@c.Id">📚 @c.Title</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                    <table class="table table-sm table-hover align-middle m-0" id="selectedCoursesTable">
+                        <thead class="table-light text-muted small fw-bold text-uppercase">
+                            <tr>
+                                <th>Название курса</th>
+                                <th style="width: 50px;" class="text-end">Искл.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="skeletonCoursesBody">
+                            <!-- Рендерится через JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top text-end">
+                <button id="saveSkeletonBtn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                    💾 Сохранить костяк учебной группы
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. ЭТАП 2: ТОНКАЯ НАСТРОЙКА КУРСОВ (АККОРДЕОНЫ) -->
+<div class="mb-3">
+    <h4 class="fw-bold text-dark m-0">⚙️ Индивидуальная настройка курсов и допусков</h4>
+    <p class="text-muted small">После сохранения костяка группы ниже появятся раскрывающиеся плашки для ввода протоколов и распределения людей</p>
+</div>
+
+<div class="d-flex flex-column gap-3 mb-5" id="courseConfigsAccordionContainer">
+    <!-- Сюда JavaScript будет динамически выводить Moodle-плашки аккордеонов -->
+</div>
+<!-- 4. ЕДИНЫЙ ИНТЕРАКТИВНЫЙ JAVASCRIPT-МОДУЛЬ УПРАВЛЕНИЯ ГРУППОЙ -->
+<script>
+    const currentGroupId = @ViewBag.GroupId;
+
+    // Глобальные массивы в оперативной памяти браузера
+    let selectedStudents = []; 
+    let selectedCourses = [];  
+    let allStudentsStore = []; // Склад ВСЕХ студентов системы для мгновенного поиска
+
+    // Ссылки на ключевые DOM-элементы интерфейса
+    const studentSearchInput = document.getElementById('studentSearchInput');
+    const searchDropdown = document.getElementById('searchDropdown');
+    const skeletonStudentsBody = document.getElementById('skeletonStudentsBody');
+    const courseSelectInput = document.getElementById('courseSelectInput');
+    const skeletonCoursesBody = document.getElementById('skeletonCoursesBody');
+    const saveSkeletonBtn = document.getElementById('saveSkeletonBtn');
+    const accordionContainer = document.getElementById('courseConfigsAccordionContainer');
+
+    // 1. АВТОМАТИЧЕСКАЯ ПОДГРУЗКА ДАННЫХ ИЗ SQLite ПРИ СТАРТЕ СТРАНИЦЫ
+    async function loadCurrentGroupData() {
+        try {
+            const response = await fetch(`/Groups/GetGroupData/${currentGroupId}`);
+            const data = await response.json();
+
+            selectedStudents = data.students || [];
+            selectedCourses = data.courses || [];
+            allStudentsStore = data.allStudentsStore || []; // Синхронизируем склад поиска!
+
+            renderStudentsTable();
+            renderCoursesTable();
+            renderConfigsAccordion();
+        } catch (err) {
+            console.error('Ошибка инициализации данных группы:', err);
+            alert('Не удалось подгрузить текущий состав группы с сервера.');
+        }
+    }
+
+    // 2. ОТРИСОВКА ВЕРХНЕЙ ТАБЛИЦЫ СЛУШАТЕЛЕЙ
+    function renderStudentsTable() {
+        if (selectedStudents.length === 0) {
+            skeletonStudentsBody.innerHTML = `
+                <tr id="emptyStudentsRow">
+                    <td colspan="3" class="text-center py-4 text-muted small">Список пуст. Используйте живой поиск выше для добавления людей.</td>
+                </tr>`;
+            return;
+        }
+
+        skeletonStudentsBody.innerHTML = selectedStudents.map(st => `
+            <tr id="student-row-item-${st.id}">
+                <td>
+                    <div class="fw-bold text-dark mb-0" style="font-size:0.95rem;">${st.fio}</div>
+                </td>
+                <td class="text-muted small">
+                    <span class="d-block text-secondary fw-bold">${st.company}</span>
+                    <span class="d-block text-muted" style="font-size:0.75rem;">Должность: ${st.position}</span>
+                </td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none fw-bold p-0 px-2" 
+                            style="font-size:1.1rem; line-height:1;" onclick="removeStudentFromSkeleton(${st.id})" title="Исключить из группы">×</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // 3. ОТРИСОВКА ВЕРХНЕЙ ТАБЛИЦЫ КУРСОВ
+    function renderCoursesTable() {
+        if (selectedCourses.length === 0) {
+            skeletonCoursesBody.innerHTML = `
+                <tr id="emptyCoursesRow">
+                    <td colspan="2" class="text-center py-4 text-muted small">Программы не назначены. Выберите курс в выпадающем меню.</td>
+                </tr>`;
+            return;
+        }
+
+        skeletonCoursesBody.innerHTML = selectedCourses.map(c => `
+            <tr id="course-row-item-${c.courseId}">
+                <td class="fw-bold text-dark small">📚 ${c.title}</td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none fw-bold p-0 px-2" 
+                            style="font-size:1.1rem; line-height:1;" onclick="removeCourseFromSkeleton(${c.courseId})" title="Исключить курс">×</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function removeStudentFromSkeleton(id) {
+        selectedStudents = selectedStudents.filter(st => st.id !== id);
+        renderStudentsTable();
+    }
+
+    function removeCourseFromSkeleton(courseId) {
+        selectedCourses = selectedCourses.filter(c => c.courseId !== courseId);
+        renderCoursesTable();
+    }
+    // 4. СВЕРХБЫСТРЫЙ ФРОНТЕНД-АВТОКОМПЛИТ (ПОЛНОСТЬЮ НА КЛИЕНТЕ)
+    studentSearchInput.addEventListener('input', function() {
+        const searchText = this.value.trim().toLowerCase();
+
+        // Если стерли текст или ввели меньше 2 букв — жестко прячем через display = 'none'
+        if (searchText.length < 2) {
+            searchDropdown.style.setProperty('display', 'none', 'important');
+            return;
+        }
+
+        // Фильтруем локальный массив-склад, который у нас в памяти браузера
+        const filtered = allStudentsStore.filter(st => {
+            return st.fio && st.fio.toLowerCase().includes(searchText);
+        });
+
+        if (filtered.length === 0) {
+            searchDropdown.innerHTML = `<li class="dropdown-item text-muted small py-2">Слушатели не найдены</li>`;
+        } else {
+            searchDropdown.innerHTML = filtered.slice(0, 10).map(st => `
+                <li>
+                    <a class="dropdown-item py-2 border-bottom style-search-item" href="#" 
+                       style="display:block; width:100%; color:#212529;" 
+                       onclick="event.preventDefault(); addStudentToSkeleton(${st.id}, '${st.fio.replace(/'/g, "\\'")}', '${st.company.replace(/'/g, "\\'")}', '${st.position.replace(/'/g, "\\'")}')">
+                        <div class="fw-bold mb-0" style="color:#212529 !important;">${st.fio}</div>
+                        <small class="text-muted d-block" style="font-size:0.75rem;">${st.company} | Должность: ${st.position}</small>
+                    </a>
+                </li>
+            `).join('');
+        }
+        
+        // ЖЕСТКО ЗАСТАВЛЯЕМ БРАУЗЕР ПОКАЗАТЬ БЛОК ПОДСКАЗОК ПО ПРЯМОЙ CSS КОМАНДЕ
+        searchDropdown.style.setProperty('display', 'block', 'important');
+    });
+
+    window.addStudentToSkeleton = function(id, fio, company, position) {
+        searchDropdown.style.setProperty('display', 'none', 'important');
+        studentSearchInput.value = '';
+
+        if (selectedStudents.some(st => st.id === id)) {
+            alert('Данный слушатель уже добавлен в текущий список группы!');
+            return;
+        }
+
+        selectedStudents.push({ id, fio, company, position });
+        renderStudentsTable();
+    };
+
+    document.addEventListener('click', function(e) {
+        if (!studentSearchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+            searchDropdown.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // 5. ДОБАВЛЕНИЕ КУРСА ИЗ ВЫПАДАЮЩЕГО СПИСКА В МАССИВ ПАМЯТИ
+    courseSelectInput.addEventListener('change', function() {
+        const courseId = parseInt(this.value);
+        if (!courseId) return;
+
+        const selectedOption = this.options[this.selectedIndex];
+        const title = selectedOption.textContent.replace('📚 ', '').trim();
+        this.value = ''; 
+
+        if (selectedCourses.some(c => c.courseId === courseId)) {
+            alert('Этот курс уже назначен данной учебной группе!');
+            return;
+        }
+
+        selectedCourses.push({
+            configId: 0, 
+            courseId,
+            title,
+            protocol: '',
+            start: '',
+            end: '',
+            allowedIds: '' 
+        });
+
+        renderCoursesTable();
+    });
+
+    // 6. СОХРАНЕНИЕ БАЗОВОГО КОСТЯКА ГРУППЫ (AJAX)
+    saveSkeletonBtn.addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = 'Синхронизация состава...';
+
+        const params = new URLSearchParams();
+        params.append('groupId', currentGroupId);
+        selectedStudents.forEach(st => params.append('studentIds', st.id));
+        selectedCourses.forEach(c => params.append('courseIds', c.courseId));
+
+        try {
+            const response = await fetch('/Groups/SaveGroupSkeleton', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Базовый костяк группы (состав людей и курсов) успешно зафиксирован!');
+                await loadCurrentGroupData();
+            } else {
+                alert('Ошибка сохранения: ' + result.message);
+                saveSkeletonBtn.disabled = false;
+                saveSkeletonBtn.textContent = '💾 Сохранить костяк учебной группы';
+            }
+        } catch (err) {
+            alert('Сбой сети при сохранении костяка.');
+            saveSkeletonBtn.disabled = false;
+            saveSkeletonBtn.textContent = '💾 Сохранить костяк учебной группы';
+        }
+    });
+    // 7. МАГИЯ ГЕНЕРАЦИИ АККОРДЕОНОВ (ТОНКАЯ НАСТРОЙКА КУРСОВ И ГАЛОЧЕК СЛУШАТЕЛЕЙ)
+    function renderConfigsAccordion() {
+        saveSkeletonBtn.disabled = false;
+        saveSkeletonBtn.textContent = '💾 Сохранить костяк учебной группы';
+
+        if (selectedCourses.length === 0) {
+            accordionContainer.innerHTML = `
+                <div class="alert alert-light text-center border p-4 small text-muted mb-0" style="border-radius: 12px;">
+                    Здесь пока пусто. Сначала добавьте курсы и нажмите кнопку «Сохранить костяк» выше.
+                </div>`;
+            return;
+        }
+
+        accordionContainer.innerHTML = selectedCourses.map((c, index) => {
+            if (c.configId === 0) {
+                return `
+                    <div class="card bg-light border p-3 small text-muted text-center" style="border-radius:12px;">
+                        📌 Курс <strong>«${c.title}»</strong> добавлен в структуру. Сохраните костяк группы кнопкой выше, чтобы открыть ввод протоколов и допусков.
+                    </div>`;
+            }
+
+            const allowedIdsArray = c.allowedIds ? c.allowedIds.split(',').map(id => parseInt(id)) : [];
+            const isFirstTime = !c.allowedIds;
+
+            let studentsCheckboxesHtml = selectedStudents.map(st => {
+                const isChecked = isFirstTime || allowedIdsArray.includes(st.id);
+                return `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-2 border rounded bg-white d-flex align-items-center gap-2.5 small">
+                            <input type="checkbox" class="form-check-input ms-1 course-student-checkbox-${c.configId}" 
+                                   value="${st.id}" ${isChecked ? 'checked' : ''} />
+                            <div class="overflow-hidden">
+                                <div class="fw-bold text-dark text-truncate">${st.fio}</div>
+                                <div class="text-muted text-truncate" style="font-size:0.75rem;">${st.company}</div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            if (selectedStudents.length === 0) {
+                studentsCheckboxesHtml = `<div class="col-12 text-muted small ps-3">Сначала добавьте слушателей в верхнюю левую таблицу группы.</div>`;
+            }
+
+            return `
+                <div class="card bg-white border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center" role="button" 
+                         data-bs-toggle="collapse" data-bs-target="#collapse-config-${c.configId}" style="cursor:pointer;">
+                        <span class="fw-bold text-dark fs-5">📚 ${c.title}</span>
+                        <span class="text-muted small fw-bold">⚙️ Настройка протокола и допусков &darr;</span>
+                    </div>
+
+                    <div id="collapse-config-${c.configId}" class="collapse p-4 border-top">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">НОМЕР ПРОТОКОЛА / ПРИКАЗА</label>
+                                <input type="text" id="protocol-input-${c.configId}" class="form-control form-control-sm fw-bold" value="${c.protocol || ''}" placeholder="Например: Пр-234/ОТ" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">ДАТА НАЧАЛА ОБУЧЕНИЯ</label>
+                                <input type="date" id="start-input-${c.configId}" class="form-control form-control-sm" value="${c.start || ''}" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">ДАТА ЭКЗАМЕНА (ОКОНЧАНИЯ)</label>
+                                <input type="date" id="end-input-${c.configId}" class="form-control form-control-sm" value="${c.end || ''}" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3"><label class="form-label text-muted small fw-bold">РАСПРЕДЕЛЕНИЕ СЛУШАТЕЛЕЙ НА ДАННЫЙ КУРС (УБЕРИТЕ ГАЛОЧКИ ЛИШНИМ)</label></div>
+                        <div class="row g-2 mb-4">
+                            ${studentsCheckboxesHtml}
+                        </div>
+
+                        <div class="text-end border-top pt-3">
+                            <button type="button" class="btn btn-sm btn-success fw-bold px-4 py-2" onclick="saveIndividualCourseConfig(${c.configId})">
+                                💾 Сохранить параметры курса «${c.title}»
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // 8. ОТПРАВКА ИНДИВИДУАЛЬНОЙ НАСТРОЙКИ КУРСА НА СЕРВЕР ЧЕРЕЗ AJAX
+    window.saveIndividualCourseConfig = async function(configId) {
+        const protocolInput = document.getElementById(`protocol-input-${configId}`);
+        const startInput = document.getElementById(`start-input-${configId}`);
+        const endInput = document.getElementById(`end-input-${configId}`);
+        
+        const checkedCheckboxes = document.querySelectorAll(`.course-student-checkbox-${configId}:checked`);
+        const allowedIds = Array.from(checkedCheckboxes).map(cb => parseInt(cb.value));
+
+        if (allowedIds.length === 0 && selectedStudents.length > 0) {
+            if (!confirm('Вы сняли галочки со всех студентов! Это означает, что никто из этой группы не допущен к курсу. Продолжить?')) {
+                return;
+            }
+        }
+
+        const btn = document.querySelector(`button[onclick="saveIndividualCourseConfig(${configId})"]`);
+        btn.disabled = true;
+        btn.textContent = 'Сохранение настроек...';
+
+        const params = new URLSearchParams();
+        params.append('configId', configId);
+        params.append('protocolNumber', protocolInput.value.trim());
+        if (startInput.value) params.append('startDate', startInput.value);
+        if (endInput.value) params.append('endDate', endInput.value);
+        allowedIds.forEach(id => params.append('allowedStudentIds', id));
+
+        try {
+            const response = await fetch('/Groups/SaveCourseConfig', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Параметры протокола и допуски студентов успешно обновлены!');
+                await loadCurrentGroupData();
+            } else {
+                alert('Ошибка бэкенда: ' + result.message);
+                btn.disabled = false; btn.textContent = '💾 Сохранить параметры курса';
+            }
+        } catch (err) {
+            alert('Критический сбой сети при сохранении параметров курса.');
+            btn.disabled = false; btn.textContent = '💾 Сохранить параметры курса';
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", loadCurrentGroupData);
+</script>

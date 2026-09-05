@@ -1,0 +1,325 @@
+@model IEnumerable<SdoApp.Models.Company>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Справочник организаций";
+}
+
+<!-- 1. CSS СТИЛИ ДЛЯ ИНТЕРАКТИВА, АНИМАЦИЙ, ПАГИНАЦИИ И КОПИРОВАНИЯ -->
+<style>
+    .copy-clickable { 
+        cursor: pointer; 
+        position: relative; 
+        transition: background-color 0.2s; 
+        padding: 2px 6px; 
+        border-radius: 4px; 
+    }
+    .copy-clickable:hover { 
+        background-color: rgba(78, 115, 223, 0.1); 
+    }
+    .copy-toast { 
+        position: absolute; 
+        bottom: 110%; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        background-color: #333; 
+        color: #fff; 
+        padding: 4px 8px; 
+        font-size: 0.75rem; 
+        border-radius: 4px; 
+        white-space: nowrap; 
+        opacity: 0; 
+        pointer-events: none; 
+        transition: opacity 0.2s; 
+        z-index: 10; 
+    }
+    .copy-toast.show { 
+        opacity: 1; 
+    }
+    .fade-out { 
+        opacity: 0; 
+        transition: opacity 0.3s ease; 
+    }
+    .page-link { 
+        cursor: pointer; 
+    }
+</style>
+
+<!-- 2. ВЕРХНЯЯ ПАНЕЛЬ С КНОПКОЙ ДОБАВЛЕНИЯ -->
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h2 class="fw-bold text-dark m-0">Организации</h2>
+        <small class="text-muted">Справочник компаний-контрагентов и предприятий</small>
+    </div>
+    <a href="/Companies/Create" class="btn btn-primary px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
+        <svg xmlns="http://w3.org" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+        </svg>
+        Добавить компанию
+    </a>
+</div>
+
+<!-- 3. ИНСТРУМЕНТЫ ФИЛЬТРАЦИИ И ЖИВОГО ПОИСКА -->
+<div class="row g-3 align-items-center mb-3">
+    <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
+        <span>Показать по:</span>
+        <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 75px;">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+    <div class="col-sm ms-auto" style="max-width: 400px;">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light text-muted">🔍</span>
+            <input type="text" id="companyTableSearchInput" class="form-control" 
+                   placeholder="Поиск по Наименованию или ИНН..." autocomplete="off" />
+        </div>
+    </div>
+</div>
+
+<!-- 4. ТАБЛИЦА ОРГАНИЗАЦИЙ -->
+<div class="card card-custom p-3 bg-white border-0 shadow-sm mb-4" style="border-radius: 12px;">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle m-0">
+            <thead class="table-light text-muted small text-uppercase">
+                <tr>
+                    <th>Наименование организации</th>
+                    <th>ИНН</th>
+                    <th class="text-center">Слушателей в СДО</th>
+                    <th class="text-end" style="width: 150px;">Действия</th>
+                </tr>
+            </thead>
+            <tbody id="companiesTableBody">
+                @if (!Model.Any())
+                {
+                    <tr id="emptyRow">
+                        <td colspan="4" class="text-center py-4 text-muted">В справочнике пока нет ни одной организации.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var company in Model)
+                    {
+                        <tr id="company-row-@company.Id" class="company-data-row" data-id="@company.Id">
+                            <td>
+                                <div class="fw-bold text-dark company-name">@company.Name</div>
+                                <span class="text-muted small">Системный ID: #@company.Id</span>
+                            </td>
+                            <td>
+                                <!-- ИНН с интерактивным клик-копированием -->
+                                <span class="badge bg-light text-secondary border fw-mono copy-clickable company-inn" 
+                                      onclick="copyText(this, '@company.Inn')" title="Кликните, чтобы скопировать">
+                                    @company.Inn
+                                    <span class="copy-toast">Скопировано!</span>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @(company.Users.Count > 0 ? "bg-light text-success border border-success" : "bg-light text-muted border") px-3 py-1.5 fw-bold" style="font-size: 0.85rem;">
+                                    @company.Users.Count чел.
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <a href="/Companies/Edit/@company.Id" class="btn btn-sm btn-light border text-secondary px-2.5 py-1.5" title="Редактировать">
+                                        <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.5.5 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11z"/>
+                                        </svg>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger px-2.5 py-1.5" title="Удалить" 
+                                            data-bs-toggle="modal" data-bs-target="#deleteCompanyModal"
+                                            onclick="prepareDeleteCompany(@company.Id, '@company.Name')">
+                                        <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 5. СТРОКА НАВИГАЦИИ ПО СТРАНИЦАМ -->
+<div class="d-flex justify-content-between align-items-center px-1">
+    <div id="paginationInfo" class="small text-muted">Показано 0-0 из 0 записей</div>
+    <nav>
+        <ul id="paginationButtons" class="pagination pagination-sm m-0">
+            <!-- Сгенерируется автоматически -->
+        </ul>
+    </nav>
+</div>
+<!-- 6. КРАСИВОЕ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ Bootstrap 5 -->
+<div class="modal fade" id="deleteCompanyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <div class="modal-body p-4 text-center">
+                <div class="text-danger mb-3">
+                    <span style="font-size: 3rem; line-height: 1;">⚠️</span>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Удаление организации</h5>
+                <p class="text-muted small mb-0">Вы действительно хотите удалить компанию</p>
+                <p id="deleteCompanyNameText" class="fw-bold text-danger mb-4"></p>
+                
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50" data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmDeleteCompanyBtn" type="button" class="btn btn-danger px-4 fw-bold w-50">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 7. АВТОНОМНЫЙ JAVASCRIPT ДЛЯ ПОИСКА, ПАГИНАЦИИ, КОПИРОВАНИЯ И УДАЛЕНИЯ -->
+<script>
+    // Функция копирования ИНН в буфер обмена
+    function copyText(element, textToCopy) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const toast = element.querySelector('.copy-toast');
+            if (toast) {
+                toast.classList.add('show');
+                setTimeout(() => { toast.classList.remove('show'); }, 1200);
+            }
+        }).catch(err => console.error('Ошибка копирования ИНН:', err));
+    }
+
+    let currentPage = 1;
+    const tableBody = document.getElementById('companiesTableBody');
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    const searchInput = document.getElementById('companyTableSearchInput');
+
+    let pageSize = parseInt(pageSizeSelect.value);
+
+    // Функция: Живой поиск + постраничный вывод (пагинация)
+    function updatePagination() {
+        const rows = Array.from(tableBody.querySelectorAll('.company-data-row'));
+        const searchText = searchInput.value.trim().toLowerCase();
+
+        // Фильтрация живым поиском (по имени или ИНН)
+        let filteredRows = rows;
+        if (searchText.length > 0) {
+            filteredRows = rows.filter(row => {
+                const name = row.querySelector('.company-name')?.textContent?.toLowerCase() ?? "";
+                const inn = row.querySelector('.company-inn')?.textContent?.toLowerCase() ?? "";
+                return name.includes(searchText) || inn.includes(searchText);
+            });
+        }
+
+        const totalRows = filteredRows.length;
+
+        if (totalRows === 0) {
+            rows.forEach(row => row.style.display = 'none');
+            document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 записей';
+            document.getElementById('paginationButtons').innerHTML = '';
+            return;
+        }
+
+        const totalPages = Math.ceil(totalRows / pageSize);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalRows);
+
+        rows.forEach(row => row.style.display = 'none');
+        filteredRows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.style.display = '';
+            }
+        });
+
+        document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} записей (справочник)`;
+
+        const paginationContainer = document.getElementById('paginationButtons');
+        paginationContainer.innerHTML = '';
+
+        // Стрелка назад
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<span class="page-link">&laquo;</span>`;
+        if (currentPage > 1) {
+            prevLi.addEventListener('click', () => { currentPage--; updatePagination(); });
+        }
+        paginationContainer.appendChild(prevLi);
+
+        // Цифры страниц
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<span class="page-link">${i}</span>`;
+            li.addEventListener('click', () => { currentPage = i; updatePagination(); });
+            paginationContainer.appendChild(li);
+        }
+
+        // Стрелка вперед
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<span class="page-link">&raquo;</span>`;
+        if (currentPage < totalPages) {
+            nextLi.addEventListener('click', () => { currentPage++; updatePagination(); });
+        }
+        paginationContainer.appendChild(nextLi);
+    }
+
+    searchInput.addEventListener('input', function() {
+        currentPage = 1;
+        updatePagination();
+    });
+
+    pageSizeSelect.addEventListener('change', function() {
+        pageSize = parseInt(this.value);
+        currentPage = 1;
+        updatePagination();
+    });
+
+    // --- ЛОГИКА АСИНХРОННОГО AJAX-УДАЛЕНИЯ ОРГАНИЗАЦИИ ---
+    let companyIdToDelete = null;
+
+    function prepareDeleteCompany(id, companyName) {
+        companyIdToDelete = id;
+        document.getElementById('deleteCompanyNameText').textContent = companyName;
+    }
+
+    document.getElementById('confirmDeleteCompanyBtn').addEventListener('click', async function() {
+        if (!companyIdToDelete) return;
+
+        try {
+            const response = await fetch(`/Companies/Delete/${companyIdToDelete}`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                document.querySelector('#deleteCompanyModal [data-bs-dismiss="modal"]').click();
+
+                const row = document.getElementById(`company-row-${companyIdToDelete}`);
+                if (row) {
+                    row.classList.add('fade-out');
+                    setTimeout(() => {
+                        row.remove();
+                        const rows = tableBody.querySelectorAll('.company-data-row');
+                        if (rows.length === 0) {
+                            tableBody.innerHTML = `<tr id="emptyRow"><td colspan="4" class="text-center py-4 text-muted">В справочнике пока нет ни одной организации.</td></tr>`;
+                        }
+                        updatePagination();
+                    }, 300);
+                }
+            } else {
+                alert('Внимание: ' + result.message);
+                document.querySelector('#deleteCompanyModal [data-bs-dismiss="modal"]').click();
+            }
+        } catch (error) {
+            console.error('Ошибка удаления:', error);
+            alert('Не удалось связаться с сервером для удаления компании.');
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        updatePagination();
+    });
+</script>

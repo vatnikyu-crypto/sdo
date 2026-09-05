@@ -1,0 +1,166 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Добавление слушателя";
+}
+
+<div class="mb-3 mt-2">
+    <a href="/Users/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1">
+        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+                  d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
+        </svg>
+        Назад к списку
+    </a>
+    <h2 class="fw-bold text-dark mt-2 m-0">Новый слушатель</h2>
+    <small class="text-muted">Заполните личные и организационные данные для создания учетной записи</small>
+</div>
+
+<div class="card card-custom p-4 bg-white border-0 shadow-sm mb-4" style="max-width: 850px; border-radius: 12px;">
+    <form asp-action="Create" asp-controller="Users" method="post">
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger border-0 small py-2 mb-4" role="alert">
+                <div asp-validation-summary="All"></div>
+            </div>
+        }
+
+        <!-- СЕКЦИЯ 1: ЛИЧНЫЕ ДАННЫЕ (с value из ViewBag) -->
+        <h5 class="text-primary mb-3 fw-bold small text-uppercase tracking-wider">1. Личные данные</h5>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold">ФАМИЛИЯ <span class="text-danger">*</span></label>
+                <input name="LastName" type="text" class="form-control" required placeholder="Иванов" autocomplete="off"
+                       value="@ViewBag.LastName" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold">ИМЯ <span class="text-danger">*</span></label>
+                <input name="FirstName" type="text" class="form-control" required placeholder="Иван" autocomplete="off"
+                       value="@ViewBag.FirstName" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold">ОТЧЕСТВО</label>
+                <input name="MiddleName" type="text" class="form-control" placeholder="Иванович" autocomplete="off"
+                       value="@ViewBag.MiddleName" />
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold">ПОЛ <span class="text-danger">*</span></label>
+                <select name="Gender" class="form-select">
+                    <option value="0" selected="@(ViewBag.Gender == 0 ? "selected" : null)">Мужской</option>
+                    <option value="1" selected="@(ViewBag.Gender == 1 ? "selected" : null)">Женский</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold">ДАТА РОЖДЕНИЯ</label>
+                <input name="BirthDate" type="date" class="form-control" value="@ViewBag.BirthDate" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold">СНИЛС</label>
+                <input name="Snils" type="text" class="form-control" placeholder="123-456-789 01" autocomplete="off"
+                       value="@ViewBag.Snils" />
+            </div>
+        </div>
+        <!-- СЕКЦИЯ 2: ОРГАНИЗАЦИЯ -->
+        <h5 class="text-primary mb-3 fw-bold small text-uppercase tracking-wider">2. Организация</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 position-relative">
+                <label class="form-label text-muted small fw-bold">КОМПАНИЯ (ЖИВОЙ ПОИСК ПО БД) <span
+                    class="text-danger">*</span></label>
+                    <!-- Поле ввода компании -->
+                    <input id="companySearchInput" name="CompanyName" type="text" class="form-control"
+                           placeholder="Начните вводить название (например: ООО)..." required autocomplete="off"
+                           value="@ViewBag.CompanyName" />
+
+                    <!-- Кастомное выпадающее меню для результатов поиска LIKE -->
+                    <div id="companyDropdownMenu" class="dropdown-menu w-100 shadow-sm border mt-1"
+                         style="display: none; max-height: 200px; overflow-y: auto;">
+                        <!-- Сюда JS будет подставлять результаты -->
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">ПОДРАЗДЕЛЕНИЕ / ОТДЕЛЕНИЕ</label>
+                    <input name="Department" type="text" class="form-control" placeholder="Например, Отдел логистики"
+                           autocomplete="off" value="@ViewBag.Department" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">ДОЛЖНОСТЬ</label>
+                    <input name="position" type="text" class="form-control"
+                           placeholder="Например: Электрогазосварщик 5 разряда" />
+                </div>
+            </div>
+
+            <div class="alert alert-light border text-muted small mb-4 py-2"
+                 style="background-color: #fdfdfd; border-radius: 6px;">
+                💡 Логин и пароль будут сгенерированы автоматически после успешного прохождения всех проверок в базе данных.
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">Сохранить в базу</button>
+                <a href="/Users/Index" class="btn btn-light px-4 py-2 fw-bold border text-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- 3. СКРИПТ ЖИВОГО КОМБОБОКСА ПО БАЗЕ ДАННЫХ (LIKE) -->
+    <script>
+        const searchInput = document.getElementById('companySearchInput');
+        const dropdownMenu = document.getElementById('companyDropdownMenu');
+
+        // Слушаем ввод текста в поле компании
+        searchInput.addEventListener('input', async function () {
+            const text = this.value.trim();
+
+            if (text.length < 1) {
+                dropdownMenu.style.display = 'none';
+                return;
+            }
+
+            try {
+                // Делаем фоновый AJAX-запрос к нашему методу LIKE в контроллере
+                const response = await fetch(`/Users/SearchCompanies?term=${encodeURIComponent(text)}`);
+                const companies = await response.json();
+
+                // Очищаем старые результаты в меню
+                dropdownMenu.innerHTML = '';
+
+                if (companies.length === 0) {
+                    const noResult = document.createElement('span');
+                    noResult.className = 'dropdown-item text-muted small';
+                    noResult.textContent = 'Ничего не найдено';
+                    dropdownMenu.appendChild(noResult);
+                } else {
+                    // Отрисовываем найденные компании в виде кликабельных пунктов
+                    companies.forEach(company => {
+                        const item = document.createElement('a');
+                        item.className = 'dropdown-item small py-2';
+                        item.href = '#';
+                        item.textContent = company.name;
+
+                        // Клик по компании подставляет её имя в инпут и скрывает меню
+                        item.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            searchInput.value = company.name;
+                            dropdownMenu.style.display = 'none';
+                        });
+
+                        dropdownMenu.appendChild(item);
+                    });
+                }
+
+                dropdownMenu.style.display = 'block';
+
+            } catch (error) {
+                console.error('Ошибка живого поиска компаний:', error);
+            }
+        });
+
+        // Скрываем меню, если кликнули в любое другое место экрана
+        document.addEventListener('click', function (e) {
+            if (e.target !== searchInput && e.target !== dropdownMenu) {
+                dropdownMenu.style.display = 'none';
+            }
+        });
+    </script>

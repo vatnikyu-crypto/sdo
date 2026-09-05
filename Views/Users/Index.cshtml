@@ -1,0 +1,661 @@
+@model IEnumerable<SdoApp.Models.User>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Список обучающихся";
+}
+
+<!-- 1. CSS СТИЛИ ДЛЯ ИНТЕРАКТИВА, АНИМАЦИЙ И ПАГИНАЦИИ -->
+<style>
+    .copy-clickable {
+        cursor: pointer;
+        position: relative;
+        transition: background-color 0.2s;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .copy-clickable:hover {
+        background-color: rgba(78, 115, 223, 0.1);
+    }
+
+    .copy-toast {
+        position: absolute;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: #fff;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 10;
+    }
+
+    .copy-toast.show {
+        opacity: 1;
+    }
+
+    .fade-out {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .page-link {
+        cursor: pointer;
+    }
+</style>
+
+<!-- 2. ВЕРХНЯЯ ПАНЕЛЬ С КНОПКАМИ ДЕЙСТВИЙ -->
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h2 class="fw-bold text-dark m-0">Обучающиеся</h2>
+        <small class="text-muted">Управление учетными записями слушателей курсов</small>
+    </div>
+    <div class="d-flex gap-2">
+        <!-- НОВАЯ КНОПКА ИМПОРТА -->
+        <button class="btn btn-outline-success px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2"
+                data-bs-toggle="modal" data-bs-target="#importExcelModal">
+            📊 Импорт из Файла
+        </button>
+        <!-- Кнопка группового удаления (скрыта по умолчанию через d-none) -->
+        <button id="deleteSelectedBtn" class="btn btn-danger px-4 py-2 fw-bold shadow-sm d-none" data-bs-toggle="modal"
+                data-bs-target="#deleteMultipleModal">
+            Удалить выбранные (<span id="selectedCount">0</span>)
+        </button>
+        <a href="/Users/Create" class="btn btn-primary px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
+            <svg xmlns="http://w3.org" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+            </svg>
+            Добавить пользователя
+        </a>
+    </div>
+</div>
+
+<!-- 3. ИНСТРУМЕНТЫ ФИЛЬТРАЦИИ, ПОИСКА И ПАГИНАЦИИ -->
+<div class="row g-3 align-items-center mb-3">
+    <!-- Выбор количества строк -->
+    <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
+        <span>Показать по:</span>
+        <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 75px;">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+    <!-- Новое интерактивное поле универсального поиска -->
+    <div class="col-sm ms-auto" style="max-width: 400px;">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light text-muted">🔍</span>
+            <input type="text" id="userTableSearchInput" class="form-control"
+                   placeholder="Поиск по Фамилии, СНИЛС или Дате рождения (ДД.ММ.ГГГГ)..." autocomplete="off" />
+        </div>
+    </div>
+</div>
+
+<!-- 4. ТАБЛИЦА СТУДЕНТОВ -->
+<div class="card card-custom p-3 bg-white border-0 shadow-sm mb-4" style="border-radius: 12px;">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle m-0">
+            <thead class="table-light text-muted small text-uppercase">
+                <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                    </th>
+                    <th>ФИО слушателя</th>
+                    <th>Данные доступа</th>
+                    <th>Организация / Отделение</th>
+                    <th>СНИЛС</th>
+                    <th class="text-end" style="width: 150px;">Действия</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                @if (!Model.Any())
+                {
+                    <tr id="emptyRow">
+                        <td colspan="6" class="text-center py-4 text-muted">В базе данных пока нет ни одного обучающегося.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var student in Model)
+                    {
+                        <tr id="user-row-@student.Id" class="user-data-row" data-id="@student.Id">
+                            <td>
+                                <input type="checkbox" class="form-check-input user-checkbox" value="@student.Id">
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">@student.LastName @student.FirstName @student.MiddleName</div>
+                                <span class="text-muted small">Пол: @student.Gender |
+                                    @(student.BirthDate?.ToString("dd.MM.yyyy") ?? "—")</span>
+                                </td>
+                                <td>
+                                    <div class="mb-1">
+                                        <span class="text-muted small fw-bold me-1" style="font-size: 0.7rem;">ЛОГИН:</span>
+                                        <span class="badge bg-light text-primary border fw-mono copy-clickable"
+                                              onclick="copyText(this, '@student.Login')">
+                                            @student.Login <span class="copy-toast">Скопировано!</span>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted small fw-bold me-1" style="font-size: 0.7rem;">ПАРОЛЬ:</span>
+                                        <span class="badge bg-light text-secondary border fw-mono copy-clickable"
+                                              onclick="copyText(this, '@student.Password')">
+                                            •••••••• <span class="copy-toast">Скопировано!</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <!-- Было в вашей 4-й колонке: -->
+                                <td>
+                                    <div class="small fw-bold text-secondary">@student.Company?.Name</div>
+
+                                    <!-- Вывод должности: если она есть, выводим. Если нет — тег не создается -->
+                                    @if (!string.IsNullOrWhiteSpace(student.Position))
+                                    {
+                                        <div class="text-muted small">@student.Position</div>
+                                    }
+
+                                    <!-- ТАКЖЕ ДЕЛАЕМ И ДЛЯ ПОДРАЗДЕЛЕНИЯ: выводим строго при наличии текста -->
+                                    @if (!string.IsNullOrWhiteSpace(student.Department))
+                                    {
+                                        <div class="text-muted small">@student.Department</div>
+                                    }
+                                </td>
+
+                                <td class="text-muted small">@(string.IsNullOrEmpty(student.Snils) ? "—" : student.Snils)</td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <!-- НОВАЯ КНОПКА: СКАЧАТЬ ДАННЫЕ ДЛЯ ВХОДА (EXCEL) -->
+                                        <a href="/Users/DownloadAccessCard/@student.Id"
+                                           class="btn btn-sm btn-outline-success px-2.5 py-1.5"
+                                           title="Скачать данные для входа (.xlsx)">
+                                            📥
+                                        </a>
+
+                                        <!-- Твоя старая кнопка карандаша (Редактировать) -->
+                                        <a href="/Users/Edit/@student.Id"
+                                           class="btn btn-sm btn-light border text-secondary px-2.5 py-1.5" title="Редактировать">
+                                            <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor"
+                                                 viewBox="0 0 16 16">
+                                                <path
+                                                d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.5.5 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11z" />
+                                            </svg>
+                                        </a>
+
+                                        <!-- Твоя старая кнопка корзины (Удалить) -->
+                                        <button class="btn btn-sm btn-outline-danger px-2.5 py-1.5" title="Удалить"
+                                                data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
+                                                onclick="prepareDelete(@student.Id, '@student.LastName @student.FirstName')">
+                                            <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor"
+                                                 viewBox="0 0 16 16">
+                                                <path
+                                                d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                                <path
+                                                d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. СТРОКА НАВИГАЦИИ ПО СТРАНИЦАМ -->
+    <div class="d-flex justify-content-between align-items-center px-1">
+        <div id="paginationInfo" class="small text-muted">Показано 0-0 из 0 записей</div>
+        <nav>
+            <ul id="paginationButtons" class="pagination pagination-sm m-0">
+                <!-- Кнопки сгенерирует скрипт -->
+            </ul>
+        </nav>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: ОДИНОЧНОЕ УДАЛЕНИЕ -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-body p-4 text-center">
+                    <div class="text-danger mb-3"><span style="font-size: 3rem; line-height: 1;">⚠️</span></div>
+                    <h5 class="fw-bold text-dark mb-2">Удаление слушателя</h5>
+                    <p class="text-muted small mb-0">Вы действительно хотите удалить пользователя</p>
+                    <p id="deleteUserName" class="fw-bold text-danger mb-4"></p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50"
+                                data-bs-dismiss="modal">Отмена</button>
+                        <button id="confirmDeleteBtn" type="button"
+                                class="btn btn-danger px-4 fw-bold w-50">Удалить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ИМПОРТА EXCEL С ЗОНОЙ DRAG AND DROP -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header bg-light border-0 py-3">
+                    <h5 class="modal-title fw-bold text-dark">Импорт слушателей из Файла .csv</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Ссылка на скачивание шаблона -->
+                    <div class="mb-4 text-center">
+                        <a href="/Users/DownloadTemplate"
+                           class="btn btn-sm btn-link fw-bold text-primary text-decoration-none">
+                            📥 Скачать официальный Файл-шаблон (.csv)
+                        </a>
+                    </div>
+
+                    <!-- Зона Drag and Drop -->
+                    <div id="dropZone" class="border border-2 border-dashed rounded-3 p-5 text-center bg-light"
+                         style="cursor: pointer; transition: all 0.2s; border-color: #cbd5e1 !important;">
+                        <span style="font-size: 3rem;">📄</span>
+                        <h5 class="fw-bold mt-2 text-secondary" id="dropZoneText">Перетащите CSV файл сюда или кликните для
+                            выбора</h5>
+                            <p class="text-muted small mb-0">Поддерживаются только файлы формата .csv (разделитель - точка с
+                                запятой)</p>
+                                <input type="file" id="excelFileInput" accept=".csv" class="d-none" />
+                            </div>
+
+                            <!-- Блок вывода результатов (скрыт по умолчанию) -->
+                            <div id="importResultBlock" class="mt-4 d-none">
+                                <div class="alert alert-success border-0 small py-2 mb-2" id="importSuccessMessage"></div>
+                                <div id="importErrorsBlock" class="alert alert-danger border-0 small py-2 d-none"
+                                     style="max-height: 150px; overflow-y: auto;">
+                                    <h6 class="fw-bold mb-1">Ошибки импорта некоторых строк:</h6>
+                                    <ul id="importErrorsList" class="mb-0 ps-3"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light border-0 py-3">
+                            <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Закрыть</button>
+                            <button id="startImportBtn" type="button" class="btn btn-success px-4 fw-bold" disabled>Запустить
+                                импорт</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- МОДАЛЬНОЕ ОКНО: МАССОВОЕ УДАЛЕНИЕ -->
+                <div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                            <div class="modal-body p-4 text-center">
+                                <div class="text-danger mb-3"><span style="font-size: 3rem; line-height: 1;">🚨</span></div>
+                                <h5 class="fw-bold text-dark mb-2">Групповое удаление</h5>
+                                <p class="text-muted small mb-3">Вы действительно хотите безвозвратно удалить выбранных пользователей в
+                                    количестве:</p>
+                                    <h4 id="multipleDeleteCountDisplay" class="fw-bold text-danger mb-4">0</h4>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50"
+                                                data-bs-dismiss="modal">Отмена</button>
+                                        <button id="confirmMultipleDeleteBtn" type="button" class="btn btn-danger px-4 fw-bold w-50">Удалить
+                                            всё</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 6. АВТОНОМНЫЙ JAVASCRIPT ДЛЯ ФУНКЦИОНАЛА ПАГИНАЦИИ И ГАЛОЧЕК -->
+                        <!-- 6. ОБНОВЛЕННЫЙ JAVASCRIPT: ЧАСТЬ 1 ИЗ 2 (ПОИСК И ПАГИНАЦИЯ) -->
+                        <script>
+                            // Кликовое копирование текста в один клик
+                            function copyText(element, textToCopy) {
+                                navigator.clipboard.writeText(textToCopy).then(() => {
+                                    const toast = element.querySelector('.copy-toast');
+                                    if (toast) {
+                                        toast.classList.add('show');
+                                        setTimeout(() => { toast.classList.remove('show'); }, 1200);
+                                    }
+                                }).catch(err => console.error(err));
+                            }
+
+                            // Инициализация переменных состояния
+                            let currentPage = 1;
+                            const tableBody = document.getElementById('usersTableBody');
+                            const pageSizeSelect = document.getElementById('pageSizeSelect');
+                            const searchInput = document.getElementById('userTableSearchInput'); // Наш инпут поиска
+                            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+                            const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+                            const selectedCountSpan = document.getElementById('selectedCount');
+
+                            let pageSize = parseInt(pageSizeSelect.value);
+
+                            // ОСНОВНАЯ ФУНКЦИЯ: Фильтрация, Поиск и Пагинация видимых строк
+                            function updatePagination() {
+                                const rows = Array.from(tableBody.querySelectorAll('.user-data-row'));
+                                const searchText = searchInput.value.trim().toLowerCase();
+
+                                // 1. ЭТАП ЖИВОГО ПОИСКА: Фильтруем строки по введенному тексту
+                                let filteredRows = rows;
+                                if (searchText.length > 0) {
+                                    filteredRows = rows.filter(row => {
+                                        const fullName = row.querySelector('.user-fullname')?.textContent?.toLowerCase() ?? "";
+                                        const rowText = row.textContent?.toLowerCase() ?? ""; // Берем весь текст строки (включая СНИЛС и Дату)
+
+                                        // Проверяем совпадение по Фамилии, СНИЛС или Дате рождения
+                                        return fullName.includes(searchText) || rowText.includes(searchText);
+                                    });
+                                }
+
+                                const totalRows = filteredRows.length;
+
+                                // Если после поиска ничего не найдено
+                                if (totalRows === 0) {
+                                    rows.forEach(row => {
+                                        row.style.display = 'none';
+                                        const cb = row.querySelector('.user-checkbox');
+                                        if (cb) cb.checked = false;
+                                    });
+
+                                    document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 записей';
+                                    document.getElementById('paginationButtons').innerHTML = '';
+                                    selectAllCheckbox.checked = false;
+                                    toggleDeleteButton();
+                                    return;
+                                }
+
+                                // Расчет страниц только для найденных (отфильтрованных) строк
+                                const totalPages = Math.ceil(totalRows / pageSize);
+                                if (currentPage > totalPages) currentPage = totalPages;
+                                if (currentPage < 1) currentPage = 1;
+
+                                const startIndex = (currentPage - 1) * pageSize;
+                                const endIndex = Math.min(startIndex + pageSize, totalRows);
+
+                                // 2. ЭТАП ПАГИНАЦИИ: Прячем все строки, кроме текущей страницы результатов
+                                rows.forEach(row => {
+                                    row.style.display = 'none';
+                                    const cb = row.querySelector('.user-checkbox');
+                                    if (cb) cb.checked = false;
+                                });
+
+                                // Включаем отображение для строк, попавших в текущий диапазон пагинации
+                                filteredRows.forEach((row, index) => {
+                                    if (index >= startIndex && index < endIndex) {
+                                        row.style.display = '';
+                                    }
+                                });
+
+                                document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} записей (отфильтровано)`;
+
+                                // Генерация кнопок пагинации (Стрелочки + Цифры)
+                                const paginationContainer = document.getElementById('paginationButtons');
+                                paginationContainer.innerHTML = '';
+
+                                // Кнопка Стрелочка Назад
+                                const prevLi = document.createElement('li');
+                                prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                                prevLi.innerHTML = `<span class="page-link">&laquo;</span>`;
+                                if (currentPage > 1) {
+                                    prevLi.addEventListener('click', () => { currentPage--; updatePagination(); });
+                                }
+                                paginationContainer.appendChild(prevLi);
+
+                                // Цифровые кнопки страниц
+                                for (let i = 1; i <= totalPages; i++) {
+                                    const li = document.createElement('li');
+                                    li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                                    li.innerHTML = `<span class="page-link">${i}</span>`;
+                                    li.addEventListener('click', () => { currentPage = i; updatePagination(); });
+                                    paginationContainer.appendChild(li);
+                                }
+
+                                // Кнопка Стрелочка Вперед
+                                const nextLi = document.createElement('li');
+                                nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                                nextLi.innerHTML = `<span class="page-link">&raquo;</span>`;
+                                if (currentPage < totalPages) {
+                                    nextLi.addEventListener('click', () => { currentPage++; updatePagination(); });
+                                }
+                                paginationContainer.appendChild(nextLi);
+
+                                updateSelectAllState();
+                                toggleDeleteButton();
+                            }
+
+                            // Слушатель событий на ввод текста в поле поиска
+                            searchInput.addEventListener('input', function () {
+                                currentPage = 1; // При любом поиске всегда сбрасываем отображение на 1-ю страницу результатов
+                                updatePagination();
+                            });
+
+
+                            // Управление видимостью кнопки удаления
+                            function toggleDeleteButton() {
+                                const checkedBoxes = tableBody.querySelectorAll('.user-checkbox:checked');
+                                const count = checkedBoxes.length;
+
+                                if (count > 0) {
+                                    deleteSelectedBtn.classList.remove('d-none');
+                                    selectedCountSpan.textContent = count;
+                                    document.getElementById('multipleDeleteCountDisplay').textContent = count;
+                                } else {
+                                    deleteSelectedBtn.classList.add('d-none');
+                                }
+                            }
+
+                            // Контроль состояния чекбокса "Выбрать все"
+                            function updateSelectAllState() {
+                                const visibleCheckboxes = Array.from(tableBody.querySelectorAll('.user-data-row'))
+                                    .filter(row => row.style.display !== 'none')
+                                    .map(row => row.querySelector('.user-checkbox'));
+
+                                if (visibleCheckboxes.length === 0) {
+                                    selectAllCheckbox.checked = false;
+                                    return;
+                                }
+
+                                const allChecked = visibleCheckboxes.every(cb => cb.checked);
+                                selectAllCheckbox.checked = allChecked;
+                            }
+
+                            // Клик по главному чекбоксу
+                            selectAllCheckbox.addEventListener('change', function () {
+                                const isChecked = this.checked;
+                                Array.from(tableBody.querySelectorAll('.user-data-row'))
+                                    .filter(row => row.style.display !== 'none')
+                                    .forEach(row => {
+                                        const cb = row.querySelector('.user-checkbox');
+                                        if (cb) cb.checked = isChecked;
+                                    });
+                                toggleDeleteButton();
+                            });
+
+                            tableBody.addEventListener('change', function (e) {
+                                if (e.target.classList.contains('user-checkbox')) {
+                                    updateSelectAllState();
+                                    toggleDeleteButton();
+                                }
+                            });
+
+                            pageSizeSelect.addEventListener('change', function () {
+                                pageSize = parseInt(this.value);
+                                currentPage = 1;
+                                updatePagination();
+                            });
+
+                            // ОДИНОЧНОЕ АСИНХРОННОЕ УДAЛЕНИЕ
+                            let userIdToDelete = null;
+                            function prepareDelete(id, fullName) {
+                                userIdToDelete = id;
+                                document.getElementById('deleteUserName').textContent = fullName;
+                            }
+
+                            document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
+                                if (!userIdToDelete) return;
+                                try {
+                                    const response = await fetch(`/Users/Delete/${userIdToDelete}`, { method: 'POST' });
+                                    const result = await response.json();
+                                    if (result.success) {
+                                        document.querySelector('#deleteConfirmModal [data-bs-dismiss="modal"]').click();
+                                        const row = document.getElementById(`user-row-${userIdToDelete}`);
+                                        if (row) {
+                                            row.classList.add('fade-out');
+                                            setTimeout(() => { row.remove(); checkTableEmpty(); updatePagination(); }, 300);
+                                        }
+                                    } else { alert(result.message); }
+                                } catch (error) { alert('Ошибка сети'); }
+                            });
+
+                            // МАССОВОЕ АСИНХРОННОЕ УДАЛЕНИЕ (МАССИВ ID НА СЕРВЕР)
+                            document.getElementById('confirmMultipleDeleteBtn').addEventListener('click', async function () {
+                                const checkedBoxes = tableBody.querySelectorAll('.user-checkbox:checked');
+                                const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+
+                                if (idsToDelete.length === 0) return;
+
+                                try {
+                                    const response = await fetch('/Users/DeleteMultiple', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(idsToDelete)
+                                    });
+                                    const result = await response.json();
+
+                                    if (result.success) {
+                                        document.querySelector('#deleteMultipleModal [data-bs-dismiss="modal"]').click();
+
+                                        idsToDelete.forEach(id => {
+                                            const row = document.getElementById(`user-row-${id}`);
+                                            if (row) row.classList.add('fade-out');
+                                        });
+
+                                        setTimeout(() => {
+                                            idsToDelete.forEach(id => {
+                                                const row = document.getElementById(`user-row-${id}`);
+                                                if (row) row.remove();
+                                            });
+                                            checkTableEmpty();
+                                            updatePagination();
+                                        }, 300);
+                                    } else { alert(result.message); }
+                                } catch (error) { alert('Ошибка сети при массовом удалении'); }
+                            });
+
+                            function checkTableEmpty() {
+                                const rows = tableBody.querySelectorAll('.user-data-row');
+                                if (rows.length === 0) {
+                                    tableBody.innerHTML = `<tr id="emptyRow"><td colspan="6" class="text-center py-4 text-muted">В базе данных пока нет ни одного обучающегося.</td></tr>`;
+                                }
+                            }
+
+                            document.addEventListener("DOMContentLoaded", function () {
+                                updatePagination();
+                            });
+
+                            // --- ЛОГИКА DRAG AND DROP И ИМПОРТА EXCEL ---
+                            const dropZone = document.getElementById('dropZone');
+                            const fileInput = document.getElementById('excelFileInput');
+                            const dropZoneText = document.getElementById('dropZoneText');
+                            const startImportBtn = document.getElementById('startImportBtn');
+
+                            let selectedFile = null;
+
+                            // Клик по зоне открывает системный выбор файла
+                            dropZone.addEventListener('click', () => fileInput.click());
+
+                            fileInput.addEventListener('change', function () {
+                                if (this.files.length > 0) handleFileSelection(this.files[0]);
+                            });
+
+                            // Подсветка зоны при перетаскивании файла мышкой
+                            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = '#e2e8f0'; });
+                            dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = '#f8fafc'; });
+                            dropZone.addEventListener('drop', (e) => {
+                                e.preventDefault();
+                                dropZone.style.backgroundColor = '#f8fafc';
+                                if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files[0]);
+                            });
+
+                            function handleFileSelection(file) {
+                                if (!file.name.endsWith('.csv')) {
+                                    alert('Пожалуйста, выберите файл формата CSV (.csv)');
+                                    return;
+                                }
+                                selectedFile = file;
+                                dropZoneText.textContent = `Выбран файл: ${file.name} (${(file.size / 1024).toFixed(1)} КБ)`;
+                                dropZone.style.borderColor = '#10b981';
+                                startImportBtn.disabled = false;
+                            }
+
+                            // Отправка файла на сервер через AJAX (FormData)
+                            startImportBtn.addEventListener('click', async function () {
+                                if (!selectedFile) return;
+
+                                this.disabled = true;
+                                this.textContent = 'Импортирование...';
+
+                                const formData = new FormData();
+                                formData.append('excelFile', selectedFile);
+
+                                try {
+                                    const response = await fetch('/Users/Import', { method: 'POST', body: formData });
+                                    const result = await response.json();
+
+                                    if (result.success) {
+                                        document.getElementById('importResultBlock').classList.remove('d-none');
+                                        document.getElementById('importSuccessMessage').textContent = `Успешно импортировано: ${result.successCount} слушателей. Ошибок: ${result.errorCount}.`;
+
+                                        const errorsBlock = document.getElementById('importErrorsBlock');
+                                        const errorsList = document.getElementById('importErrorsList');
+                                        errorsList.innerHTML = '';
+
+                                        if (result.errorCount > 0) {
+                                            errorsBlock.classList.remove('d-none');
+                                            result.errors.forEach(err => {
+                                                const li = document.createElement('li');
+                                                li.textContent = err;
+                                                errorsList.appendChild(li);
+                                            });
+                                        } else {
+                                            errorsBlock.classList.add('d-none');
+                                        }
+
+                                        // Сбрасываем состояние формы импорта
+                                        selectedFile = null;
+                                        this.textContent = 'Запустить импорт';
+                                        dropZoneText.textContent = 'Перетащите Файл сюда или кликните для выбора';
+
+                                        // Замените старый setTimeout на этот код:
+                                        if (result.errorCount === 0) {
+                                            // Если всё прошло идеально (0 ошибок), мягко обновляем страницу через 1.5 секунды
+                                            setTimeout(() => { window.location.reload(); }, 1500);
+                                        } else {
+                                            // Если есть ХОТЯ БЫ ОДНА ошибка, мы НЕ перезагружаем страницу!
+                                            // Оставляем модальное окно открытым, чтобы админ прочитал список ошибок.
+                                            this.textContent = 'Импорт завершен с ошибками';
+                                            this.disabled = true;
+
+                                            // Добавим кнопку "Обновить таблицу вручную" рядом, чтобы обновить успешно импортированных
+                                            const refreshAlert = document.createElement('div');
+                                            refreshAlert.className = 'alert alert-warning border-0 small py-2 mt-2 text-center text-dark';
+                                            refreshAlert.innerHTML = `Часть пользователей успешно добавлена. <a href="#" onclick="window.location.reload(); return false;" class="fw-bold text-dark">Обновить список</a>`;
+                                            document.getElementById('importResultBlock').appendChild(refreshAlert);
+                                        }
+
+                                    } else {
+                                        alert('Ошибка: ' + result.message);
+                                        this.disabled = false;
+                                        this.textContent = 'Запустить импорт';
+                                    }
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('Произошла ошибка при отправке файла на сервер.');
+                                    this.disabled = false;
+                                    this.textContent = 'Запустить импорт';
+                                }
+                            });
+
+                        </script>

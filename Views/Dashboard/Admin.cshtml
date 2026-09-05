@@ -1,0 +1,15 @@
+@{ 
+    // Подключаем персональный шаблон с 4 разделами меню
+    Layout = "_AdminLayout"; 
+    ViewData["Title"] = "Кабинет Администратора"; 
+}
+
+<div class="card card-custom p-4 bg-white border-0 mt-2">
+    <h2 class="text-dark fw-bold mb-3">Добро пожаловать в рабочую область</h2>
+    <p class="text-muted fs-5">Вы успешно авторизовались с ролью <strong>Администратор</strong>.</p>
+    <p class="text-secondary">Используйте боковое меню слева для переключения между разделами пользователей, обучающих курсов, учебных групп и привязанных компаний.</p>
+    
+    <div class="alert alert-warning border-0 mt-3 d-inline-block" role="alert" style="max-width: fit-content;">
+        В настоящий момент все разделы меню работают в режиме макета.
+    </div>
+</div>
