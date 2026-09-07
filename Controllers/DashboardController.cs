@@ -46,8 +46,40 @@ public class DashboardController : Controller
 
     // ЛК Слушателя (Обучающегося)
     [Authorize(Roles = "Обучающийся")]
-    public IActionResult Student()
+    public async Task<IActionResult> Student()
     {
-        return View();
+        // 1. Вытаскиваем ID авторизованного студента из куки-сессии
+        var userIdClaim = User.FindFirst("UserId")?.Value;
+        if (userIdClaim == null) return RedirectToAction("Login", "Auth");
+        int studentId = int.Parse(userIdClaim);
+
+        // 2. Находим группы, в которых числится этот студент
+        var myGroupIds = await _context.GroupStudents
+            .Where(gs => gs.StudentId == studentId)
+            .Select(gs => gs.GroupId)
+            .ToListAsync();
+
+        // 3. Вытаскиваем конфигурации курсов для этих групп
+        var groupCourses = await _context.GroupCourseConfigs
+            .Include(gcc => gcc.Course)
+            .Where(gcc => myGroupIds.Contains(gcc.GroupId))
+            .ToListAsync();
+
+        // Трюк: убираем дубликаты курсов, если студент случайно оказался в двух группах с одним курсом
+        var uniqueCourses = groupCourses
+            .GroupBy(gc => gc.CourseId)
+            .Select(g => g.First())
+            .ToList();
+
+        // 4. Загружаем все зачеты этого студента из журнала успеваемости
+        var myProgresses = await _context.CourseProgresses
+            .Where(p => p.StudentId == studentId)
+            .ToDictionaryAsync(p => p.CourseId);
+
+        // Передаем журнал успеваемости во ViewBag, чтобы во View сопоставить статус с карточкой курса
+        ViewBag.StudentProgress = myProgresses;
+
+        // Отправляем список привязанных конфигураций курсов во View
+        return View(uniqueCourses);
     }
 }

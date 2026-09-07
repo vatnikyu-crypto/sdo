@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace SdoApp.Controllers;
 
-[Authorize(Roles = "Админ")] // Доступ только для Администратора
+[Authorize]
 public class CourseMaterialsController : Controller
 {
     private readonly AppDbContext _context;
@@ -44,6 +44,7 @@ public class CourseMaterialsController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Create(int courseId, string title, MaterialType type, string? textContent, IFormFile? uploadedFile, int? timeLimit, bool shuffleQuestions, int? passPercentage, TestStatus testKind, int? questionsCountToUse)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -129,6 +130,7 @@ public class CourseMaterialsController : Controller
     // POST: /CourseMaterials/ChangeOrder
     // Смена порядка элементов (сортировка стрелочками вверх/вниз)
     [HttpPost]
+    [Authorize(Roles = "Админ")]
     public async Task<IActionResult> ChangeOrder(int id, string direction)
     {
         var currentMaterial = await _context.CourseMaterials.FindAsync(id);
@@ -179,6 +181,7 @@ public class CourseMaterialsController : Controller
     // POST: /CourseMaterials/Delete/5
     // Асинхронное удаление элемента курса с пересчетом порядка Order
     [HttpPost]
+    [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Delete(int id)
     {
         var material = await _context.CourseMaterials.FindAsync(id);
@@ -275,6 +278,7 @@ public class CourseMaterialsController : Controller
 
     // POST: /CourseMaterials/Edit
     [HttpPost]
+    [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Edit(int id, string title, string? textContent, IFormFile? uploadedFile, int? timeLimit, bool shuffleQuestions, int? passPercentage, TestStatus testKind, int? questionsCountToUse)
     {
         var material = await _context.CourseMaterials.FindAsync(id);
@@ -425,7 +429,6 @@ public class CourseMaterialsController : Controller
         }
     }
 
-
     [HttpPost]
     public async Task<IActionResult> ToggleTestType(int id)
     {
@@ -436,5 +439,26 @@ public class CourseMaterialsController : Controller
         _context.CourseMaterials.Update(material);
         await _context.SaveChangesAsync();
         return Json(new { success = true });
+    }
+
+    // GET: /CourseMaterials/StudentView?courseId=5
+    // Страница изучения материалов курса для ученика
+    [HttpGet]
+    [Authorize] // Доступно для всех авторизованных пользователей
+    public async Task<IActionResult> StudentView(int courseId)
+    {
+        var course = await _context.Courses
+            .Include(c => c.Materials)
+            .FirstOrDefaultAsync(c => c.Id == courseId);
+
+        if (course == null) return NotFound("Курс не найден.");
+
+        // Сортируем материалы строго по их порядковому номеру Order
+        var orderedMaterials = course.Materials.OrderBy(m => m.Order).ToList();
+
+        ViewBag.CourseId = course.Id;
+        ViewBag.CourseTitle = course.Title;
+
+        return View(orderedMaterials);
     }
 }

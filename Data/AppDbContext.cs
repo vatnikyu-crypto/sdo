@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<GroupStudent> GroupStudents => Set<GroupStudent>();
     public DbSet<GroupCourseConfig> GroupCourseConfigs => Set<GroupCourseConfig>();
+    public DbSet<CourseProgress> CourseProgresses => Set<CourseProgress>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

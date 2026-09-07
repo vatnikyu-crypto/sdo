@@ -1,0 +1,408 @@
+@model IEnumerable<SdoApp.Models.CourseMaterial>
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = $"Изучение курса: {ViewBag.CourseTitle}";
+}
+
+<style>
+    /* ДВУХКОЛОНОЧНЫЙ ИНТЕРФЕЙС ОБУЧЕНИЯ */
+    .course-layout {
+        display: flex;
+        gap: 24px;
+        margin-top: 10px;
+    }
+
+    .course-sidebar {
+        width: 320px;
+        min-width: 320px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e3e6f0;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        position: sticky;
+        top: 90px;
+    }
+
+    .course-content-area {
+        flex-grow: 1;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e3e6f0;
+        min-height: calc(100vh - 120px);
+    }
+
+    .sidebar-material-btn {
+        width: 100%;
+        text-align: left;
+        padding: 14px 20px;
+        border: none;
+        border-bottom: 1px solid #f0f1f6;
+        background: transparent;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-material-btn:hover {
+        background-color: #f8fafc;
+    }
+
+    .sidebar-material-btn.active {
+        background-color: rgba(78, 115, 223, 0.08);
+        border-left: 4px solid #4e73df;
+        padding-left: 16px;
+    }
+
+    /* ЦВЕТОВОЕ ВЫДЕЛЕНИЕ ДЛЯ РАЗНЫХ СТАТУСОВ ТЕСТОВ В МЕНЮ */
+    .sidebar-material-btn.test-kind-0 {
+        /* Промежуточный */
+        border-left: 4px solid #4e73df;
+        background-color: rgba(78, 115, 223, 0.03);
+    }
+
+    .sidebar-material-btn.test-kind-0.active {
+        background-color: rgba(78, 115, 223, 0.1);
+    }
+
+    .sidebar-material-btn.test-kind-1 {
+        /* Итоговый — самый яркий бордовый акцент */
+        border-left: 4px solid #e74a3b;
+        background-color: rgba(231, 74, 59, 0.04);
+    }
+
+    .sidebar-material-btn.test-kind-1.active {
+        background-color: rgba(231, 74, 59, 0.1);
+    }
+
+    .sidebar-material-btn.test-kind-2 {
+        /* Тренажер — спокойный песочный цвет */
+        border-left: 4px solid #f6c23e;
+        background-color: rgba(246, 194, 62, 0.03);
+    }
+
+    .sidebar-material-btn.test-kind-2.active {
+        background-color: rgba(246, 194, 62, 0.1);
+    }
+
+    .sidebar-material-btn.assignment-card {
+        /* Практика */
+        border-left: 4px solid #36b9cc;
+    }
+
+    /* СТИЛИ БЕСКОНЕЧНОГО СКРОЛЛА СТРАНИЦ PDF */
+    #pdfViewerContainer {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background: #f1f5f9;
+        padding: 20px;
+        border-radius: 8px;
+        max-height: 700px;
+        overflow-y: auto;
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .pdf-page-canvas {
+        display: block;
+        margin: 0 auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background: white;
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Стили красивой информационной карточки теста справа */
+    .test-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .test-info-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+    }
+</style>
+
+<!-- ПОДКЛЮЧАЕМ ЛОКАЛЬНЫЙ МОДУЛЬ PDF.MJS С ЗАЩИТОЙ ГЛОБАЛЬНОЙ ВИДИМОСТИ -->
+<script type="module">
+    import * as pdfjsLib from '/lib/pdfjs/pdf.mjs';
+    window.pdfjsLib = pdfjsLib;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/lib/pdfjs/pdf.worker.mjs';
+</script>
+<div class="mb-3 mt-2">
+    <h3 class="fw-bold text-dark m-0">🧭 Обучение: @ViewBag.CourseTitle</h3>
+</div>
+
+<div class="course-layout mb-5">
+    <!-- ЛЕВЫЙ САЙДБАР: СОДЕРЖАНИЕ КУРСА -->
+    <div class="course-sidebar shadow-sm">
+        <div class="p-3 bg-light border-bottom fw-bold text-secondary small text-uppercase tracking-wider">📜 Содержание
+            курса</div>
+            <div class="d-flex flex-column" id="sidebarMenuContainer">
+                @{
+                    int idx = 0;
+                }
+                @foreach (var m in Model)
+                {
+                    idx++;
+                    string customClass = "";
+                    string subLabel = m.Type.ToString();
+
+                    if (m.Type == SdoApp.Models.MaterialType.Test)
+                    {
+                        customClass = $"test-kind-{(int)m.TestKind}";
+                        subLabel = $"Тест: {m.TestKind.ToString()}";
+                    }
+                    else if (m.Type == SdoApp.Models.MaterialType.Assignment)
+                    {
+                        customClass = "assignment-card";
+                        subLabel = "Практическое задание";
+                    }
+                    else if (m.Type == SdoApp.Models.MaterialType.Text)
+                    {
+                        subLabel = "Лекция";
+                    }
+
+                    <button class="sidebar-material-btn @(idx == 1 ? "active" : "") @customClass" data-id="@m.Id"
+                            onclick="loadContentToRightSide(@m.Id, this)">
+                        <span class="text-muted small fw-bold mb-1">Шаг #@idx — @subLabel</span>
+                        <span class="fw-bold text-dark text-truncate w-100" style="font-size:0.9rem;">@m.Title</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ОБЛАСТЬ: КОНТЕНТ МАТЕРИАЛА -->
+        <div class="course-content-area shadow-sm p-4 d-flex flex-column" id="mainContentWindow">
+            <div class="text-center text-muted my-auto py-5">
+                <div class="spinner-border text-primary mb-3"></div>
+                <h5>Загрузка учебного модуля...</h5>
+            </div>
+        </div>
+    </div>
+    <!-- МОДАЛЬНОЕ ОКНО СДАЧИ ПРАКТИКИ СТУДЕНТОМ -->
+    <div class="modal fade" id="submitAssignmentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header bg-light border-0 py-3">
+                    <h5 class="modal-title fw-bold text-dark">🚀 Сдача практического задания</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="studentAssignmentForm" autocomplete="off" enctype="multipart/form-data">
+                        <input type="hidden" name="materialId" id="assignmentMaterialId" />
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">КОММЕНТАРИЙ К РАБОТЕ</label>
+                            <textarea name="studentComment" class="form-control" rows="3"
+                                      placeholder="Ваше сообщение преподавателю..."></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-bold">ФАЙЛ РЕШЕНИЯ <span
+                                class="text-danger">*</span></label>
+                                <input type="file" name="submissionFile" class="form-control" required />
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer bg-light border-0 py-3">
+                        <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Отмена</button>
+                        <button id="confirmSubmitAssignmentBtn" type="button" class="btn btn-success px-4 fw-bold">Отправить на
+                            проверку</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                const contentWindow = document.getElementById('mainContentWindow');
+
+                // 1. ФУНКЦИЯ ЗАГРУЗКИ КОНТЕНТА В ПРАВУЮ КОЛОНКУ СБОКУ ОТ МЕНЮ
+                async function loadContentToRightSide(id, btnElement) {
+                    document.querySelectorAll('.sidebar-material-btn').forEach(btn => btn.classList.remove('active'));
+                    if (btnElement) btnElement.classList.add('active');
+
+                    contentWindow.innerHTML = '<div class="text-center text-muted my-auto py-5"><div class="spinner-border text-primary mb-2"></div><p>Загрузка данных...</p></div>';
+
+                    try {
+                        const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
+                        const rawData = await response.json();
+
+                        const data = {};
+                        for (let key in rawData) { data[key.toLowerCase()] = rawData[key]; }
+
+                        const mType = parseInt(data.type);
+                        const fileUrl = data.fileurl || "";
+                        const textContent = data.textcontent || "";
+
+                        if (mType === 0) { // Лекция
+                            contentWindow.innerHTML = `<h4 class="fw-bold text-dark mb-3">${data.title}</h4><div class="p-4 border rounded shadow-sm text-dark bg-white" style="font-size:1.05rem; line-height:1.6;">${textContent}</div>`;
+                        }
+                        else if (mType === 1) { // PDF Документ с каскадным скроллом
+                            contentWindow.innerHTML = `
+                                            <h4 class="fw-bold text-dark mb-2">${data.title}</h4>
+                                            <p class="text-muted small mb-3">📜 Листайте колесиком мыши вниз для чтения страниц документа</p>
+                                            <div id="pdfViewerContainer"><div class="text-center p-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Подготовка страниц...</div></div>`;
+                            renderPdfAsScrollableImages(fileUrl);
+                        }
+                        else if (mType === 2) { // Видео плеер Plyr
+                            contentWindow.innerHTML = `
+                                            <h4 class="fw-bold text-dark mb-3">${data.title}</h4>
+                                            <div class="shadow rounded-3 overflow-hidden" style="max-width: 850px; margin: 0 auto; background: #000;">
+                                                <video id="azimutVideoPlayer" playsinline controls src="${fileUrl}">
+                                                    <source src="${fileUrl}" type="video/mp4" />
+                                                </video>
+                                            </div>`;
+
+                            import('/lib/plyr/plyr.js').then(() => {
+                                const player = new Plyr('#azimutVideoPlayer', {
+                                    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+                                    settings: ['speed'],
+                                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
+                                });
+                            }).catch(err => console.error("Не удалось запустить локальный плеер Plyr:", err));
+                        }
+                        else if (mType === 3) { // Картинка
+                            contentWindow.innerHTML = `<h4 class="fw-bold text-dark mb-3">${data.title}</h4><div class="text-center p-3 border rounded shadow-sm bg-white"><img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" /></div>`;
+                        }
+                        else if (mType === 5) { // Практика
+                            contentWindow.innerHTML = `
+                                            <h4 class="fw-bold text-dark mb-3">${data.title}</h4>
+                                            <div class="p-4 border rounded shadow-sm bg-white">
+                                                <h6 class="fw-bold text-secondary mb-2">📋 Инструкция к выполнению задания:</h6>
+                                                <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
+                                                <div class="d-flex gap-2">
+                                                    ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold" download>📥 Скачать файл задания</a>` : ""}
+                                                    <button class="btn btn-warning fw-bold px-4" onclick="openAssignmentModal(${id})">🚀 Сдать готовую работу</button>
+                                                </div>
+                                            </div>`;
+                        }
+                        else if (mType === 4) { // Карточка допуска к Тестированию (Обновленная)
+                            const kinds = ["Промежуточное тестирование", "Итоговый экзамен курса", "Обучающий тренажер"];
+                            const currentKindText = kinds[data.testkind] || "Тестирование";
+                            const headerColors = ["#4e73df", "#e74a3b", "#f6c23e"];
+                            const currentColor = headerColors[data.testkind] || "#4e73df";
+
+                            contentWindow.innerHTML = `
+                                            <div class="card border-0 mb-0">
+                                                <div class="p-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, ${currentColor} 0%, #3a3b45 100%);">
+                                                    <span class="badge bg-white text-dark fw-bold text-uppercase mb-2" style="font-size:0.7rem;">Контроль знаний</span>
+                                                    <h3 class="fw-bold m-0">${data.title}</h3>
+                                                    <p class="lead small opacity-75 mt-1 mb-0">${currentKindText}</p>
+                                                </div>
+                                                <h5 class="fw-bold text-dark mb-3">📋 Параметры и регламент прохождения:</h5>
+                                                <div class="test-info-grid">
+                                                    <div class="test-info-item">
+                                                        <span style="font-size:1.5rem;">⏱️</span>
+                                                        <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Ограничение времени</div>
+                                                        <h5 class="fw-bold text-dark m-0 mt-1">${data.timelimit > 0 ? `${data.timelimit} минут` : "Без лимита"}</h5>
+                                                    </div>
+                                                    <div class="test-info-item">
+                                                        <span style="font-size:1.5rem;">📉</span>
+                                                        <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Порог успешной сдачи</div>
+                                                        <h5 class="fw-bold text-success m-0 mt-1">${data.passpercentage}% правильных</h5>
+                                                    </div>
+                                                    <div class="test-info-item">
+                                                        <span style="font-size:1.5rem;">🎲</span>
+                                                        <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Вопросов в билете</div>
+                                                        <h5 class="fw-bold text-dark m-0 mt-1">${data.questionscounttouse > 0 ? `${data.questionscounttouse} шт.` : "Все доступные"}</h5>
+                                                    </div>
+                                                </div>
+                                                <div class="alert alert-light border p-3 mb-4 small text-muted" style="border-radius:8px;">
+                                                    🧭 <b>Обратите внимание:</b> Результаты ${data.testkind === 2 ? "тренажера не влияют на общую успеваемость." : "этого теста напрямую влияют на получение зачета по курсу."} Вопросы и варианты ответов ${data.shufflequestions ? "будут перемешаны случайным образом." : "отобразятся в стандартном порядке."}
+                                                </div>
+                                                <div class="text-center mt-2">
+                                        <!-- ИСПРАВЛЕНО: Убрали прямую ссылку, добавили вызов функции confirmAndStartTest -->
+                                        <button onclick="confirmAndStartTest(${id}, '${data.title.replace(/'/g, "\\'")}')" 
+                                                class="btn btn-success fw-bold px-5 py-3 shadow shadow-sm" 
+                                                style="border-radius:30px; font-size:1.05rem; letter-spacing:0.3px;">
+                                            🚀 ЗАПУСТИТЬ ТЕСТИРОВАНИЕ
+                                        </button>
+                                    </div>
+                                </div>`;
+                        }
+                    } catch (err) {
+                        contentWindow.innerHTML = '<div class="alert alert-danger m-3">⚠️ Не удалось отобразить содержимое выбранного элемента.</div>';
+                    }
+                }
+            </script>
+            <script>
+                // 2. ФУНКЦИЯ ОТРЕСОВКИ СТРАНИЦ PDF ДРУГ ЗА ДРУГОМ С ОБХОДОМ CORS ЗАЩИТЫ
+                async function renderPdfAsScrollableImages(pdfUrl) {
+                    const viewerContainer = document.getElementById('pdfViewerContainer');
+                    if (!pdfUrl) {
+                        viewerContainer.innerHTML = '<div class="alert alert-warning m-2">Файл документа отсутствует.</div>';
+                        return;
+                    }
+
+                    try {
+                        const absoluteUrl = window.location.origin + pdfUrl;
+                        const loadingTask = pdfjsLib.getDocument({
+                            url: absoluteUrl,
+                            disableRange: true,
+                            disableAutoFetch: true,
+                            withCredentials: true
+                        });
+
+                        const pdf = await loadingTask.promise;
+                        viewerContainer.innerHTML = '';
+
+                        // Безопасный постраничный цикл рендеринга
+                        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                            const page = await pdf.getPage(pageNum);
+                            const viewport = page.getViewport({ scale: 1.5 });
+
+                            const canvas = document.createElement('canvas');
+                            canvas.className = 'pdf-page-canvas mb-3 shadow-sm';
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            viewerContainer.appendChild(canvas);
+
+                            const context = canvas.getContext('2d');
+                            const renderContext = {
+                                canvasContext: context,
+                                viewport: viewport
+                            };
+
+                            await page.render(renderContext).promise;
+                        }
+                    } catch (error) {
+                        console.error("Критическая ошибка рендера PDF.mjs:", error);
+                        viewerContainer.innerHTML = '<div class="alert alert-danger m-2">⚠️ Ошибка отрисовки документа. Файл поврежден или заблокирован сервером.</div>';
+                    }
+                }
+
+                // 3. АВТОСТАРТ ПЕРВОГО УРОКА ПРИ ЗАГРУЗКЕ СТРАНИЦЫ КУРСА
+                document.addEventListener("DOMContentLoaded", function () {
+                    const firstBtn = document.querySelector('#sidebarMenuContainer .sidebar-material-btn');
+                    if (firstBtn) {
+                        firstBtn.click();
+                    } else {
+                        document.getElementById('mainContentWindow').innerHTML = '<div class="text-center text-muted my-auto py-5"><h5>В программе курса пока нет материалов.</h5></div>';
+                    }
+                });
+
+                // Утилитарные методы модального окна практики
+                function openAssignmentModal(id) {
+                    document.getElementById("assignmentMaterialId").value = id;
+                    new bootstrap.Modal(document.getElementById('submitAssignmentModal')).show();
+                }
+
+                document.getElementById("confirmSubmitAssignmentBtn").addEventListener("click", function () {
+                    alert("Ваша практическая работа успешно отправлена преподавателю на проверку!");
+                    bootstrap.Modal.getInstance(document.getElementById('submitAssignmentModal')).hide();
+                });
+
+                function confirmAndStartTest(testId, testTitle) {
+                    const isReady = confirm(`Вы действительно готовы запустить тест:\n"${testTitle}"?\n\nВнимание: Если у теста есть ограничение по времени, таймер запустится сразу после нажатия кнопки ОК!`);
+
+                    if (isReady) {
+                        // Если студент нажал ОК — перенаправляем его на страницу сдачи экзамена
+                        window.location.href = `/StudentTest/Take?testId=${testId}`;
+                    }
+                }
+            </script>

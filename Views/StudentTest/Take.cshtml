@@ -1,0 +1,280 @@
+@model IEnumerable<SdoApp.Models.TestQuestion>
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = $"Тестирование: {ViewBag.TestTitle}";
+
+    int timeLimitMinutes = ViewBag.TimeLimit ?? 0;
+    var testKind = (SdoApp.Models.TestStatus)ViewBag.TestKind;
+}
+
+<style>
+    .timer-badge {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        z-index: 1050;
+        background-color: #3a3b45;
+        color: #fff;
+        font-family: monospace;
+        font-size: 1.3rem;
+        padding: 8px 16px;
+        border-radius: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .timer-badge.danger-time {
+        background-color: #e74a3b !important;
+        animation: pulse 1s infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.03);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .question-wizard-step {
+        display: none;
+        /* Все вопросы скрыты, кроме текущего */
+    }
+
+    .question-wizard-step.active {
+        display: block;
+    }
+
+    .student-answer-label {
+        display: flex;
+        align-items: center;
+        padding: 14px 20px;
+        border: 2px solid #eaecf4;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fff;
+    }
+
+    .student-answer-label:hover {
+        background-color: #f8fafc;
+        border-color: #dddfeb;
+    }
+
+    .form-check-input:checked+.student-answer-label {
+        border-color: #4e73df;
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+
+    .test-option-thumbnail {
+        max-width: 150px;
+        max-height: 100px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+    }
+
+    .student-hint-box {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        color: #664d03;
+        border-radius: 4px;
+    }
+</style>
+
+<!-- ПЛАВАЮЩИЙ ТАЙМЕР (ЕСЛИ ЕСТЬ ОГРАНИЧЕНИЕ) -->
+@if (timeLimitMinutes > 0)
+{
+    <div id="testTimerBadge" class="timer-badge fw-bold shadow">
+        ⏱️ <span id="timerClock">--:--</span>
+    </div>
+}
+
+<div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 12px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <span class="badge bg-dark text-uppercase py-1 px-2.5 small mb-1">@testKind.ToString()</span>
+            <h3 class="fw-bold text-dark m-0">@ViewBag.TestTitle</h3>
+        </div>
+        <div class="text-muted fw-bold small">
+            Вопрос <span id="currentStepDisplay">1</span> из @Model.Count()
+        </div>
+    </div>
+
+    <!-- Линия прогресса -->
+    <div class="progress mb-4" style="height: 6px;">
+        <div id="testProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%;"></div>
+    </div>
+    <!-- КОНТЕЙНЕР ШАГОВ ТЕСТИРОВАНИЯ -->
+    <form id="testWizardForm">
+        <div id="wizardStepsContainer">
+            @{
+                int qIdx = 0;
+            }
+            @foreach (var q in Model)
+            {
+                qIdx++;
+                <div class="question-wizard-step @(qIdx == 1 ? "active" : "")" data-step="@qIdx" data-question-id="@q.Id">
+                    <h5 class="fw-bold text-dark mb-4">@q.QuestionText</h5>
+
+                    <!-- СТРОГОЕ УСЛОВИЕ: ПОДСКАЗКА ВЫВОДИТСЯ ТОЛЬКО ДЛЯ СТАТУСА "ТРЕНАЖЕР" -->
+                    @if (testKind == SdoApp.Models.TestStatus.Тренажер && !string.IsNullOrWhiteSpace(q.Hint))
+                    {
+                        <div class="student-hint-box p-3 mb-4 small">
+                            💡 <b>Вспомогательная подсказка тренажера:</b> @q.Hint
+                        </div>
+                    }
+
+                    <!-- СЕТКА ВАРИАНТОВ ОТВЕТОВ -->
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        @foreach (var opt in q.Answers)
+                        {
+                            <div class="position-relative">
+                                <!-- Чекбоксы (позволяют выбирать несколько вариантов, как мы закладывали на бэкенде) -->
+                                <input type="checkbox" class="form-check-input d-none test-option-checkbox" id="opt-@opt.Id"
+                                       name="q-@q.Id" value="@opt.Id" />
+
+                                <label for="opt-@opt.Id"
+                                       class="student-answer-label d-flex justify-content-between align-items-center gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="border rounded-circle d-flex align-items-center justify-content-center bg-light"
+                                             style="width:24px; height:24px; min-width:24px;">✓</div>
+                                        <span class="text-dark fw-medium">@opt.AnswerText</span>
+                                    </div>
+
+                                    <!-- КАРТИНКА ВАРИАНТА ОТВЕТА (ЕСЛИ ПРИКРЕПЛЕНА АДМИНОМ) -->
+                                    @if (!string.IsNullOrEmpty(opt.ImageUrl))
+                                    {
+                                        <div>
+                                            <img src="@opt.ImageUrl" class="test-option-thumbnail shadow-sm" alt="Вариант ответа" />
+                                        </div>
+                                    }
+                                </label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </form>
+</div>
+
+<!-- КНОПКИ НАВИГАЦИИ ПО МАСТЕРУ ТЕСТА -->
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <button id="prevQuestionBtn" class="btn btn-light border px-4 fw-bold text-secondary" disabled>⬅ Назад</button>
+    <button id="nextQuestionBtn" class="btn btn-primary px-5 fw-bold shadow-sm">Далее ➡</button>
+    <button id="submitTestBtn" class="btn btn-success px-5 fw-bold shadow-sm d-none">🏁 Завершить тест</button>
+</div>
+<!-- СКРИПТЫ СДАЧИ ТЕСТА С АВТО-ТАЙМЕРОМ -->
+<script>
+    let activeStep = 1;
+    const totalSteps = @Model.Count();
+    const steps = document.querySelectorAll('.question-wizard-step');
+
+    const prevBtn = document.getElementById('prevQuestionBtn');
+    const nextBtn = document.getElementById('nextQuestionBtn');
+    const submitBtn = document.getElementById('submitTestBtn');
+    const stepDisplay = document.getElementById('currentStepDisplay');
+    const progressBar = document.getElementById('testProgressBar');
+
+    // 1. НАВИГАЦИЯ ПО ШАГАМ ТЕСТА (ОДИН ВОПРОС НА ЭКРАНЕ)
+    function updateWizardUI() {
+        steps.forEach(step => step.classList.remove('active'));
+        document.querySelector(`.question-wizard-step[data-step="${activeStep}"]`).classList.add('active');
+
+        stepDisplay.textContent = activeStep;
+        progressBar.style.width = `${((activeStep - 1) / totalSteps) * 100}%`;
+
+        prevBtn.disabled = activeStep === 1;
+        if (activeStep === totalSteps) {
+            nextBtn.classList.add('d-none');
+            submitBtn.classList.remove('d-none');
+        } else {
+            nextBtn.classList.remove('d-none');
+            submitBtn.classList.add('d-none');
+        }
+    }
+
+    nextBtn.addEventListener('click', () => { if (activeStep < totalSteps) { activeStep++; updateWizardUI(); } });
+    prevBtn.addEventListener('click', () => { if (activeStep > 1) { activeStep--; updateWizardUI(); } });
+
+    // 2. РАБОТА С СЕРВЕРНЫМ ТАЙМЕРОМ ОБРАТНОГО ОТСЧЕТА
+    const limitMinutes = @timeLimitMinutes;
+    if (limitMinutes > 0) {
+        let totalSeconds = limitMinutes * 60;
+        const clockDisplay = document.getElementById('timerClock');
+        const badge = document.getElementById('testTimerBadge');
+
+        const countdownInterval = setInterval(() => {
+            totalSeconds--;
+            let mins = Math.floor(totalSeconds / 60);
+            let secs = totalSeconds % 60;
+
+            clockDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            // За 1 минуту до конца подсвечиваем таймер красным цветом и пульсацией
+            if (totalSeconds <= 60) {
+                badge.classList.add('danger-time');
+            }
+
+            if (totalSeconds <= 0) {
+                clearInterval(countdownInterval);
+                alert("⏱️ Время, отведенное на прохождение теста, полностью вышло! Ваши ответы отправляются на проверку автоматически.");
+                sendResultsToServer(); // Принудительная автосдача
+            }
+        }, 1000);
+    }
+
+    // 3. СБОР ОТВЕТОВ И AJAX ОТПРАВКА НА СЕРВЕР
+    async function sendResultsToServer() {
+        if (submitBtn) submitBtn.disabled = true;
+
+        // Формируем словарь структуры: QuestionId -> [AnswerIds]
+        const answersPayload = {};
+
+        steps.forEach(step => {
+            const qId = step.getAttribute('data-question-id');
+            const checkedOptions = Array.from(step.querySelectorAll('.test-option-checkbox:checked')).map(cb => parseInt(cb.value));
+            answersPayload[qId] = checkedBoxes = checkedOptions;
+        });
+
+        try {
+            const response = await fetch('/StudentTest/SubmitAnswers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Пакуем в плоскую обертку под свойства класса TestSubmissionDto
+                body: JSON.stringify({
+                    testId: @ViewBag.TestId,
+                    studentAnswers: answersPayload
+                })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                // Выводим красивое сообщение о результатах сдачи
+                alert(`${result.message}\nВаш результат: ${result.score}% (Необходимо для сдачи: ${result.requiredScore}%)`);
+                window.location.href = "/Dashboard/Student"; // Возвращаем в ЛК к обновленным статусам
+            } else {
+                alert("Ошибка: " + result.message);
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        } catch {
+            alert("Критический сбой сети при отправке пакета ответов.");
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (confirm("Вы действительно хотите завершить тестирование и отправить ответы на проверку?")) {
+                sendResultsToServer();
+            }
+        });
+    }
+</script>

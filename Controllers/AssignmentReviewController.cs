@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
+using SdoApp.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -63,6 +64,12 @@ public class AssignmentReviewController : Controller
 
         _context.StudentSubmissions.Update(submission);
         await _context.SaveChangesAsync();
+
+        var material = await _context.CourseMaterials.FindAsync(submission.CourseMaterialId);
+        if (material != null)
+        {
+            await GradeService.RecalculateCourseProgressAsync(_context, submission.StudentId, material.CourseId);
+        }
 
         return Json(new { success = true });
     }

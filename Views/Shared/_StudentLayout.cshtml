@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - СДО</title>
+    <!-- Подключаем Bootstrap из wwwroot -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/plyr/plyr.css" />
+</head>
+
+<body class="bg-light">
+
+    <!-- НАВИГАЦИОННАЯ ПАНЕЛЬ СТУДЕНТА -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+        <div class="container">
+            <!-- ЛОГОТИП И НАЗВАНИЕ СДО "АЗИМУТ" -->
+            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/Dashboard/Student"
+               style="text-decoration: none;">
+                <!-- Иконка: Компас знаний со стрелкой на Северо-Восток -->
+                <svg xmlns="http://w3.org" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1cc88a"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- Круг компаса -->
+                    <circle cx="12" cy="12" r="10" stroke="#eaecf4" stroke-width="1.5" />
+                    <!-- Засечки сторон света -->
+                    <line x1="12" y1="2" x2="12" y2="4" />
+                    <line x1="12" y1="20" x2="12" y2="22" />
+                    <line x1="2" y1="12" x2="4" y2="12" />
+                    <line x1="20" y1="12" x2="22" y2="12" />
+                    <!-- Направленная стрелка-книга -->
+                    <polygon points="16,8 11,11 8,16 13,13" fill="rgba(28, 200, 138, 0.2)" />
+                    <line x1="12" y1="12" x2="15.5" y2="8.5" stroke-width="2.5" />
+                </svg>
+                <!-- Текстовая часть -->
+                <span class="text-white fw-bold tracking-wide"
+                      style="font-family: 'Segoe UI', sans-serif; letter-spacing: 0.8px; font-size: 1.15rem;">
+                    АЗИМУТ <span
+                    style="color: #1cc88a; font-weight: 300; font-size: 0.85rem; letter-spacing: 1px; display: block; margin-top: -5px;">СДО</span>
+                </span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="studentNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active fw-bold" href="/Dashboard/Student">🏠 Мои курсы</a>
+                    </li>
+                </ul>
+                <!-- Блок пользователя и кнопка безопасного выхода -->
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-white-50 small d-none d-sm-inline">
+                        👤 @User.FindFirst("FullName")?.Value
+                    </span>
+                    <a href="/Auth/Logout" class="btn btn-sm btn-outline-danger fw-bold px-3">
+                        Выйти 🚪
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ СТРАНИЦЫ -->
+    <div class="container">
+        <main role="main" class="pb-5">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- СКРИПТЫ -->
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>
