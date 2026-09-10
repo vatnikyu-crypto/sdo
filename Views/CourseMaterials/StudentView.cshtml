@@ -127,6 +127,93 @@
         padding: 16px;
         text-align: center;
     }
+
+    /* СТИЛИ ДЛЯ РЕЖИМА "НА ВЕСЬ ЭКРАН" */
+    .course-sidebar {
+        /* Добавим плавность для скрытия сайдбара */
+        transition: all 0.3s ease-in-out;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Класс, который JS повесит на сайдбар для его скрытия */
+    .course-sidebar.sidebar-hidden {
+        width: 0 !important;
+        min-width: 0 !important;
+        opacity: 0;
+        visibility: hidden;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
+
+    .course-content-area {
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Кнопка разворачивания */
+    .fullscreen-toggle-btn {
+        background: #f8fafc;
+        border: 1px solid #d1d5db;
+        color: #4e73df;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        transition: all 0.2s;
+    }
+
+    .fullscreen-toggle-btn:hover {
+        background: #4e73df;
+        color: #fff;
+        border-color: #4e73df;
+    }
+
+    /* СТИЛИ ДЛЯ УВЕЛИЧЕНИЯ КАРТИНКИ (LIGHTBOX) */
+    .image-preview-wrapper img {
+        cursor: zoom-in;
+        transition: transform 0.2s ease;
+    }
+
+    /* Темная вуаль на весь экран */
+    .fullscreen-image-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.85);
+        /* Глубокий темный полупрозрачный фон */
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out;
+        cursor: zoom-out;
+    }
+
+    /* Состояние, когда оверлей активен */
+    .fullscreen-image-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Сама увеличенная картинка */
+    .fullscreen-image-overlay img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transform: scale(0.95);
+        transition: transform 0.25s ease-in-out;
+    }
+
+    .fullscreen-image-overlay.show img {
+        transform: scale(1);
+    }
 </style>
 
 <!-- ПОДКЛЮЧАЕМ ЛОКАЛЬНЫЙ МОДУЛЬ PDF.MJS С ЗАЩИТОЙ ГЛОБАЛЬНОЙ ВИДИМОСТИ -->
@@ -180,10 +267,21 @@
 
         <!-- ПРАВАЯ ОБЛАСТЬ: КОНТЕНТ МАТЕРИАЛА -->
         <div class="course-content-area shadow-sm p-4 d-flex flex-column" id="mainContentWindow">
-            <div class="text-center text-muted my-auto py-5">
-                <div class="spinner-border text-primary mb-3"></div>
-                <h5>Загрузка учебного модуля...</h5>
+            <!-- Панель управления верхней частью контента -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-dark m-0" id="rightSideMaterialTitle">Загрузка курса...</h4>
+                <button class="fullscreen-toggle-btn shadow-sm" onclick="toggleTheaterMode()">🖥️ На весь экран</button>
             </div>
+
+            <div id="dynamicBodyContainer" class="d-flex flex-column flex-grow-1">
+                <div class="text-center text-muted my-auto py-5">
+                    <div class="spinner-border text-primary mb-3"></div>
+                    <h5>Загрузка учебного модуля...</h5>
+                </div>
+            </div>
+        </div>
+        <div id="imageLightboxOverlay" class="fullscreen-image-overlay" onclick="closeImageFullscreen()">
+            <img id="lightboxTargetImage" src="" alt="Увеличенное изображение" />
         </div>
     </div>
     <!-- МОДАЛЬНОЕ ОКНО СДАЧИ ПРАКТИКИ СТУДЕНТОМ -->
@@ -220,12 +318,15 @@
             <script>
                 const contentWindow = document.getElementById('mainContentWindow');
 
-                // 1. ФУНКЦИЯ ЗАГРУЗКИ КОНТЕНТА В ПРАВУЮ КОЛОНКУ СБОКУ ОТ МЕНЮ
+                // ОБНОВЛЕННАЯ ФУНКЦИЯ ДИНАМИЧЕСКОЙ СМЕНЫ КОНТЕНТА
                 async function loadContentToRightSide(id, btnElement) {
                     document.querySelectorAll('.sidebar-material-btn').forEach(btn => btn.classList.remove('active'));
                     if (btnElement) btnElement.classList.add('active');
 
-                    contentWindow.innerHTML = '<div class="text-center text-muted my-auto py-5"><div class="spinner-border text-primary mb-2"></div><p>Загрузка данных...</p></div>';
+                    const titleEl = document.getElementById('rightSideMaterialTitle');
+                    const bodyContainer = document.getElementById('dynamicBodyContainer');
+
+                    bodyContainer.innerHTML = '<div class="text-center text-muted my-auto py-5"><div class="spinner-border text-primary mb-2"></div><p>Загрузка данных...</p></div>';
 
                     try {
                         const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
@@ -238,96 +339,137 @@
                         const fileUrl = data.fileurl || "";
                         const textContent = data.textcontent || "";
 
+                        // Обновляем заголовок в шапке
+                        titleEl.textContent = data.title;
+
+                        // ОТРИСОВКА КОНТЕНТА ВНУТРИ ВЫДЕЛЕННОГО КОНТЕЙНЕРА
                         if (mType === 0) { // Лекция
-                            contentWindow.innerHTML = `<h4 class="fw-bold text-dark mb-3">${data.title}</h4><div class="p-4 border rounded shadow-sm text-dark bg-white" style="font-size:1.05rem; line-height:1.6;">${textContent}</div>`;
+                            bodyContainer.innerHTML = `<div class="p-4 border rounded shadow-sm text-dark bg-white" style="font-size:1.05rem; line-height:1.6;">${textContent}</div>`;
                         }
-                        else if (mType === 1) { // PDF Документ с каскадным скроллом
-                            contentWindow.innerHTML = `
-                                            <h4 class="fw-bold text-dark mb-2">${data.title}</h4>
-                                            <p class="text-muted small mb-3">📜 Листайте колесиком мыши вниз для чтения страниц документа</p>
-                                            <div id="pdfViewerContainer"><div class="text-center p-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Подготовка страниц...</div></div>`;
+                        else if (mType === 1) { // PDF Документ
+                            bodyContainer.innerHTML = `<div id="pdfViewerContainer"><div class="text-center p-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Подготовка страниц...</div></div>`;
                             renderPdfAsScrollableImages(fileUrl);
                         }
-                        else if (mType === 2) { // Видео плеер Plyr
-                            contentWindow.innerHTML = `
-                                            <h4 class="fw-bold text-dark mb-3">${data.title}</h4>
-                                            <div class="shadow rounded-3 overflow-hidden" style="max-width: 850px; margin: 0 auto; background: #000;">
-                                                <video id="azimutVideoPlayer" playsinline controls src="${fileUrl}">
-                                                    <source src="${fileUrl}" type="video/mp4" />
-                                                </video>
-                                            </div>`;
-
+                        else if (mType === 2) { // Видео
+                            bodyContainer.innerHTML = `<div class="shadow rounded-3 overflow-hidden w-100" style="background: #000;"><video id="azimutVideoPlayer" playsinline controls src="${fileUrl}"><source src="${fileUrl}" type="video/mp4" /></video></div>`;
                             import('/lib/plyr/plyr.js').then(() => {
-                                const player = new Plyr('#azimutVideoPlayer', {
+                                new Plyr('#azimutVideoPlayer', {
                                     controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
                                     settings: ['speed'],
                                     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
                                 });
-                            }).catch(err => console.error("Не удалось запустить локальный плеер Plyr:", err));
+                            });
                         }
-                        else if (mType === 3) { // Картинка
-                            contentWindow.innerHTML = `<h4 class="fw-bold text-dark mb-3">${data.title}</h4><div class="text-center p-3 border rounded shadow-sm bg-white"><img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" /></div>`;
+                        else if (mType === 3) { // Картинка / Схема
+                            bodyContainer.innerHTML = `
+                                                                                <div class="text-center p-3 border rounded shadow-sm bg-white image-preview-wrapper">
+                                                                                    <!-- При клике на картинку вызываем функцию openImageFullscreen -->
+                                                                                    <img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" 
+                                                                                         onclick="openImageFullscreen(this.src)" title="Кликните для увеличения на весь экран" />
+                                                                                </div>`;
                         }
-                        else if (mType === 5) { // Практика
-                            contentWindow.innerHTML = `
-                                            <h4 class="fw-bold text-dark mb-3">${data.title}</h4>
-                                            <div class="p-4 border rounded shadow-sm bg-white">
-                                                <h6 class="fw-bold text-secondary mb-2">📋 Инструкция к выполнению задания:</h6>
-                                                <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
-                                                <div class="d-flex gap-2">
-                                                    ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold" download>📥 Скачать файл задания</a>` : ""}
-                                                    <button class="btn btn-warning fw-bold px-4" onclick="openAssignmentModal(${id})">🚀 Сдать готовую работу</button>
+                        else if (mType === 5) { // Практика (Правая сторона)
+                            bodyContainer.innerHTML = `
+                                <div class="p-4 border rounded shadow-sm bg-white">
+                                    <h6 class="fw-bold text-secondary mb-2">📋 Инструкция к выполнению задания:</h6>
+                                    <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
+            
+                                    <!-- Динамический блок интерактивного чата-статуса -->
+                                    <div id="studentAssignmentArea" class="mb-4">
+                                        <div class="spinner-border spinner-border-sm text-secondary"></div> Проверка статуса выполнения...
+                                    </div>
+
+                                    <div class="d-flex gap-2" id="assignmentActionsBlock">
+                                        ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold" download>📥 Скачать файл задания</a>` : ""}
+                                        <button id="mainSubmitWorkBtn" class="btn btn-warning fw-bold px-4 d-none" onclick="openAssignmentModal(${id})">🚀 Сдать готовую работу</button>
+                                    </div>
+                                </div>
+                            `;
+
+                            // Асинхронно запрашиваем у сервера состояние сдачи задания
+                            fetch(`/StudentCourse/GetAssignmentState?materialId=${id}`)
+                                .then(res => res.json())
+                                .then(state => {
+                                    const area = document.getElementById('studentAssignmentArea');
+                                    const actionBtn = document.getElementById('mainSubmitWorkBtn');
+
+                                    if (!state.hasSubmission) {
+                                        area.innerHTML = `<div class="alert alert-light border small text-muted">Вы еще не отправляли решение по этому практическому заданию.</div>`;
+                                        actionBtn.textContent = "🚀 Сдать готовую работу";
+                                        actionBtn.classList.remove('d-none');
+                                        return;
+                                    }
+
+                                    // Формируем красивую ленту сообщений (Чат)
+                                    let chatHtml = `<div class="border rounded p-3 mb-3 bg-light small" style="max-height: 250px; overflow-y: auto;">
+                                        <div class="fw-bold text-muted mb-2">💬 Ваш диалог с преподавателем:</div>`;
+
+                                    state.messages.forEach(msg => {
+                                        chatHtml += `
+                                            <div class="mb-2 p-2 rounded ${msg.isStudent ? 'bg-white border-start border-primary border-4 ms-2' : 'bg-body-secondary me-2'}">
+                                                <div class="d-flex justify-content-between text-muted" style="font-size:0.7rem;">
+                                                    <span><b>${msg.isStudent ? 'Вы (Слушатель)' : 'Преподаватель'}</b></span>
+                                                    <span>${msg.date}</span>
                                                 </div>
+                                                <div class="mt-1 text-dark">${msg.text}</div>
+                                                ${msg.file ? `<div class="mt-1"><a href="${msg.file}" class="text-decoration-none text-primary" download>📂 Отправленный_файл</a></div>` : ''}
                                             </div>`;
+                                    });
+                                    chatHtml += `</div>`;
+
+                                    // Управляем интерфейсом в зависимости от глобального статуса тикета
+                                    if (state.status === "OnReview") {
+                                        area.innerHTML = chatHtml + `<div class="alert alert-info border small m-0 fw-bold">⏳ Работа успешно доставлена и ожидает проверки преподавателем. Повторная отправка временно заблокирована.</div>`;
+                                        actionBtn.classList.add('d-none');
+                                    }
+                                    else if (state.status === "NeedFix") {
+                                        area.innerHTML = chatHtml + `<div class="alert alert-warning border small m-0">🔄 <b>Задание возвращено на доработку!</b> Изучите комментарий преподавателя выше и пришлите исправленный вариант.</div>`;
+                                        actionBtn.textContent = "🔄 Отправить исправленный вариант";
+                                        actionBtn.classList.remove('d-none');
+                                    }
+                                    else if (state.status === "Completed") {
+                                        area.innerHTML = chatHtml + `
+                                            <div class="alert alert-success border d-flex justify-content-between align-items-center m-0">
+                                                <span>✅ <b>Проверка завершена!</b> Задание закрыто для редактирования.</span>
+                                                <h4 class="m-0 fw-bold bg-white text-success px-3 py-1 rounded border shadow-sm">Балл: ${state.grade}</h4>
+                                            </div>`;
+                                        actionBtn.classList.add('d-none');
+                                    }
+                                });
                         }
-                        else if (mType === 4) { // Карточка допуска к Тестированию (Обновленная)
+                        else if (mType === 4) { // Тестирование
                             const kinds = ["Промежуточное тестирование", "Итоговый экзамен курса", "Обучающий тренажер"];
                             const currentKindText = kinds[data.testkind] || "Тестирование";
                             const headerColors = ["#4e73df", "#e74a3b", "#f6c23e"];
                             const currentColor = headerColors[data.testkind] || "#4e73df";
 
-                            contentWindow.innerHTML = `
-                                            <div class="card border-0 mb-0">
-                                                <div class="p-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, ${currentColor} 0%, #3a3b45 100%);">
-                                                    <span class="badge bg-white text-dark fw-bold text-uppercase mb-2" style="font-size:0.7rem;">Контроль знаний</span>
-                                                    <h3 class="fw-bold m-0">${data.title}</h3>
-                                                    <p class="lead small opacity-75 mt-1 mb-0">${currentKindText}</p>
-                                                </div>
-                                                <h5 class="fw-bold text-dark mb-3">📋 Параметры и регламент прохождения:</h5>
-                                                <div class="test-info-grid">
-                                                    <div class="test-info-item">
-                                                        <span style="font-size:1.5rem;">⏱️</span>
-                                                        <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Ограничение времени</div>
-                                                        <h5 class="fw-bold text-dark m-0 mt-1">${data.timelimit > 0 ? `${data.timelimit} минут` : "Без лимита"}</h5>
-                                                    </div>
-                                                    <div class="test-info-item">
-                                                        <span style="font-size:1.5rem;">📉</span>
-                                                        <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Порог успешной сдачи</div>
-                                                        <h5 class="fw-bold text-success m-0 mt-1">${data.passpercentage}% правильных</h5>
-                                                    </div>
-                                                    <div class="test-info-item">
-                                                        <span style="font-size:1.5rem;">🎲</span>
-                                                        <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Вопросов в билете</div>
-                                                        <h5 class="fw-bold text-dark m-0 mt-1">${data.questionscounttouse > 0 ? `${data.questionscounttouse} шт.` : "Все доступные"}</h5>
-                                                    </div>
-                                                </div>
-                                                <div class="alert alert-light border p-3 mb-4 small text-muted" style="border-radius:8px;">
-                                                    🧭 <b>Обратите внимание:</b> Результаты ${data.testkind === 2 ? "тренажера не влияют на общую успеваемость." : "этого теста напрямую влияют на получение зачета по курсу."} Вопросы и варианты ответов ${data.shufflequestions ? "будут перемешаны случайным образом." : "отобразятся в стандартном порядке."}
-                                                </div>
-                                                <div class="text-center mt-2">
-                                        <!-- ИСПРАВЛЕНО: Убрали прямую ссылку, добавили вызов функции confirmAndStartTest -->
-                                        <button onclick="confirmAndStartTest(${id}, '${data.title.replace(/'/g, "\\'")}')" 
-                                                class="btn btn-success fw-bold px-5 py-3 shadow shadow-sm" 
-                                                style="border-radius:30px; font-size:1.05rem; letter-spacing:0.3px;">
-                                            🚀 ЗАПУСТИТЬ ТЕСТИРОВАНИЕ
-                                        </button>
-                                    </div>
-                                </div>`;
+                            bodyContainer.innerHTML = `
+                                                                                                                <div class="card border-0 mb-0">
+                                                                                                                    <div class="p-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, ${currentColor} 0%, #3a3b45 100%);">
+                                                                                                                        <span class="badge bg-white text-dark fw-bold text-uppercase mb-2" style="font-size:0.7rem;">Контроль знаний</span>
+                                                                                                                        <p class="lead small opacity-75 mt-1 mb-0">${currentKindText}</p>
+                                                                                                                    </div>
+                                                                                                                    <h5 class="fw-bold text-dark mb-3">📋 Параметры и регламент прохождения:</h5>
+                                                                                                                    <div class="test-info-grid">
+                                                                                                                        <div class="test-info-item"><span>⏱️</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Время</div><h5 class="fw-bold text-dark m-0 mt-1">${data.timelimit > 0 ? `${data.timelimit} мин.` : "Без лимита"}</h5></div>
+                                                                                                                        <div class="test-info-item"><span>📉</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Порог</div><h5 class="fw-bold text-success m-0 mt-1">${data.passpercentage}% верных</h5></div>
+                                                                                                                        <div class="test-info-item"><span>🎲</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Вопросы</div><h5 class="fw-bold text-dark m-0 mt-1">${data.questionscounttouse > 0 ? `${data.questionscounttouse} шт.` : "Все"}</h5></div>
+                                                                                                                    </div>
+                                                                                                                    <div class="alert alert-light border p-3 mb-4 small text-muted" style="border-radius:8px;">
+                                                                                                                        🧭 <b>Обратите внимание:</b> Результаты ${data.testkind === 2 ? "тренажера не влияют на общую успеваемость." : "этого теста напрямую влияют на получение зачета по курсу."}
+                                                                                                                    </div>
+                                                                                                                    <div class="text-center mt-2">
+                                                                                                                        <button onclick="confirmAndStartTest(${id}, '${data.title.replace(/'/g, "\\'")}')" class="btn btn-success fw-bold px-5 py-3 shadow shadow-sm" style="border-radius:30px; font-size:1.05rem;">
+                                                                                                                            🚀 ЗАПУСТИТЬ ТЕСТИРОВАНИЕ
+                                                                                                                        </button>
+                                                                                                                    </div>
+                                                                                                                </div>`;
                         }
                     } catch (err) {
-                        contentWindow.innerHTML = '<div class="alert alert-danger m-3">⚠️ Не удалось отобразить содержимое выбранного элемента.</div>';
+                        bodyContainer.innerHTML = '<div class="alert alert-danger m-3">⚠️ Не удалось отобразить контент элемента.</div>';
                     }
                 }
+
             </script>
             <script>
                 // 2. ФУНКЦИЯ ОТРЕСОВКИ СТРАНИЦ PDF ДРУГ ЗА ДРУГОМ С ОБХОДОМ CORS ЗАЩИТЫ
@@ -392,9 +534,46 @@
                     new bootstrap.Modal(document.getElementById('submitAssignmentModal')).show();
                 }
 
-                document.getElementById("confirmSubmitAssignmentBtn").addEventListener("click", function () {
-                    alert("Ваша практическая работа успешно отправлена преподавателю на проверку!");
-                    bootstrap.Modal.getInstance(document.getElementById('submitAssignmentModal')).hide();
+                document.getElementById("confirmSubmitAssignmentBtn").addEventListener("click", async function () {
+                    const button = this;
+                    const form = document.getElementById('studentAssignmentForm');
+                    const materialId = document.getElementById("assignmentMaterialId").value;
+
+                    if (!form.checkValidity()) {
+                        form.reportValidity();
+                        return;
+                    }
+
+                    button.disabled = true;
+                    button.textContent = 'Отправка...';
+
+                    const formData = new FormData(form);
+
+                    try {
+                        const response = await fetch('/StudentCourse/SubmitAssignment', {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            alert("Ваша работа успешно отправлена преподавателю на проверку!");
+                            form.reset();
+                            bootstrap.Modal.getInstance(document.getElementById('submitAssignmentModal')).hide();
+
+                            // Программный клик по активному элементу меню, чтобы правая часть чата перерисовала новый статус сама
+                            document.querySelector(`#sidebarMenuContainer .sidebar-material-btn[data-id="${materialId}"]`).click();
+                        } else {
+                            alert("Ошибка отправки: " + result.message);
+                        }
+                    } catch (error) {
+                        alert("Не удалось связаться с сервером.");
+                    } finally {
+                        button.disabled = false;
+                        button.textContent = 'Отправить на проверку';
+                    }
                 });
 
                 function confirmAndStartTest(testId, testTitle) {
@@ -404,5 +583,44 @@
                         // Если студент нажал ОК — перенаправляем его на страницу сдачи экзамена
                         window.location.href = `/StudentTest/Take?testId=${testId}`;
                     }
+                }
+
+                // 4. ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ ПОЛНОЭКРАННОГО РЕЖИМА "ТЕАТР"
+                function toggleTheaterMode() {
+                    const sidebar = document.querySelector('.course-sidebar');
+                    const toggleBtn = document.querySelector('.fullscreen-toggle-btn');
+
+                    // Переключаем класс скрытия у сайдбара
+                    sidebar.classList.toggle('sidebar-hidden');
+
+                    // Меняем текст и иконку на кнопке в зависимости от текущего состояния
+                    if (sidebar.classList.contains('sidebar-hidden')) {
+                        toggleBtn.innerHTML = "🔲 Вернуть меню";
+                        toggleBtn.classList.remove('btn-outline-secondary');
+                        toggleBtn.classList.add('btn-primary');
+                    } else {
+                        toggleBtn.innerHTML = "🖥️ На весь экран";
+                        toggleBtn.classList.remove('btn-primary');
+                        toggleBtn.classList.add('btn-outline-secondary');
+                    }
+                }
+                // 5. ФУНКЦИИ ПОЛНОЭКРАННОГО ПРОСМОТРА ИЛЛЮСТРАЦИЙ "АЗИМУТА"
+                function openImageFullscreen(src) {
+                    const overlay = document.getElementById('imageLightboxOverlay');
+                    const img = document.getElementById('lightboxTargetImage');
+
+                    img.src = src;
+                    overlay.classList.add('show');
+
+                    // Блокируем скролл основной страницы, пока картинка открыта
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeImageFullscreen() {
+                    const overlay = document.getElementById('imageLightboxOverlay');
+                    overlay.classList.remove('show');
+
+                    // Возвращаем скролл обратно
+                    document.body.style.overflow = '';
                 }
             </script>

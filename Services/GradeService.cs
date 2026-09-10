@@ -11,7 +11,7 @@ public class GradeService
 {
     public static async Task RecalculateCourseProgressAsync(AppDbContext context, int studentId, int courseId)
     {
-        // 1. Находим все обязательные материалы этого курса (Практики + Тесты, кроме Тренажеров)
+        // 1. Одним запросом забираем все обязательные материалы этого курса (кроме тренажеров)
         var mandatoryMaterials = await context.CourseMaterials
             .Where(m => m.CourseId == courseId && 
                        (m.Type == MaterialType.Assignment || 
@@ -21,36 +21,42 @@ public class GradeService
         // Если в курсе нет оцениваемых элементов, зачет ставить не за что
         if (!mandatoryMaterials.Any()) return; 
 
+        var mandatoryMaterialIds = mandatoryMaterials.Select(m => m.Id).ToList();
+
+        // 2. Вторым запросом вытаскиваем СРАЗУ ВСЕ ответы этого конкретного студента по этим материалам
+        var studentSubmissions = await context.StudentSubmissions
+            .Where(s => s.StudentId == studentId && mandatoryMaterialIds.Contains(s.CourseMaterialId))
+            .ToListAsync();
+
         int totalMandatoryCount = mandatoryMaterials.Count;
         int completedMandatoryCount = 0;
 
+        // 3. Считаем успешные сдачи в оперативной памяти сервера
         foreach (var material in mandatoryMaterials)
         {
             if (material.Type == MaterialType.Assignment)
             {
-                // Задание зачтено, если админ его проверил и оценка выше двойки (3, 4, 5)
-                var submission = await context.StudentSubmissions
-                    .FirstOrDefaultAsync(s => s.CourseMaterialId == material.Id && s.StudentId == studentId && s.IsReviewed && s.Grade >= 3);
+                // СИНХРОНИЗИРОВАНО: Задание зачтено, если тикет закрыт (Completed) и оценка выше двойки (3, 4, 5)
+                bool isAssignmentPassed = studentSubmissions.Any(s => 
+                    s.CourseMaterialId == material.Id && 
+                    s.Status == SubmissionStatus.Completed && 
+                    s.Grade >= 3);
                 
-                if (submission != null)
-                {
-                    completedMandatoryCount++;
-                }
+                if (isAssignmentPassed) completedMandatoryCount++;
             }
             else if (material.Type == MaterialType.Test)
             {
-                // Тест сдан, если набранный % правильных ответов (Grade) >= порога теста (PassPercentage)
-                var testResult = await context.StudentSubmissions
-                    .FirstOrDefaultAsync(s => s.CourseMaterialId == material.Id && s.StudentId == studentId && s.Grade >= material.PassPercentage);
+                // СИНХРОНИЗИРОВАНО: Тест сдан, если статус Completed и процент правильных ответов выше порога
+                bool isTestPassed = studentSubmissions.Any(s => 
+                    s.CourseMaterialId == material.Id && 
+                    s.Status == SubmissionStatus.Completed && 
+                    s.Grade >= material.PassPercentage);
 
-                if (testResult != null)
-                {
-                    completedMandatoryCount++;
-                }
+                if (isTestPassed) completedMandatoryCount++;
             }
         }
 
-        // 2. Ищем существующую запись прогресса по курсу или создаем её
+        // 4. Ищем существующую запись прогресса по курсу или создаем её
         var progress = await context.CourseProgresses
             .FirstOrDefaultAsync(p => p.StudentId == studentId && p.CourseId == courseId);
 
@@ -60,7 +66,7 @@ public class GradeService
             context.CourseProgresses.Add(progress);
         }
 
-        // 3. Сверяем количество: если сданы ВСЕ обязательные элементы — ставим "Сдал" (IsCompleted = true)
+        // 5. Сверяем количество: если сданы ВСЕ обязательные элементы — ставим курс как завершенный
         if (completedMandatoryCount == totalMandatoryCount)
         {
             if (!progress.IsCompleted)

@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<CourseMaterial> CourseMaterials => Set<CourseMaterial>();
     public DbSet<StudentSubmission> StudentSubmissions => Set<StudentSubmission>();
+    public DbSet<SubmissionMessage> SubmissionMessages => Set<SubmissionMessage>(); 
     public DbSet<TestQuestion> TestQuestions => Set<TestQuestion>();
     public DbSet<TestAnswerOption> TestAnswerOptions => Set<TestAnswerOption>();
     public DbSet<Group> Groups => Set<Group>();

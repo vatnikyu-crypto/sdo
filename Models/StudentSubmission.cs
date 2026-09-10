@@ -1,24 +1,25 @@
 using System;
+using System.Collections.Generic;
 
 namespace SdoApp.Models;
 
 public class StudentSubmission
 {
     public int Id { get; set; }
+    
     public int CourseMaterialId { get; set; }
     public CourseMaterial? CourseMaterial { get; set; }
 
     public int StudentId { get; set; }
     public User? Student { get; set; }
 
-    // Ответ студента (Текст + Файл)
-    public string? StudentTextResponse { get; set; } 
-    public string? StudentFilePath { get; set; } 
-    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+    // Общие статусы тикета
+    public SubmissionStatus Status { get; set; } = SubmissionStatus.OnReview;
+    public int? Grade { get; set; } // null, пока статус OnReview или NeedFix
+    
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Рецензия преподавателя (Мини-чат)
-    public string? AdminReviewText { get; set; } 
-    public int? Grade { get; set; } 
-    public DateTime? ReviewedAt { get; set; }
-    public bool IsReviewed { get; set; } = false; 
+    // СВЯЗЬ: Внутри одной сдачи может быть целая цепочка сообщений (Чат)
+    public List<SubmissionMessage> Messages { get; set; } = new();
 }

@@ -1,279 +1,239 @@
 @model IEnumerable<SdoApp.Models.StudentSubmission>
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Проверка практических заданий";
+    ViewData["Title"] = "Проверка practicalеских заданий";
 
-    // Делим данные на два списка прямо в верстке
-    var pendingSubmissions = Model.Where(s => !s.IsReviewed).ToList();
-    var reviewedSubmissions = Model.Where(s => s.IsReviewed).ToList();
+    // Фильтруем списки по статусам тикетов
+    var pendingSubmissions = Model.Where(s => s.Status == SdoApp.Models.SubmissionStatus.OnReview).ToList();
+    var reviewedSubmissions = Model.Where(s => s.Status != SdoApp.Models.SubmissionStatus.OnReview).ToList();
 }
 
 <style>
     .submission-card {
-        border-left: 4px solid #f6c23e;
-        /* Желтый маркер для новых */
-        transition: transform 0.2s;
+        border-left: 4px solid #f6c23e; /* Желтый для новых */
     }
-
-    .submission-card.reviewed {
-        border-left-color: #1cc88a;
-        /* Зеленый маркер для проверенных */
+    .submission-card.need-fix {
+        border-left-color: #fd7e14; /* Оранжевый — на доработке */
     }
-
-    .submission-card:hover {
-        transform: translateX(4px);
-    }
-
-    .fade-out {
-        opacity: 0;
-        transition: opacity 0.3s ease;
+    .submission-card.completed {
+        border-left-color: #1cc88a; /* Зеленый — завершено */
     }
 </style>
 
-<!-- 1. ЗАГОЛОВОК СТРАНИЦЫ -->
 <div class="mb-4 mt-2">
     <h2 class="fw-bold text-dark m-0">Проверка практических заданий</h2>
-    <small class="text-muted">Рецензирование письменных ответов слушателей, скачивание файлов и выставление
-        оценок</small>
-    </div>
+    <small class="text-muted">Рецензирование письменных ответов, история диалога и управление статусами доработки</small>
+</div>
 
-    <!-- 2. НАВИГАЦИЯ ПО ВКЛАДКАМ (ТАБЫ) -->
-    <ul class="nav nav-tabs mb-4" id="assignmentTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold text-dark position-relative" id="pending-tab" data-bs-toggle="tab"
-                    data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="true">
-                📥 Ожидают проверки
-                <span class="badge bg-danger ms-1" id="tabPendingBadge">@pendingSubmissions.Count</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold text-muted" id="reviewed-tab" data-bs-toggle="tab" data-bs-target="#reviewed"
-                    type="button" role="tab" aria-controls="reviewed" aria-selected="false">
-                ✅ Архив проверенных (@reviewedSubmissions.Count)
-            </button>
-        </li>
-    </ul>
-
-    <!-- СОДЕРЖИМОЕ ВКЛАДОК -->
-    <div class="tab-content" id="assignmentTabsContent">
-
-        <!-- ВКЛАДКА 1: НОВЫЕ ЗАДАНИЯ -->
-        <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
-            <div class="d-flex flex-column gap-3" id="pendingContainer">
-                @if (!pendingSubmissions.Any())
+<!-- НАВИГАЦИЯ ПО ВКЛАДКАМ -->
+<ul class="nav nav-tabs mb-4" id="assignmentTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold text-dark" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+            📥 Ожидают проверки <span class="badge bg-danger ms-1" id="tabPendingBadge">@pendingSubmissions.Count</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold text-muted" id="reviewed-tab" data-bs-toggle="tab" data-bs-target="#reviewed" type="button" role="tab">
+            ✅ Архив обработанных (@reviewedSubmissions.Count)
+        </button>
+    </li>
+</ul>
+<div class="tab-content" id="assignmentTabsContent">
+    <!-- ВКЛАДКА 1: ОЖИДАЮТ ПРОВЕРКИ -->
+    <div class="tab-pane fade show active" id="pending" role="tabpanel">
+        <div class="d-flex flex-column gap-3" id="pendingContainer">
+            @if (!pendingSubmissions.Any())
+            {
+                <div class="text-center py-5 bg-white border rounded-3 text-muted">
+                    <span style="font-size: 3rem;">🎉</span>
+                    <h5 class="fw-bold mt-2 text-dark">Все задания проверены!</h5>
+                </div>
+            }
+            else
+            {
+                @foreach (var sub in pendingSubmissions)
                 {
-                    <div class="text-center py-5 bg-white border rounded-3 text-muted" style="border-radius: 12px !important;">
-                        <span style="font-size: 3rem;">🎉</span>
-                        <h5 class="fw-bold mt-2 text-dark">Все задания проверены!</h5>
-                        <p class="small mb-0">Новых ответов от слушателей пока не поступало.</p>
-                    </div>
-                }
-                else
-                {
-                    @foreach (var sub in pendingSubmissions)
-                    {
-                        <div class="card bg-white submission-card p-4 border-0 shadow-sm" id="submission-block-@sub.Id">
-                            <div class="row align-items-start g-3">
-                                <div class="col-md-8">
-                                    <span
-                                    class="badge bg-light text-warning border border-warning text-uppercase px-2 py-1 mb-2 fw-bold"
-                                    style="font-size: 0.65rem;">Новый ответ</span>
-                                    <h5 class="fw-bold text-dark mb-1">@sub.Student?.LastName @sub.Student?.FirstName
-                                        @sub.Student?.MiddleName</h5>
-                                        <div class="small text-muted mb-3">
-                                            📖 Курс: <span class="fw-bold text-secondary">@sub.CourseMaterial?.Course?.Title</span> |
-                                            🧩 Элемент: <span class="fw-bold text-secondary">@sub.CourseMaterial?.Title</span>
-                                        </div>
+                    <div class="card bg-white submission-card p-4 border-0 shadow-sm" id="submission-block-@sub.Id">
+                        <div class="row align-items-start g-3">
+                            <div class="col-md-8">
+                                <span class="badge bg-light text-warning border border-warning text-uppercase px-2 py-1 mb-2 fw-bold" style="font-size: 0.65rem;">Требует проверки</span>
+                                <h5 class="fw-bold text-dark mb-1">@sub.Student?.LastName @sub.Student?.FirstName</h5>
+                                <div class="small text-muted mb-3">
+                                    📖 Курс: <span class="fw-bold">@sub.CourseMaterial?.Course?.Title</span> | Элемент: <span class="fw-bold">@sub.CourseMaterial?.Title</span>
+                                </div>
 
-                                        <div class="bg-light p-3 border rounded text-dark small mb-3">
-                                            <div class="fw-bold text-muted mb-1">💬 Письменный ответ студента:</div>
-                                            <div>@(string.IsNullOrWhiteSpace(sub.StudentTextResponse) ? "Текстовый ответ отсутствует." :
-                                                                                sub.StudentTextResponse)</div>
+                                <!-- ЛЕНТА ЧАТА-ДИАЛОГА -->
+                                <div class="p-3 border rounded text-dark small bg-light" style="max-height: 250px; overflow-y: auto;">
+                                    <div class="fw-bold text-secondary mb-2">💬 Переписка по заданию:</div>
+                                    @foreach (var msg in sub.Messages.OrderBy(m => m.CreatedAt))
+                                    {
+                                        bool isStudent = msg.AuthorId == sub.StudentId;
+                                        <div class="mb-2 p-2 rounded @(isStudent ? "bg-white border-start border-primary border-4 ms-2" : "bg-body-secondary me-2")">
+                                            <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem;">
+                                                <span><b>@(isStudent ? "🧑‍🎓 Слушатель" : "👩‍🏫 Вы")</b></span>
+                                                <span>@msg.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
                                             </div>
-
-                                            @if (!string.IsNullOrEmpty(sub.StudentFilePath))
+                                            <div class="mt-1">@msg.TextContent</div>
+                                            @if (!string.IsNullOrEmpty(msg.FilePath))
                                             {
-                                                <div>
-                                                    <a href="@sub.StudentFilePath" class="btn btn-sm btn-outline-primary fw-bold px-3 py-1.5"
-                                                       download>
-                                                        📂 Скачать прикрепленный файл студента
-                                                    </a>
-                                                </div>
+                                                <div class="mt-1"><a href="@msg.FilePath" class="text-primary fw-bold text-decoration-none" download>📂 Скачать файл студента</a></div>
                                             }
                                         </div>
-
-                                        <!-- ФОРМА ПРОВЕРКИ И ВЫСТАВЛЕНИЯ ОЦЕНКИ -->
-                                        <div class="col-md-4 border-start ps-4">
-                                            <form class="review-assignment-form" data-id="@sub.Id">
-                                                <input type="hidden" name="submissionId" value="@sub.Id" />
-
-                                                <div class="mb-2">
-                                                    <label class="form-label text-muted small fw-bold">РЕЦЕНЗИЯ ПРЕПОДАВАТЕЛЯ *</label>
-                                                    <textarea name="reviewText" class="form-control form-control-sm" rows="3" required
-                                                              placeholder="Напишите замечания или комментарий студенту..."></textarea>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label text-muted small fw-bold">ОЦЕНКА ЗА РАБОТУ *</label>
-                                                    <select name="grade" class="form-select form-select-sm fw-bold text-dark">
-                                                        <option value="5" selected>5 — Отлично</option>
-                                                        <option value="4">4 — Хорошо</option>
-                                                        <option value="3">3 — Удовлетворительно</option>
-                                                        <option value="2">2 — Неудовлетворительно</option>
-                                                    </select>
-                                                </div>
-
-                                                <button type="button" class="btn btn-sm btn-success w-100 fw-bold py-2 submit-review-btn">
-                                                    Выставить оценку и ответить
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
+                                    }
                                 </div>
-                            }
-                        }
-                    </div>
-                </div>
-
-                <!-- ВКЛАДКА 2: АРХИВ ПРОВЕРЕННЫХ -->
-                <div class="tab-pane fade" id="reviewed" role="tabpanel" aria-labelledby="reviewed-tab">
-                    <div class="d-flex flex-column gap-3">
-                        @if (!reviewedSubmissions.Any())
-                        {
-                            <div class="text-center py-5 bg-white border rounded-3 text-muted" style="border-radius: 12px !important;">
-                                <h6 class="mb-0">В архиве пока нет ни одного проверенного задания.</h6>
                             </div>
-                        }
-                        else
-                        {
-                            @foreach (var sub in reviewedSubmissions)
-                            {
-                                <div class="card bg-white submission-card reviewed p-4 border-0 shadow-sm">
-                                    <div class="row">
-                                        <div class="col-md-9">
-                                            <h5 class="fw-bold text-dark mb-1">@sub.Student?.LastName @sub.Student?.FirstName</h5>
-                                            <div class="small text-muted mb-3">
-                                                Курс: <span class="fw-bold">@sub.CourseMaterial?.Course?.Title</span> |
-                                                Элемент: <span class="fw-bold">@sub.CourseMaterial?.Title</span>
-                                            </div>
-                                            <div class="bg-light p-2.5 border rounded small mb-2 text-dark">
-                                                <span class="text-muted fw-bold">Ответ студента:</span> @sub.StudentTextResponse
-                                            </div>
-                                            <div class="p-2.5 border rounded small text-dark" style="background-color: #f4f6f9;">
-                                                <span class="text-success fw-bold">Рецензия:</span> @sub.AdminReviewText
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3 text-end d-flex flex-column justify-content-between">
-                                            <div>
-                                                <span class="small text-muted d-block">Проверено:</span>
-                                                <small class="text-muted fw-mono">@(sub.ReviewedAt?.ToString("dd.MM.yyyy HH:mm") ??
-                                                            "—")</small>
-                                                </div>
-                                                <div class="mt-3">
-                                                    <span class="small text-muted d-block mb-1">Оценка:</span>
-                                                    <span class="badge bg-success px-3 py-2 fw-bold"
-                                                          style="font-size: 1.1rem;">@sub.Grade</span>
-                                                </div>
-                                            </div>
-                                        </div>
+
+                            <!-- ФОРМА ОТВЕТА АДМИНА -->
+                            <div class="col-md-4 border-start ps-4">
+                                <form class="review-assignment-form" data-id="@sub.Id">
+                                    <input type="hidden" name="submissionId" value="@sub.Id" />
+                                    <div class="mb-2">
+                                        <label class="form-label text-muted small fw-bold">ВАШ ТЕКСТОВЫЙ ОТВЕТ *</label>
+                                        <textarea name="reviewText" class="form-control form-control-sm" rows="3" required placeholder="Напишите замечания для доработки или похвалу..."></textarea>
                                     </div>
-                                }
-                            }
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-bold">ВЕРДИКТ / ОЦЕНКА *</label>
+                                        <select name="grade" class="form-select form-select-sm fw-bold">
+                                            <option value="">🔄 Отправить на доработку (без оценки)</option>
+                                            <option value="5">5 — Отлично</option>
+                                            <option value="4">4 — Хорошо</option>
+                                            <option value="3">3 — Удовлетворительно</option>
+                                            <option value="2">2 — Неудовлетворительно</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-success w-100 fw-bold py-2 submit-review-btn">
+                                        Выставить оценку и ответить
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА 2: АРХИВ ОБРАБОТАННЫХ -->
+    <div class="tab-pane fade" id="reviewed" role="tabpanel">
+        <div class="d-flex flex-column gap-3">
+            @if (!reviewedSubmissions.Any())
+            {
+                <div class="text-center py-5 bg-white border rounded-3 text-muted">
+                    <h6>Архив пуст.</h6>
                 </div>
-                <!-- 3. ИНТЕРAКТИВНЫЙ SCRIPТ ДЛЯ ОТПРАВКИ РЕЦЕНЗИЙ И СИНХРОНИЗАЦИИ СЧЕТЧИКОВ -->
-                <script>
-                    document.addEventListener("DOMContentLoaded", function () {
-                        const pendingContainer = document.getElementById('pendingContainer');
-                        const tabBadge = document.getElementById('tabPendingBadge');
-                        const sidebarBadge = document.getElementById('sidebarAssignmentBadge');
-
-                        // Ловим клики по кнопкам отправки проверки на всей странице
-                        pendingContainer.addEventListener('click', async function (e) {
-                            if (!e.target.classList.contains('submit-review-btn')) return;
-
-                            const button = e.target;
-                            const form = button.closest('.review-assignment-form');
-                            const submissionId = form.getAttribute('data-id');
-
-                            const reviewTextarea = form.querySelector('textarea[name="reviewText"]');
-                            const reviewText = reviewTextarea.value.trim();
-                            const grade = form.querySelector('select[name="grade"]').value;
-
-                            // Базовая проверка валидности текста на клиенте перед отправкой
-                            if (!reviewText) {
-                                alert('Пожалуйста, напишите текст замечания или комментария для слушателя!');
-                                reviewTextarea.focus();
-                                return;
-                            }
-
-                            // Блокируем органы управления, защищая от случайных повторных кликов
-                            button.disabled = true;
-                            button.textContent = 'Отправка ответа...';
-
-                            // Формируем стандартный URL-encoded пакет данных
-                            const params = new URLSearchParams();
-                            formData = { submissionId, reviewText, grade };
-                            for (let key in formData) params.append(key, formData[key]);
-
-                            try {
-                                const response = await fetch('/AssignmentReview/Review', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                        'X-Requested-With': 'XMLHttpRequest'
-                                    },
-                                    body: params
-                                });
-
-                                const result = await response.json();
-
-                                if (result.success) {
-                                    const cardBlock = document.getElementById(`submission-block-${submissionId}`);
-                                    if (cardBlock) {
-                                        // Плавно гасим карточку проверенного студента
-                                        cardBlock.classList.add('fade-out');
-
-                                        setTimeout(() => {
-                                            cardBlock.remove();
-
-                                            // 1. Мгновенно уменьшаем счетчик на текущей вкладке
-                                            let currentCount = parseInt(tabBadge.textContent) - 1;
-                                            tabBadge.textContent = currentCount;
-
-                                            // 2. Синхронизируем счетчик в левом боковом меню
-                                            if (sidebarBadge) {
-                                                if (currentCount > 0) {
-                                                    sidebarBadge.textContent = currentCount;
-                                                } else {
-                                                    sidebarBadge.classList.add('d-none');
-                                                }
-                                            }
-
-                                            // Если проверили вообще последнее задание из списка
-                                            const remainingCards = pendingContainer.querySelectorAll('.submission-card');
-                                            if (remainingCards.length === 0) {
-                                                pendingContainer.innerHTML = `
-                                                    <div class="text-center py-5 bg-white border rounded-3 text-muted" style="border-radius: 12px !important;">
-                                                        <span style="font-size: 3rem;">🎉</span>
-                                                        <h5 class="fw-bold mt-2 text-dark">Все задания проверены!</h5>
-                                                        <p class="small mb-0">Новых ответов от слушателей пока не поступало.</p>
-                                                    </div>`;
-                                            }
-                                        }, 300);
+            }
+            else
+            {
+                @foreach (var sub in reviewedSubmissions)
+                {
+                    string statusClass = sub.Status == SdoApp.Models.SubmissionStatus.NeedFix ? "need-fix" : "completed";
+                    <div class="card bg-white submission-card @statusClass p-4 border-0 shadow-sm">
+                        <div class="row">
+                            <div class="col-md-9">
+                                <h5 class="fw-bold text-dark mb-1">@sub.Student?.LastName @sub.Student?.FirstName</h5>
+                                <div class="small text-muted mb-3">
+                                    Курс: <span class="fw-bold">@sub.CourseMaterial?.Course?.Title</span> | Элемент: <span class="fw-bold">@sub.CourseMaterial?.Title</span>
+                                </div>
+                                <div class="p-3 bg-light rounded text-dark small" style="max-height: 180px; overflow-y: auto;">
+                                    @foreach(var msg in sub.Messages.OrderBy(m => m.CreatedAt))
+                                    {
+                                        <div class="mb-1"><b>@(msg.AuthorId == sub.StudentId ? "🧑‍🎓 Студент" : "👩‍🏫 Преподаватель"):</b> @msg.TextContent</div>
                                     }
-                                } else {
-                                    alert('Ошибка валидации: ' + result.message);
-                                    button.disabled = false;
-                                    button.textContent = 'Выставить оценку и ответить';
-                                }
-                            } catch (error) {
-                                console.error('Критический сбой AJAX при проверке:', error);
-                                alert('Не удалось связаться с сервером для сохранения оценки.');
-                                button.disabled = false;
-                                button.textContent = 'Выставить оценку и ответить';
-                            }
-                        });
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="small text-muted d-block">Обновлено:</span>
+                                    <small class="text-muted fw-mono">@sub.UpdatedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
+                                </div>
+                                <div class="mt-3">
+                                    <span class="small text-muted d-block mb-1">Итог:</span>
+                                    @if (sub.Status == SdoApp.Models.SubmissionStatus.NeedFix)
+                                    {
+                                        <span class="badge bg-warning text-dark px-3 py-2 fw-bold" style="font-size: 0.9rem;">🔄 На доработке</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success px-3 py-2 fw-bold" style="font-size: 1.1rem;">Оценка: @sub.Grade</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const pendingContainer = document.getElementById('pendingContainer');
+
+        // Обработка отправки формы админом
+        if (pendingContainer) {
+            pendingContainer.addEventListener('click', async function (e) {
+                if (!e.target.classList.contains('submit-review-btn')) return;
+
+                const button = e.target;
+                const form = button.closest('.review-assignment-form');
+                const reviewTextarea = form.querySelector('textarea[name="reviewText"]');
+                const reviewText = reviewTextarea.value.trim();
+                const grade = form.querySelector('select[name="grade"]').value;
+                const submissionId = form.querySelector('input[name="submissionId"]').value;
+
+                if (!reviewText) {
+                    alert('Пожалуйста, напишите комментарий!');
+                    reviewTextarea.focus();
+                    return;
+                }
+
+                button.disabled = true;
+                button.textContent = 'Сохранение...';
+
+                const params = new URLSearchParams();
+                const formData = { submissionId, reviewText, grade };
+                for (let key in formData) { if (formData[key] !== "") params.append(key, formData[key]); }
+
+                try {
+                    const response = await fetch('/AssignmentReview/Review', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: params
                     });
-                </script>
+
+                    const result = await response.json();
+                    if (result.success) {
+                        location.reload(); // Перезагружаем страницу для обновления списков
+                    } else {
+                        alert('Ошибка: ' + result.message);
+                        button.disabled = false;
+                        button.textContent = 'Выставить оценку и ответить';
+                    }
+                } catch (error) {
+                    alert('Сбой сети при отправке данных.');
+                    button.disabled = false;
+                    button.textContent = 'Выставить оценку и ответить';
+                }
+            });
+        }
+
+        // Сохранение и восстановление активного таба после перезагрузки
+        const triggerTabList = document.querySelectorAll('#assignmentTabs button');
+        triggerTabList.forEach(tabEl => {
+            tabEl.addEventListener('shown.bs.tab', event => {
+                localStorage.setItem('activeAssignmentTab', event.target.id);
+            });
+        });
+
+        const activeTabId = localStorage.getItem('activeAssignmentTab');
+        if (activeTabId) {
+            const tabToActivate = document.getElementById(activeTabId);
+            if (tabToActivate) {
+                bootstrap.Tab.getOrCreateInstance(tabToActivate).show();
+            }
+        }
+    });
+</script>

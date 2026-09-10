@@ -25,21 +25,17 @@ public class StudentTestController : Controller
         if (testMaterial == null || testMaterial.Type != MaterialType.Test)
             return NotFound("Тест не найден в системе.");
 
-        // 1. Сначала просто забираем все вопросы этого теста из SQLite в память приложения
         var finalQuestions = await _context.TestQuestions
             .Include(q => q.Answers)
             .Where(q => q.CourseMaterialId == testId)
             .ToListAsync();
 
-        // 2. ИСПРАВЛЕНО: Применяем логику перемешивания в памяти (In-Memory)
         if (testMaterial.ShuffleQuestions && finalQuestions.Any())
         {
             var random = new Random();
-            // Быстрая и безопасная сортировка по случайному числу средствами .NET
             finalQuestions = finalQuestions.OrderBy(q => random.Next()).ToList();
         }
 
-        // 3. Применяем ограничение количества вопросов, если оно задано
         if (testMaterial.QuestionsCountToUse > 0 && finalQuestions.Count > testMaterial.QuestionsCountToUse)
         {
             finalQuestions = finalQuestions.Take(testMaterial.QuestionsCountToUse).ToList();
@@ -53,13 +49,13 @@ public class StudentTestController : Controller
         return View(finalQuestions);
     }
 
-    // 2. ОБНОВЛЕННЫЙ МЕТОД ПРИЕМА ОТВЕТОВ СТУДЕНТА (ЧЕРЕЗ DTO-КЛАСС)
     // POST: /StudentTest/SubmitAnswers
     [HttpPost]
     public async Task<IActionResult> SubmitAnswers([FromBody] TestSubmissionDto model)
     {
         if (model == null) return Json(new { success = false, message = "Некорректные данные запроса!" });
 
+        // Синхронизировано с твоей авторизацией из AuthController
         var userIdClaim = User.FindFirst("UserId")?.Value;
         if (userIdClaim == null) return Json(new { success = false, message = "Вы не авторизованы!" });
         int studentId = int.Parse(userIdClaim);
@@ -68,9 +64,11 @@ public class StudentTestController : Controller
         if (testMaterial == null || testMaterial.Type != MaterialType.Test)
             return Json(new { success = false, message = "Тест не найден!" });
 
+        var answeredQuestionIds = model.StudentAnswers.Keys.ToList();
+
         var questions = await _context.TestQuestions
             .Include(q => q.Answers)
-            .Where(q => q.CourseMaterialId == model.TestId)
+            .Where(q => answeredQuestionIds.Contains(q.Id))
             .ToListAsync();
 
         int totalQuestions = questions.Count;
@@ -93,19 +91,32 @@ public class StudentTestController : Controller
 
         int finalScorePercentage = totalQuestions > 0 ? (int)Math.Round((double)correctQuestionsCount / totalQuestions * 100) : 0;
 
+        // ШАГ 1: Создаем заголовок (тикет) сдачи теста в статусе Completed
         var submission = new StudentSubmission
         {
             CourseMaterialId = model.TestId,
             StudentId = studentId,
             Grade = finalScorePercentage,
-            SubmittedAt = DateTime.UtcNow,
-            IsReviewed = true,
-            StudentTextResponse = $"Результат теста: {correctQuestionsCount} из {totalQuestions} верных ответов ({finalScorePercentage}%)."
+            Status = SubmissionStatus.Completed, // Автоматически завершен
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
-
         _context.StudentSubmissions.Add(submission);
+        await _context.SaveChangesAsync(); // Сохраняем, чтобы сгенерировать submission.Id
+
+        // ШАГ 2: Записываем системный результат теста как первое сообщение чата
+        var systemMessage = new SubmissionMessage
+        {
+            StudentSubmissionId = submission.Id,
+            AuthorId = studentId, // Автором пишем студента
+            TextContent = $"Автоматический результат теста: {correctQuestionsCount} из {totalQuestions} верных ответов ({finalScorePercentage}%).",
+            FilePath = null,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.SubmissionMessages.Add(systemMessage);
         await _context.SaveChangesAsync();
 
+        // Пересчитываем статус курса через GradeService
         await GradeService.RecalculateCourseProgressAsync(_context, studentId, testMaterial.CourseId);
 
         bool isPassed = finalScorePercentage >= testMaterial.PassPercentage;
@@ -120,7 +131,6 @@ public class StudentTestController : Controller
     }
 }
 
-// 3. ВСПОМОГАТЕЛЬНЫЙ DTO-КЛАСС ДЛЯ ПРАВИЛЬНОЙ ДЕСЕРИАЛИЗАЦИИ JSON
 public class TestSubmissionDto
 {
     public int TestId { get; set; }
