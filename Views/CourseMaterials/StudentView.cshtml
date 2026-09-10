@@ -362,29 +362,29 @@
                         }
                         else if (mType === 3) { // Картинка / Схема
                             bodyContainer.innerHTML = `
-                                                                                <div class="text-center p-3 border rounded shadow-sm bg-white image-preview-wrapper">
-                                                                                    <!-- При клике на картинку вызываем функцию openImageFullscreen -->
-                                                                                    <img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" 
-                                                                                         onclick="openImageFullscreen(this.src)" title="Кликните для увеличения на весь экран" />
-                                                                                </div>`;
+                                                                                                                                <div class="text-center p-3 border rounded shadow-sm bg-white image-preview-wrapper">
+                                                                                                                                    <!-- При клике на картинку вызываем функцию openImageFullscreen -->
+                                                                                                                                    <img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" 
+                                                                                                                                         onclick="openImageFullscreen(this.src)" title="Кликните для увеличения на весь экран" />
+                                                                                                                                </div>`;
                         }
                         else if (mType === 5) { // Практика (Правая сторона)
                             bodyContainer.innerHTML = `
-                                <div class="p-4 border rounded shadow-sm bg-white">
-                                    <h6 class="fw-bold text-secondary mb-2">📋 Инструкция к выполнению задания:</h6>
-                                    <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
+                                                                                <div class="p-4 border rounded shadow-sm bg-white">
+                                                                                    <h6 class="fw-bold text-secondary mb-2">📋 Инструкция к выполнению задания:</h6>
+                                                                                    <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
             
-                                    <!-- Динамический блок интерактивного чата-статуса -->
-                                    <div id="studentAssignmentArea" class="mb-4">
-                                        <div class="spinner-border spinner-border-sm text-secondary"></div> Проверка статуса выполнения...
-                                    </div>
+                                                                                    <!-- Динамический блок интерактивного чата-статуса -->
+                                                                                    <div id="studentAssignmentArea" class="mb-4">
+                                                                                        <div class="spinner-border spinner-border-sm text-secondary"></div> Проверка статуса выполнения...
+                                                                                    </div>
 
-                                    <div class="d-flex gap-2" id="assignmentActionsBlock">
-                                        ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold" download>📥 Скачать файл задания</a>` : ""}
-                                        <button id="mainSubmitWorkBtn" class="btn btn-warning fw-bold px-4 d-none" onclick="openAssignmentModal(${id})">🚀 Сдать готовую работу</button>
-                                    </div>
-                                </div>
-                            `;
+                                                                                    <div class="d-flex gap-2" id="assignmentActionsBlock">
+                                                                                        ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold" download>📥 Скачать файл задания</a>` : ""}
+                                                                                        <button id="mainSubmitWorkBtn" class="btn btn-warning fw-bold px-4 d-none" onclick="openAssignmentModal(${id})">🚀 Сдать готовую работу</button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            `;
 
                             // Асинхронно запрашиваем у сервера состояние сдачи задания
                             fetch(`/StudentCourse/GetAssignmentState?materialId=${id}`)
@@ -402,18 +402,18 @@
 
                                     // Формируем красивую ленту сообщений (Чат)
                                     let chatHtml = `<div class="border rounded p-3 mb-3 bg-light small" style="max-height: 250px; overflow-y: auto;">
-                                        <div class="fw-bold text-muted mb-2">💬 Ваш диалог с преподавателем:</div>`;
+                                                                                        <div class="fw-bold text-muted mb-2">💬 Ваш диалог с преподавателем:</div>`;
 
                                     state.messages.forEach(msg => {
                                         chatHtml += `
-                                            <div class="mb-2 p-2 rounded ${msg.isStudent ? 'bg-white border-start border-primary border-4 ms-2' : 'bg-body-secondary me-2'}">
-                                                <div class="d-flex justify-content-between text-muted" style="font-size:0.7rem;">
-                                                    <span><b>${msg.isStudent ? 'Вы (Слушатель)' : 'Преподаватель'}</b></span>
-                                                    <span>${msg.date}</span>
-                                                </div>
-                                                <div class="mt-1 text-dark">${msg.text}</div>
-                                                ${msg.file ? `<div class="mt-1"><a href="${msg.file}" class="text-decoration-none text-primary" download>📂 Отправленный_файл</a></div>` : ''}
-                                            </div>`;
+                                                                                            <div class="mb-2 p-2 rounded ${msg.isStudent ? 'bg-white border-start border-primary border-4 ms-2' : 'bg-body-secondary me-2'}">
+                                                                                                <div class="d-flex justify-content-between text-muted" style="font-size:0.7rem;">
+                                                                                                    <span><b>${msg.isStudent ? 'Вы (Слушатель)' : 'Преподаватель'}</b></span>
+                                                                                                    <span>${msg.date}</span>
+                                                                                                </div>
+                                                                                                <div class="mt-1 text-dark">${msg.text}</div>
+                                                                                                ${msg.file ? `<div class="mt-1"><a href="${msg.file}" class="text-decoration-none text-primary" download>📂 Отправленный_файл</a></div>` : ''}
+                                                                                            </div>`;
                                     });
                                     chatHtml += `</div>`;
 
@@ -429,10 +429,10 @@
                                     }
                                     else if (state.status === "Completed") {
                                         area.innerHTML = chatHtml + `
-                                            <div class="alert alert-success border d-flex justify-content-between align-items-center m-0">
-                                                <span>✅ <b>Проверка завершена!</b> Задание закрыто для редактирования.</span>
-                                                <h4 class="m-0 fw-bold bg-white text-success px-3 py-1 rounded border shadow-sm">Балл: ${state.grade}</h4>
-                                            </div>`;
+                                                                                            <div class="alert alert-success border d-flex justify-content-between align-items-center m-0">
+                                                                                                <span>✅ <b>Проверка завершена!</b> Задание закрыто для редактирования.</span>
+                                                                                                <h4 class="m-0 fw-bold bg-white text-success px-3 py-1 rounded border shadow-sm">Балл: ${state.grade}</h4>
+                                                                                            </div>`;
                                         actionBtn.classList.add('d-none');
                                     }
                                 });
@@ -444,27 +444,108 @@
                             const currentColor = headerColors[data.testkind] || "#4e73df";
 
                             bodyContainer.innerHTML = `
-                                                                                                                <div class="card border-0 mb-0">
-                                                                                                                    <div class="p-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, ${currentColor} 0%, #3a3b45 100%);">
-                                                                                                                        <span class="badge bg-white text-dark fw-bold text-uppercase mb-2" style="font-size:0.7rem;">Контроль знаний</span>
-                                                                                                                        <p class="lead small opacity-75 mt-1 mb-0">${currentKindText}</p>
-                                                                                                                    </div>
-                                                                                                                    <h5 class="fw-bold text-dark mb-3">📋 Параметры и регламент прохождения:</h5>
-                                                                                                                    <div class="test-info-grid">
-                                                                                                                        <div class="test-info-item"><span>⏱️</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Время</div><h5 class="fw-bold text-dark m-0 mt-1">${data.timelimit > 0 ? `${data.timelimit} мин.` : "Без лимита"}</h5></div>
-                                                                                                                        <div class="test-info-item"><span>📉</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Порог</div><h5 class="fw-bold text-success m-0 mt-1">${data.passpercentage}% верных</h5></div>
-                                                                                                                        <div class="test-info-item"><span>🎲</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Вопросы</div><h5 class="fw-bold text-dark m-0 mt-1">${data.questionscounttouse > 0 ? `${data.questionscounttouse} шт.` : "Все"}</h5></div>
-                                                                                                                    </div>
-                                                                                                                    <div class="alert alert-light border p-3 mb-4 small text-muted" style="border-radius:8px;">
-                                                                                                                        🧭 <b>Обратите внимание:</b> Результаты ${data.testkind === 2 ? "тренажера не влияют на общую успеваемость." : "этого теста напрямую влияют на получение зачета по курсу."}
-                                                                                                                    </div>
-                                                                                                                    <div class="text-center mt-2">
-                                                                                                                        <button onclick="confirmAndStartTest(${id}, '${data.title.replace(/'/g, "\\'")}')" class="btn btn-success fw-bold px-5 py-3 shadow shadow-sm" style="border-radius:30px; font-size:1.05rem;">
-                                                                                                                            🚀 ЗАПУСТИТЬ ТЕСТИРОВАНИЕ
-                                                                                                                        </button>
-                                                                                                                    </div>
-                                                                                                                </div>`;
+                                                        <div class="card border-0 mb-0">
+                                                            <div class="p-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, ${currentColor} 0%, #3a3b45 100%);">
+                                                                <span class="badge bg-white text-dark fw-bold text-uppercase mb-2" style="font-size:0.7rem;">Контроль знаний</span>
+                                                                <p class="lead small opacity-75 mt-1 mb-0">${currentKindText}</p>
+                                                            </div>
+            
+                                                            <h5 class="fw-bold text-dark mb-3">📋 Параметры и регламент прохождения:</h5>
+                                                            <div class="test-info-grid mb-4">
+                                                                <div class="test-info-item"><span>⏱️</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Время</div><h5 class="fw-bold text-dark m-0 mt-1">${data.timelimit > 0 ? `${data.timelimit} мин.` : "Без лимита"}</h5></div>
+                                                                <div class="test-info-item"><span>📉</span><div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Порог</div><h5 class="fw-bold text-success m-0 mt-1">${data.passpercentage}% верных</h5></div>
+                                                            </div>
+
+                                                            <!-- ИНТЕРАКТИВНАЯ ТАБЛИЦА ПРЕПЫДУЩИХ ПОПЫТОК -->
+                                                            <h6 class="fw-bold text-dark mb-2">📜 Ваши предыдущие попытки:</h6>
+                                                            <div class="table-responsive bg-white border rounded mb-4 shadow-sm">
+                                                                <table class="table table-hover table-striped mb-0 text-dark align-middle small">
+                                                                    <thead class="table-light text-secondary fw-bold">
+                                                                        <tr>
+                                                                            <th>Дата старта</th>
+                                                                            <th>Результат (Балл)</th>
+                                                                            <th>Статус</th>
+                                                                            <th class="text-center">Действие</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody id="testAttemptsTableBody">
+                                                                        <tr>
+                                                                            <td colspan="4" class="text-center py-3 text-muted">
+                                                                                <div class="spinner-border spinner-border-sm text-primary me-2"></div> Загрузка истории попыток...
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+
+                                                            <div class="text-center mt-2" id="testActionContainer">
+                                                                <!-- Кнопка сгенерируется динамически через JS ниже -->
+                                                            </div>
+                                                        </div>
+                                                    `;
+
+                            // Делаем AJAX-запрос к нашему новому API GetTestState
+                            fetch(`/StudentTest/GetTestState?materialId=${id}`)
+                                .then(res => res.json())
+                                .then(state => {
+                                    const tbody = document.getElementById('testAttemptsTableBody');
+                                    const actionContainer = document.getElementById('testActionContainer');
+
+                                    if (!state.success) {
+                                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Не удалось загрузить историю.</td></tr>`;
+                                        return;
+                                    }
+
+                                    // 1. Рендерим строки таблицы
+                                    if (state.history.length === 0) {
+                                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Вы еще не проходили этот тест. Попыток не найдено.</td></tr>`;
+                                    } else {
+                                        let rowsHtml = "";
+                                        state.history.forEach(item => {
+                                            let badgeClass = "bg-secondary";
+                                            if (item.statusEnum === "Passed") badgeClass = "bg-success";
+                                            if (item.statusEnum === "Failed") badgeClass = "bg-danger";
+                                            if (item.statusEnum === "InProgress") badgeClass = "bg-info text-dark";
+
+                                            rowsHtml += `
+                                                                        <tr>
+                                                                            <td class="fw-mono">${item.date}</td>
+                                                                            <td class="fw-bold">${item.statusEnum === "InProgress" ? "—" : item.score}</td>
+                                                                            <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                                                                            <td class="text-center">
+                                                                                <a href="/StudentTest/DownloadResult?attemptId=${item.id}" class="btn btn-xs btn-outline-primary fw-bold py-0.5 px-2" style="font-size: 0.75rem;">
+                📥 Скачать результат
+            </a>
+                                                                            </td>
+                                                                        </tr>
+                                                                    `;
+                                        });
+                                        tbody.innerHTML = rowsHtml;
+                                    }
+
+                                    // 2. Управляем кнопкой запуска/продолжения
+                                    // Экранируем кавычки в названии теста, чтобы JS не ломался
+                                    const cleanTitle = data.title.replace(/'/g, "\\'");
+
+                                    if (state.canContinue) {
+                                        // Если есть активная сессия и она доступна — выводим "Продолжить" ярким цветом
+                                        actionContainer.innerHTML = `
+                                                                    <button onclick="confirmAndStartTest(${id}, '${cleanTitle}')" class="btn btn-primary fw-bold px-5 py-3 shadow-sm border-0" style="border-radius:30px; font-size:1.05rem; background: linear-gradient(45deg, #4e73df, #224abe);">
+                                                                        🔄 ПРОДОЛЖИТЬ ТЕСТИРОВАНИЕ
+                                                                    </button>
+                                                                    ${state.remainingSeconds > 0 ? `<small class="text-danger d-block mt-2 fw-bold">⏳ Внимание! Сквозной таймер итогового теста тикает на сервере!</small>` : ""}
+                                                                `;
+                                    } else {
+                                        // Если активных нет (или время итогового истекло) — обычная кнопка старта новой попытки
+                                        actionContainer.innerHTML = `
+                                                                    <button onclick="confirmAndStartTest(${id}, '${cleanTitle}')" class="btn btn-success fw-bold px-5 py-3 shadow shadow-sm" style="border-radius:30px; font-size:1.05rem;">
+                                                                        🚀 ЗАПУСТИТЬ ТЕСТИРОВАНИЕ
+                                                                    </button>
+                                                                `;
+                                    }
+                                });
                         }
+
                     } catch (err) {
                         bodyContainer.innerHTML = '<div class="alert alert-danger m-3">⚠️ Не удалось отобразить контент элемента.</div>';
                     }
@@ -520,11 +601,29 @@
 
                 // 3. АВТОСТАРТ ПЕРВОГО УРОКА ПРИ ЗАГРУЗКЕ СТРАНИЦЫ КУРСА
                 document.addEventListener("DOMContentLoaded", function () {
+                    // 1. Проверяем, передал ли сервер конкретный ID для фокуса
+                    // Razor превратит это в число (например, 5) или в 0, если параметра не было
+                    const activeIdFromServer = parseInt("@(ViewBag.ActiveId ?? 0)") || 0;
+
+                    if (activeIdFromServer > 0) {
+                        // Ищем в левом сайдбаре кнопку материала по её атрибуту data-id
+                        const targetBtn = document.querySelector(`#sidebarMenuContainer .sidebar-material-btn[data-id="${activeIdFromServer}"]`);
+
+                        if (targetBtn) {
+                            // Эмулируем клик преподавателя/студента на этот элемент
+                            targetBtn.click();
+
+                            // Плавно скроллим левое меню к этому тесту, если оно длинное
+                            targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            return; // Завершаем выполнение, первый урок открывать не нужно!
+                        }
+                    }
                     const firstBtn = document.querySelector('#sidebarMenuContainer .sidebar-material-btn');
                     if (firstBtn) {
                         firstBtn.click();
                     } else {
-                        document.getElementById('mainContentWindow').innerHTML = '<div class="text-center text-muted my-auto py-5"><h5>В программе курса пока нет материалов.</h5></div>';
+                        document.getElementById('mainContentWindow').innerHTML =
+                            '<div class="text-center text-muted my-auto py-5"><h5>В программе курса пока нет материалов.</h5></div>';
                     }
                 });
 

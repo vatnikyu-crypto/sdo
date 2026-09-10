@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<GroupStudent> GroupStudents => Set<GroupStudent>();
     public DbSet<GroupCourseConfig> GroupCourseConfigs => Set<GroupCourseConfig>();
     public DbSet<CourseProgress> CourseProgresses => Set<CourseProgress>();
+    public DbSet<TestAttempt> TestAttempts => Set<TestAttempt>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

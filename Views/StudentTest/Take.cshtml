@@ -163,34 +163,47 @@
         </div>
     </form>
 </div>
+@if (ViewBag.RemainingSeconds > 0)
+{
+    <!-- 1. ЕДИНЫЙ УНИВЕРСАЛЬНЫЙ ПЛАВАЮЩИЙ ТАЙМЕР -->
+    <div id="stickyTimerWidget"
+         class="position-fixed top-0 end-0 m-4 p-3 bg-dark text-white rounded-3 shadow-lg border border-secondary d-flex align-items-center gap-2"
+         style="z-index: 1060; min-width: 140px;">
+        <span style="font-size: 1.2rem;">⏱️</span>
+        <div>
+            <small class="text-muted text-uppercase d-block fw-bold"
+                   style="font-size: 0.6rem; letter-spacing: 1px;">Осталось времени</small>
+            <span id="countdownDisplay" class="fw-bold font-monospace text-light" style="font-size: 1.2rem;">--:--</span>
+        </div>
+    </div>
+}
 
 <!-- КНОПКИ НАВИГАЦИИ ПО МАСТЕРУ ТЕСТА -->
-<div class="d-flex justify-content-between align-items-center mb-5">
+<div class="d-flex justify-content-between align-items-center mb-5 px-4">
     <button id="prevQuestionBtn" class="btn btn-light border px-4 fw-bold text-secondary" disabled>⬅ Назад</button>
     <button id="nextQuestionBtn" class="btn btn-primary px-5 fw-bold shadow-sm">Далее ➡</button>
     <button id="submitTestBtn" class="btn btn-success px-5 fw-bold shadow-sm d-none">🏁 Завершить тест</button>
 </div>
-<!-- СКРИПТЫ СДАЧИ ТЕСТА С АВТО-ТАЙМЕРОМ -->
+
+<!-- 2. СИНХРОНИЗИРОВАННЫЙ СКРИПТ НАВИГАЦИИ, ТАЙМЕРА И ОТПРАВКИ -->
 <script>
     let activeStep = 1;
     const totalSteps = @Model.Count();
     const steps = document.querySelectorAll('.question-wizard-step');
-
     const prevBtn = document.getElementById('prevQuestionBtn');
     const nextBtn = document.getElementById('nextQuestionBtn');
     const submitBtn = document.getElementById('submitTestBtn');
     const stepDisplay = document.getElementById('currentStepDisplay');
     const progressBar = document.getElementById('testProgressBar');
 
-    // 1. НАВИГАЦИЯ ПО ШАГАМ ТЕСТА (ОДИН ВОПРОС НА ЭКРАНЕ)
+    // Навигация по шагам (один вопрос на экране)
     function updateWizardUI() {
         steps.forEach(step => step.classList.remove('active'));
         document.querySelector(`.question-wizard-step[data-step="${activeStep}"]`).classList.add('active');
-
         stepDisplay.textContent = activeStep;
         progressBar.style.width = `${((activeStep - 1) / totalSteps) * 100}%`;
-
         prevBtn.disabled = activeStep === 1;
+
         if (activeStep === totalSteps) {
             nextBtn.classList.add('d-none');
             submitBtn.classList.remove('d-none');
@@ -203,72 +216,102 @@
     nextBtn.addEventListener('click', () => { if (activeStep < totalSteps) { activeStep++; updateWizardUI(); } });
     prevBtn.addEventListener('click', () => { if (activeStep > 1) { activeStep--; updateWizardUI(); } });
 
-    // 2. РАБОТА С СЕРВЕРНЫМ ТАЙМЕРОМ ОБРАТНОГО ОТСЧЕТА
-    const limitMinutes = @timeLimitMinutes;
-    if (limitMinutes > 0) {
-        let totalSeconds = limitMinutes * 60;
-        const clockDisplay = document.getElementById('timerClock');
-        const badge = document.getElementById('testTimerBadge');
-
-        const countdownInterval = setInterval(() => {
-            totalSeconds--;
-            let mins = Math.floor(totalSeconds / 60);
-            let secs = totalSeconds % 60;
-
-            clockDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
-            // За 1 минуту до конца подсвечиваем таймер красным цветом и пульсацией
-            if (totalSeconds <= 60) {
-                badge.classList.add('danger-time');
-            }
-
-            if (totalSeconds <= 0) {
-                clearInterval(countdownInterval);
-                alert("⏱️ Время, отведенное на прохождение теста, полностью вышло! Ваши ответы отправляются на проверку автоматически.");
-                sendResultsToServer(); // Принудительная автосдача
-            }
-        }, 1000);
-    }
-
-    // 3. СБОР ОТВЕТОВ И AJAX ОТПРАВКА НА СЕРВЕР
+    // СБОР ОТВЕТОВ И СДАЧА НА СЕРВЕР
     async function sendResultsToServer() {
+        // Жесткая блокировка интерфейса от повторных кликов и дорешивания
+        document.body.style.pointerEvents = "none";
+        document.body.style.opacity = "0.6";
         if (submitBtn) submitBtn.disabled = true;
 
-        // Формируем словарь структуры: QuestionId -> [AnswerIds]
         const answersPayload = {};
-
         steps.forEach(step => {
             const qId = step.getAttribute('data-question-id');
             const checkedOptions = Array.from(step.querySelectorAll('.test-option-checkbox:checked')).map(cb => parseInt(cb.value));
-            answersPayload[qId] = checkedBoxes = checkedOptions;
+            answersPayload[qId] = checkedOptions;
         });
 
         try {
             const response = await fetch('/StudentTest/SubmitAnswers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Пакуем в плоскую обертку под свойства класса TestSubmissionDto
                 body: JSON.stringify({
                     testId: @ViewBag.TestId,
                     studentAnswers: answersPayload
                 })
             });
+
             const result = await response.json();
 
             if (result.success) {
-                // Выводим красивое сообщение о результатах сдачи
                 alert(`${result.message}\nВаш результат: ${result.score}% (Необходимо для сдачи: ${result.requiredScore}%)`);
-                window.location.href = "/Dashboard/Student"; // Возвращаем в ЛК к обновленным статусам
+
+                // ИСПРАВЛЕНО: перенаправляем по динамическому URL, который сгенерировал C# бэкенд!
+                if (result.redirectUrl) {
+                    window.location.href = result.redirectUrl;
+                } else {
+                    window.location.href = "/CourseMaterials/StudentView?courseId=@ViewBag.CourseId&activeId=@ViewBag.TestId";
+                }
             } else {
                 alert("Ошибка: " + result.message);
-                if (submitBtn) submitBtn.disabled = false;
+                // Если время вышло на бэкенде — возвращаем на плеер курса
+                window.location.href = "/CourseMaterials/StudentView?courseId=@ViewBag.CourseId&activeId=@ViewBag.TestId";
             }
         } catch {
             alert("Критический сбой сети при отправке пакета ответов.");
+            document.body.style.pointerEvents = "auto";
+            document.body.style.opacity = "1";
             if (submitBtn) submitBtn.disabled = false;
         }
     }
 
+    // РАБОТА С СЕРВЕРНЫМ ТАЙМЕРОМ ОБРАТНОГО ОТСЧЕТА
+    document.addEventListener("DOMContentLoaded", function () {
+        let totalSecondsLeft = parseInt("@(ViewBag.RemainingSeconds ?? 0)") || 0;
+        const display = document.getElementById("countdownDisplay");
+        const widget = document.getElementById("stickyTimerWidget");
+
+        // Если у теста нет лимита времени (TimeLimit == 0)
+        if (totalSecondsLeft <= 0) {
+            display.textContent = "∞";
+            display.classList.remove("text-danger");
+            display.classList.add("text-success");
+            return;
+        }
+
+        display.classList.add("text-danger");
+        widget.classList.remove("border-secondary");
+        widget.classList.add("border-danger");
+
+        async function forceSubmitTest() {
+            clearInterval(timerInterval);
+            display.textContent = "00:00";
+            alert("⏱️ Время, выделенное на тестирование, полностью истекло! Ваши текущие ответы отправляются автоматически.");
+            await sendResultsToServer();
+        }
+
+        function updateTimer() {
+            if (totalSecondsLeft <= 0) {
+                forceSubmitTest();
+                return;
+            }
+
+            totalSecondsLeft--;
+
+            const minutes = Math.floor(totalSecondsLeft / 60);
+            const seconds = totalSecondsLeft % 60;
+
+            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (totalSecondsLeft < 60) {
+                widget.classList.add("bg-danger", "bg-opacity-75");
+            }
+        }
+
+        updateTimer();
+        const timerInterval = setInterval(updateTimer, 1000);
+    });
+
+    // Обработчик ручного клика по кнопке "Завершить"
     if (submitBtn) {
         submitBtn.addEventListener('click', function (e) {
             e.preventDefault();

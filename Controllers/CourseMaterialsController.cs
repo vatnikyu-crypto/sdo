@@ -445,7 +445,7 @@ public class CourseMaterialsController : Controller
     // Страница изучения материалов курса для ученика
     [HttpGet]
     [Authorize] // Доступно для всех авторизованных пользователей
-    public async Task<IActionResult> StudentView(int courseId)
+    public async Task<IActionResult> StudentView(int courseId, int? activeId)
     {
         var course = await _context.Courses
             .Include(c => c.Materials)
@@ -458,6 +458,7 @@ public class CourseMaterialsController : Controller
 
         ViewBag.CourseId = course.Id;
         ViewBag.CourseTitle = course.Title;
+        ViewBag.ActiveId = activeId;
 
         return View(orderedMaterials);
     }
