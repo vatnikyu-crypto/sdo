@@ -1,0 +1,499 @@
+@model IEnumerable<SdoApp.Models.KnowledgeBaseDocument>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Управление Базой знаний";
+}
+
+<style>
+    .fade-out {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .table-actions-btn {
+        min-width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<!-- 1. ВЕРХНЯЯ ШАПКА И ПАНЕЛЬ С СУПЕР-КНОПКАМИ -->
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h2 class="fw-bold text-dark m-0">📚 База знаний СДО</h2>
+        <small class="text-muted">Загрузка нормативных актов, ГОСТов, инструкций и регламентов для студентов</small>
+    </div>
+    <div>
+        <button class="btn btn-primary px-4 fw-bold shadow-sm d-flex align-items-center gap-1.5" data-bs-toggle="modal"
+                data-bs-target="#uploadDocModal">
+            ➕ Загрузить документ
+        </button>
+    </div>
+</div>
+
+<!-- 2. ИНСТРУМЕНТЫ ЖИВОГО ПОИСКА И ЛИМИТОВ СТРОК -->
+<div class="row g-3 align-items-center mb-4">
+    <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
+        <span>Показать по:</span>
+        <select id="kbPageSizeSelect" class="form-select form-select-sm" style="width: 75px;">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+    <div class="col-sm ms-auto" style="max-width: 450px;">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light text-muted">🔍</span>
+            <input type="text" id="kbTableSearchInput" class="form-control"
+                   placeholder="Поиск по шифру, наименованию или категории..." autocomplete="off" />
+        </div>
+    </div>
+</div>
+
+<!-- 3. ИНТЕРАКТИВНАЯ ТАБЛИЦА ДОКУМЕНТОВ -->
+<div class="card bg-white border-0 shadow-sm rounded-3 overflow-hidden mb-4" style="border-radius: 12px !important;">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle m-0" id="kbMainTable">
+            <thead class="table-light border-bottom text-muted small fw-bold text-uppercase">
+                <tr>
+                    <th style="width: 60px;" class="text-center">Тип</th>
+                    <th style="width: 160px;">Шифр / Номер</th>
+                    <th>Наименование документа</th>
+                    <th style="width: 220px;">Категория / Направление</th>
+                    <th style="width: 140px;">Редакция от</th>
+                    <th style="width: 100px;">Размер</th>
+                    <th style="width: 100px;" class="text-end pe-4">Действия</th>
+                </tr>
+            </thead>
+            <tbody class="text-dark" id="kbTableBody">
+                @if (!Model.Any())
+                {
+                    <tr id="noDocsRow">
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <span style="font-size: 2.5rem;">📂</span>
+                            <h5 class="fw-bold mt-2 text-dark">База знаний пуста</h5>
+                            <p class="small mb-0">Загрузите первый нормативный документ с помощью кнопки выше.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var d in Model)
+                    {
+                        string fileIcon = d.FileExtension == ".pdf" ? "📄" :
+                                          (d.FileExtension == ".doc" || d.FileExtension == ".docx") ? "📝" :
+                                          (d.FileExtension == ".xls" || d.FileExtension == ".xlsx") ? "📊" : "📁";
+
+                        <tr class="kb-table-row" id="doc-row-@d.Id" data-id="@d.Id">
+                            <td class="text-center fs-4" title="@d.FileExtension">@fileIcon</td>
+                            <td class="fw-bold text-secondary kb-cell-number">@d.DocumentNumber</td>
+                            <td class="fw-bold text-dark kb-cell-title">@d.Title</td>
+                            <td>
+                                <span class="badge bg-light text-secondary border kb-cell-category">@d.Category</span>
+                            </td>
+                            <td class="text-muted small">@d.DocumentRevisionDate?.ToString("dd.MM.yyyy")</td>
+                            <td class="text-muted small fw-bold">@d.FileSizeMb МБ</td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex gap-1 justify-content-end">
+                                    <a href="@d.FilePath" download="@d.Title@d.FileExtension"
+                                       class="btn btn-sm btn-light border text-success table-actions-btn"
+                                       title="Скачать файл">💾</a>
+        
+                                    <!-- НОВАЯ КНОПКА: Передает все текущие параметры строки в JS для открытия модалки -->
+                                    <button type="button" class="btn btn-sm btn-light border text-secondary table-actions-btn"
+                                            title="Редактировать" data-bs-toggle="modal" data-bs-target="#editDocModal"
+                                            onclick="prepareEditDoc(@d.Id, '@(d.DocumentNumber?.Replace("'", "\\'").Replace("\"", "&quot;"))', '@(d.Title?.Replace("'", "\\'").Replace("\"", "&quot;"))', '@d.Category', '@d.DocumentRevisionDate?.ToString("yyyy-MM-dd")')">✏️</button>
+
+        
+                                    <button type="button" class="btn btn-sm btn-outline-danger table-actions-btn"
+                                            title="Удалить" data-bs-toggle="modal" data-bs-target="#deleteDocModal"
+                                            onclick="prepareDeleteDoc(@d.Id, '@d.DocumentNumber')">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 4. СТРОКА НАВИГАЦИИ (ПАГИНАЦИЯ) -->
+<div class="d-flex justify-content-between align-items-center px-1 mb-5">
+    <div id="kbPaginationInfo" class="small text-muted">Показано 0-0 из 0 документов</div>
+    <nav>
+        <ul id="kbPaginationButtons" class="pagination pagination-sm m-0">
+            <!-- Генерируется через JS -->
+        </ul>
+    </nav>
+</div>
+<!-- МОДАЛЬНОЕ ОКНО 1: ЗАГРУЗКА ДОКУМЕНТА -->
+<div class="modal fade" id="uploadDocModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold text-dark">📂 Добавление нормативного документа</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="uploadDocForm" autocomplete="off" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">ШИФР / НОМЕР ДОКУМЕНТА <span
+                            class="text-danger">*</span></label>
+                            <input name="documentNumber" id="newDocNumber" type="text" class="form-control fw-bold" required
+                                   placeholder="Например: № 197-ФЗ, ГОСТ 12.0.004" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">ПОЛНОЕ НАИМЕНОВАНИЕ <span
+                                class="text-danger">*</span></label>
+                                <input name="title" id="newDocTitle" type="text" class="form-control" required
+                                       placeholder="Например: Трудовой кодекс Российской Федерации" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">КАТЕГОРИЯ / НАПРАВЛЕНИЕ БЕЗОПАСНОСТИ</label>
+                                <select name="category" id="newDocCategory" class="form-select">
+                                    <option value="Промышленная безопасность">Промышленная безопасность</option>
+                                    <option value="Энергетическая безопасность">Энергетическая безопасность</option>
+                                    <option value="Охрана труда" selected>Охрана труда</option>
+                                    <option value="Пожарная безопасность">Пожарная безопасность</option>
+                                    <option value="Экологическая безопасность">Экологическая безопасность</option>
+                                    <option value="Гражданская оборона и защита от ЧС">Гражданская оборона и защита от ЧС
+                                    </option>
+                                    <option value="Безопасность на транспорте">Безопасность на транспорте</option>
+                                    <option value="Управленческая безопасность">Управленческая безопасность</option>
+                                    <option value="Информационная безопасность">Информационная безопасность</option>
+                                    <option value="Антитеррористическая безопасность">Антитеррористическая безопасность</option>
+                                    <option value="Внутренние регламенты и инструкции">Внутренние регламенты и инструкции
+                                    </option>
+                                    <option value="Общие документы">Общие документы</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">ДАТА РЕДАКЦИИ (ОСТАВЬТЕ ПУСТЫМ, ЕСЛИ
+                                    СВЕЖИЙ)</label>
+                                    <input name="revisionDate" id="newDocRevisionDate" type="date" class="form-control" />
+                                </div>
+                                <div class="mb-1">
+                                    <label class="form-label text-muted small fw-bold">ВЫБЕРИТЕ ФАЙЛ ДОКУМЕНТА <span
+                                        class="text-danger">*</span></label>
+                                        <input name="docFile" id="newDocFile" type="file" class="form-control" required />
+                                        <small class="text-muted" style="font-size:0.75rem;">Разрешены форматы: PDF, Word, Excel</small>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer bg-light border-0 py-3">
+                                <button type="button" class="btn btn-light fw-bold border text-secondary"
+                                        data-bs-dismiss="modal">Отмена</button>
+                                <button id="submitUploadDocBtn" type="button" class="btn btn-success px-4 fw-bold">Загрузить
+                                    file</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ ДОКУМЕНТА -->
+                    <div class="modal fade" id="editDocModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                                <div class="modal-header bg-light border-0 py-3">
+                                    <h5 class="modal-title fw-bold text-dark">✏️ Редактирование параметров документа</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <form id="editDocForm" autocomplete="off" enctype="multipart/form-data">
+                                        <input type="hidden" id="editDocId" name="id" />
+                    
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small fw-bold">ШИФР / НОМЕР ДОКУМЕНТА <span
+                                                class="text-danger">*</span></label>
+                                                <input name="documentNumber" id="editDocNumber" type="text" class="form-control fw-bold"
+                                                       required />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted small fw-bold">ПОЛНОЕ НАИМЕНОВАНИЕ <span
+                                                    class="text-danger">*</span></label>
+                                                    <input name="title" id="editDocTitle" type="text" class="form-control" required />
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label text-muted small fw-bold">КАТЕГОРИЯ / НАПРАВЛЕНИЕ БЕЗОПАСНОСТИ</label>
+                                                    <select name="category" id="editDocCategory" class="form-select">
+                                                        <option value="Промышленная безопасность">Промышленная безопасность</option>
+                                                        <option value="Энергетическая безопасность">Энергетическая безопасность</option>
+                                                        <option value="Охрана труда">Охрана труда</option>
+                                                        <option value="Пожарная безопасность">Пожарная безопасность</option>
+                                                        <option value="Экологическая безопасность">Экологическая безопасность</option>
+                                                        <option value="Гражданская оборона и защита от ЧС">Гражданская оборона и защита от ЧС
+                                                        </option>
+                                                        <option value="Безопасность на транспорте">Безопасность на транспорте</option>
+                                                        <option value="Управленческая безопасность">Управленческая безопасность</option>
+                                                        <option value="Информационная безопасность">Информационная безопасность</option>
+                                                        <option value="Антитеррористическая безопасность">Антитеррористическая безопасность</option>
+                                                        <option value="Внутренние регламенты и инструкции">Внутренние регламенты и инструкции
+                                                        </option>
+                                                        <option value="Общие документы">Общие документы</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label text-muted small fw-bold">ДАТА РЕДАКЦИИ</label>
+                                                    <input name="revisionDate" id="editDocRevisionDate" type="date" class="form-control" />
+                                                </div>
+                                                <div class="mb-1">
+                                                    <label class="form-label text-muted small fw-bold">ПЕРЕЗАПИСАТЬ ФАЙЛ (ОСТАВЬТЕ ПУСТЫМ, ЕСЛИ ФАЙЛ
+                                                        ТОТ ЖЕ)</label>
+                                                        <input name="docFile" id="editDocFile" type="file" class="form-control" />
+                                                        <small class="text-muted" style="font-size:0.75rem;">Прикрепите файл только если хотите заменить
+                                                            его на сервере</small>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                <div class="modal-footer bg-light border-0 py-3">
+                                                    <button type="button" class="btn btn-light fw-bold border text-secondary"
+                                                            data-bs-dismiss="modal">Отмена</button>
+                                                    <button id="submitEditDocBtn" type="button" class="btn btn-primary px-4 fw-bold">Сохранить
+                                                        изменения</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- МОДАЛЬНОЕ ОКНО 2: ОДИНОЧНОЕ УДАЛЕНИЕ -->
+                                        <div class="modal fade" id="deleteDocModal" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                                                <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                                                    <div class="modal-body p-4 text-center">
+                                                        <div class="text-danger mb-3"><span style="font-size: 3rem; line-height: 1;">⚠️</span></div>
+                                                        <h5 class="fw-bold text-dark mb-2">Удаление документа</h5>
+                                                        <p class="text-muted small mb-0">Вы действительно хотите безвозвратно удалить файл документа из СДО?</p>
+                                                        <p id="deleteDocNameText" class="fw-bold text-danger mb-4"></p>
+                                                        <div class="d-flex gap-2 justify-content-center">
+                                                            <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50"
+                                                                    data-bs-dismiss="modal">Отмена</button>
+                                                            <button id="confirmDeleteDocBtn" type="button"
+                                                                    class="btn btn-danger px-4 fw-bold w-50">Удалить</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <script>
+                                            let currentKbPage = 1;
+                                            const kbTableBody = document.getElementById('kbTableBody');
+                                            const kbPageSizeSelect = document.getElementById('kbPageSizeSelect');
+                                            const kbSearchInput = document.getElementById('kbTableSearchInput');
+                                            let kbPageSize = parseInt(kbPageSizeSelect.value);
+
+                                            // ГЛАВНАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ И ПОСТРАНИЧНОГО ВЫВОДА
+                                            function updateKbTable() {
+                                                const rows = Array.from(kbTableBody.querySelectorAll('.kb-table-row'));
+                                                const searchText = kbSearchInput.value.trim().toLowerCase();
+
+                                                let filteredRows = rows;
+                                                if (searchText.length > 0) {
+                                                    filteredRows = rows.filter(row => {
+                                                        const num = row.querySelector('.kb-cell-number')?.textContent?.toLowerCase() ?? "";
+                                                        const title = row.querySelector('.kb-cell-title')?.textContent?.toLowerCase() ?? "";
+                                                        const category = row.querySelector('.kb-cell-category')?.textContent?.toLowerCase() ?? "";
+                                                        return num.includes(searchText) || title.includes(searchText) || category.includes(searchText);
+                                                    });
+                                                }
+
+                                                const totalRows = filteredRows.length;
+
+                                                if (totalRows === 0) {
+                                                    rows.forEach(r => r.style.display = 'none');
+                                                    document.getElementById('kbPaginationInfo').textContent = 'Показано 0-0 из 0 документов';
+                                                    document.getElementById('kbPaginationButtons').innerHTML = '';
+                                                    return;
+                                                }
+
+                                                const totalPages = Math.ceil(totalRows / kbPageSize);
+                                                if (currentKbPage > totalPages) currentKbPage = totalPages;
+                                                if (currentKbPage < 1) currentKbPage = 1;
+
+                                                const startIndex = (currentKbPage - 1) * kbPageSize;
+                                                const endIndex = Math.min(startIndex + kbPageSize, totalRows);
+
+                                                rows.forEach(r => r.style.display = 'none');
+                                                filteredRows.forEach((row, index) => {
+                                                    if (index >= startIndex && index < endIndex) {
+                                                        row.style.display = '';
+                                                    }
+                                                });
+
+                                                document.getElementById('kbPaginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} документов`;
+
+                                                const buttonsContainer = document.getElementById('kbPaginationButtons');
+                                                buttonsContainer.innerHTML = '';
+
+                                                const prevLi = document.createElement('li');
+                                                prevLi.className = `page-item ${currentKbPage === 1 ? 'disabled' : ''}`;
+                                                prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;">&laquo;</span>`;
+                                                if (currentKbPage > 1) {
+                                                    prevLi.addEventListener('click', () => { currentKbPage--; updateKbTable(); });
+                                                }
+                                                buttonsContainer.appendChild(prevLi);
+
+                                                for (let i = 1; i <= totalPages; i++) {
+                                                    const li = document.createElement('li');
+                                                    li.className = `page-item ${currentKbPage === i ? 'active' : ''}`;
+                                                    li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+                                                    li.addEventListener('click', () => { currentKbPage = i; updateKbTable(); });
+                                                    buttonsContainer.appendChild(li);
+                                                }
+
+                                                const nextLi = document.createElement('li');
+                                                nextLi.className = `page-item ${currentKbPage === totalPages ? 'disabled' : ''}`;
+                                                nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;">&raquo;</span>`;
+                                                if (currentKbPage < totalPages) {
+                                                    nextLi.addEventListener('click', () => { currentKbPage++; updateKbTable(); });
+                                                }
+                                                buttonsContainer.appendChild(nextLi);
+                                            }
+
+                                            // --- AJAX ЗАГРУЗКА ФАЙЛА НА БЭКЕНД ---
+                                            document.getElementById('submitUploadDocBtn').addEventListener('click', async function () {
+                                                const numInput = document.getElementById('newDocNumber');
+                                                const titleInput = document.getElementById('newDocTitle');
+                                                const fileInput = document.getElementById('newDocFile');
+                                                const categorySelect = document.getElementById('newDocCategory');
+                                                const revisionInput = document.getElementById('newDocRevisionDate');
+
+                                                if (!numInput.value.trim() || !titleInput.value.trim() || fileInput.files.length === 0) {
+                                                    alert('Пожалуйста, заполните обязательные поля и выберите файл!');
+                                                    return;
+                                                }
+
+                                                this.disabled = true;
+                                                this.textContent = 'Загрузка...';
+
+                                                const formData = new FormData();
+                                                formData.append('documentNumber', numInput.value.trim());
+                                                formData.append('title', titleInput.value.trim());
+                                                formData.append('category', categorySelect.value);
+                                                formData.append('revisionDate', revisionInput.value);
+                                                formData.append('docFile', fileInput.files[0]); // Передаем сам выбранный файл
+
+                                                try {
+                                                    const response = await fetch('/KnowledgeBase/Create', {
+                                                        method: 'POST',
+                                                        body: formData
+                                                    });
+                                                    const result = await response.json();
+                                                    if (result.success) {
+                                                        document.querySelector('#uploadDocModal [data-bs-dismiss="modal"]').click();
+                                                        document.getElementById('uploadDocForm').reset();
+                                                        window.location.reload();
+                                                    } else {
+                                                        alert('Внимание: ' + result.message);
+                                                        this.disabled = false; this.textContent = 'Загрузить файл';
+                                                    }
+                                                } catch (err) {
+                                                    alert('Ошибка сети при загрузке документа.');
+                                                    this.disabled = false; this.textContent = 'Загрузить файл';
+                                                }
+                                            });
+
+                                            // --- AJAX ОДИНОЧНОЕ УДАЛЕНИЕ ---
+                                            let docIdToDelete = null;
+                                            function prepareDeleteDoc(id, docNumber) {
+                                                docIdToDelete = id;
+                                                document.getElementById('deleteDocNameText').textContent = 'Шифр: ' + docNumber;
+                                            }
+
+                                            document.getElementById('confirmDeleteDocBtn').addEventListener('click', async function () {
+                                                if (!docIdToDelete) return;
+                                                this.disabled = true;
+
+                                                try {
+                                                    const response = await fetch(`/KnowledgeBase/Delete/${docIdToDelete}`, { method: 'POST' });
+                                                    const result = await response.json();
+                                                    if (result.success) {
+                                                        document.querySelector('#deleteDocModal [data-bs-dismiss="modal"]').click();
+                                                        const row = document.getElementById(`doc-row-${docIdToDelete}`);
+                                                        if (row) {
+                                                            row.classList.add('fade-out');
+                                                            setTimeout(() => { row.remove(); window.location.reload(); }, 300);
+                                                        }
+                                                    } else {
+                                                        alert(result.message);
+                                                        this.disabled = false;
+                                                    }
+                                                } catch (err) {
+                                                    alert('Сбой сети при удалении файла.');
+                                                    this.disabled = false;
+                                                }
+                                            });
+
+                                            // Стартовая инициализация событий
+                                            kbSearchInput.addEventListener('input', () => { currentKbPage = 1; updateKbTable(); });
+                                            kbPageSizeSelect.addEventListener('change', function () { kbPageSize = parseInt(this.value); currentKbPage = 1; updateKbTable(); });
+                                            document.addEventListener("DOMContentLoaded", updateKbTable);
+
+                                            // --- AJAX РЕДАКТИРОВАНИЕ ДОКУМЕНТА ---
+                                            // Функция наполнения полей модалки при клике на карандаш
+                                            function prepareEditDoc(id, docNumber, title, category, revisionDate) {
+                                                document.getElementById('editDocId').value = id;
+                                                document.getElementById('editDocNumber').value = docNumber;
+                                                document.getElementById('editDocTitle').value = title;
+                                                document.getElementById('editDocCategory').value = category;
+                                                document.getElementById('editDocFile').value = ""; // Сбрасываем выбор файла с прошлого раза
+        
+                                                if (revisionDate) {
+                                                    document.getElementById('editDocRevisionDate').value = revisionDate;
+                                                } else {
+                                                    document.getElementById('editDocRevisionDate').value = "";
+                                                }
+                                            }
+
+                                            // Обработчик отправки измененных полей формы на сервер
+                                            document.getElementById('submitEditDocBtn').addEventListener('click', async function () {
+                                                const idInput = document.getElementById('editDocId');
+                                                const numInput = document.getElementById('editDocNumber');
+                                                const titleInput = document.getElementById('editDocTitle');
+                                                const fileInput = document.getElementById('editDocFile');
+                                                const categorySelect = document.getElementById('editDocCategory');
+                                                const revisionInput = document.getElementById('editDocRevisionDate');
+
+                                                if (!numInput.value.trim() || !titleInput.value.trim()) {
+                                                    alert('Пожалуйста, заполните обязательные текстовые поля!');
+                                                    return;
+                                                }
+
+                                                this.disabled = true;
+                                                this.textContent = 'Сохранение...';
+
+                                                const formData = new FormData();
+                                                formData.append('id', idInput.value);
+                                                formData.append('documentNumber', numInput.value.trim());
+                                                formData.append('title', titleInput.value.trim());
+                                                formData.append('category', categorySelect.value);
+                                                formData.append('revisionDate', revisionInput.value);
+        
+                                                if (fileInput.files.length > 0) {
+                                                    formData.append('docFile', fileInput.files[0]);
+                                                }
+
+                                                try {
+                                                    const response = await fetch('/KnowledgeBase/Edit', {
+                                                        method: 'POST',
+                                                        body: formData
+                                                    });
+                                                    const result = await response.json();
+                                                    if (result.success) {
+                                                        document.querySelector('#editDocModal [data-bs-dismiss="modal"]').click();
+                                                        window.location.reload();
+                                                    } else {
+                                                        alert('Внимание: ' + result.message);
+                                                        this.disabled = false;
+                                                        this.textContent = 'Сохранить изменения';
+                                                    }
+                                                } catch (err) {
+                                                    alert('Ошибка сети при обновлении параметров документа.');
+                                                    this.disabled = false;
+                                                    this.textContent = 'Сохранить изменения';
+                                                }
+                                            });
+
+                                        </script>

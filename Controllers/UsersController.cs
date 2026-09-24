@@ -102,11 +102,16 @@ public class UsersController : Controller
         }
 
         // Шаг 3. Строгая валидация компании на существование в справочнике системы
-        var company = await _context.Companies.FirstOrDefaultAsync(c => c.Name == companyName.Trim());
-        if (company == null)
+        int? finalCompanyId = null;
+        if (!string.IsNullOrWhiteSpace(companyName))
         {
-            ModelState.AddModelError("", "Ошибка: Указанная организация не найдена в системе! Выберите компанию строго из выпадающего списка живого поиска.");
-            return View();
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.Name == companyName.Trim());
+            if (company == null)
+            {
+                ModelState.AddModelError("", "Ошибка: Указанная организация не найдена в системе! Выберите компанию строго из выпадающего списка живого поиска или ОЧИСТИТЕ поле для физ. лица.");
+                return View();
+            }
+            finalCompanyId = company.Id; // Если компания найдена, запоминаем её Id
         }
 
         // Шаг 4. Автоматическая циклическая генерация уникального ЛОГИНА (транслит фамилии + 4 цифры)
@@ -146,7 +151,7 @@ public class UsersController : Controller
             Snils = string.IsNullOrWhiteSpace(snils) ? null : snils.Trim(),
             Department = string.IsNullOrWhiteSpace(department) ? null : department.Trim(), // Необязательное поле
             Role = UserRole.Обучающийся, // Обычный администратор может создавать только Слушателей
-            CompanyId = company.Id,
+            CompanyId = finalCompanyId,
             Position = position?.Trim()
         };
 
@@ -229,7 +234,7 @@ public class UsersController : Controller
         ViewBag.Gender = (int)student.Gender;
         ViewBag.BirthDate = student.BirthDate?.ToString("yyyy-MM-dd");
         ViewBag.Snils = student.Snils;
-        ViewBag.CompanyName = student.Company?.Name;
+        ViewBag.CompanyName = student.Company != null ? student.Company.Name : string.Empty;
         ViewBag.Department = student.Department;
         ViewBag.Login = student.Login; // Показываем логин, но заблокируем его
         ViewBag.Password = student.Password;
@@ -277,11 +282,16 @@ public class UsersController : Controller
         }
 
         // 2. Валидация выбранной компании
-        var company = await _context.Companies.FirstOrDefaultAsync(c => c.Name == companyName.Trim());
-        if (company == null)
+        int? finalCompanyId = null;
+        if (!string.IsNullOrWhiteSpace(companyName))
         {
-            ModelState.AddModelError("", "Ошибка: Указанная организация не найдена! Выберите компанию из списка поиска.");
-            return View();
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.Name == companyName.Trim());
+            if (company == null)
+            {
+                ModelState.AddModelError("", "Ошибка: Указанная организация не найдена! Выберите компанию строго из списка поиска или очистите поле для физ. лица.");
+                return View();
+            }
+            finalCompanyId = company.Id; // Запоминаем Id найденной компании
         }
 
         // 3. Обновляем все поля сущности (включая пароль)
@@ -292,8 +302,8 @@ public class UsersController : Controller
         student.BirthDate = birthDate;
         student.Snils = string.IsNullOrWhiteSpace(snils) ? null : snils.Trim();
         student.Department = string.IsNullOrWhiteSpace(department) ? null : department.Trim();
-        student.CompanyId = company.Id;
-        student.Position = position.Trim();
+        student.CompanyId = finalCompanyId;
+        student.Position = position?.Trim();
 
         // Перезаписываем пароль, если админ его изменил или сгенерировал новый
         if (!string.IsNullOrWhiteSpace(password))
@@ -312,7 +322,7 @@ public class UsersController : Controller
     [HttpGet]
     public IActionResult DownloadTemplate()
     {
-        var csvContent = "Фамилия;Имя;Отчество;Пол;Дата рождения;СНИЛС;ИНН Организации;Отделение;Должность;Номер группы\n" +
+        var csvContent = "Фамилия;Имя;Отчество;Пол;Дата рождения;СНИЛС;ИНН Организации;Отделение;Должность;ID группы\n" +
                          "Петров;Петр;Петрович;Муж;20.10.1995;123-456-789 01;7700000000;Отдел сборки;Сварщик 5 разряда;";
 
         var bom = new byte[] { 0xEF, 0xBB, 0xBF };
@@ -324,8 +334,7 @@ public class UsersController : Controller
         return File(fileBytes, "text/csv", "Шаблон_Импорта_Слушателей.csv");
     }
 
-    // POST: /Users/Import
-    // УМНЫЙ ИМПОРТ: Добавление должностей, автоматическое зачисление в группы и на курсы
+    // POST: /Groups/Import или /Users/Import
     [HttpPost]
     public async Task<IActionResult> Import(IFormFile excelFile)
     {
@@ -357,15 +366,13 @@ public class UsersController : Controller
                     {
                         var cells = line.Split(';');
 
-                        // Теперь проверяем, чтобы в структуре было минимум 10 колонок
                         if (cells.Length < 10)
                         {
                             errorCount++;
-                            errorMessages.Add($"Строка {lineNumber}: Ошибка структуры (требуется 10 колонок: добавлены Должность и Номер группы).");
+                            errorMessages.Add($"Строка {lineNumber}: Ошибка структуры (требуется 10 колонок).");
                             continue;
                         }
 
-                        // Считываем ячейки строго по новым индексам
                         string lastName = (cells[0] ?? "").Trim();
                         string firstName = (cells[1] ?? "").Trim();
                         string middleName = (cells[2] ?? "").Trim();
@@ -374,8 +381,8 @@ public class UsersController : Controller
                         string snils = (cells[5] ?? "").Trim();
                         string inn = (cells[6] ?? "").Trim();
                         string department = (cells[7] ?? "").Trim();
-                        string position = (cells[8] ?? "").Trim();      // НОВОЕ: Индекс 8
-                        string groupNumberStr = (cells[9] ?? "").Trim(); // НОВОЕ: Индекс 9
+                        string position = (cells[8] ?? "").Trim();
+                        string groupNumberStr = (cells[9] ?? "").Trim();
 
                         if (string.IsNullOrEmpty(lastName) && string.IsNullOrEmpty(firstName)) continue;
 
@@ -386,32 +393,26 @@ public class UsersController : Controller
                             continue;
                         }
 
-                        // 1. Валидация Организации по ИНН
-                        if (string.IsNullOrEmpty(inn))
+                        // 1. УМНАЯ ВАЛИДАЦИЯ ОРГАНИЗАЦИИ ПО ИНН (CompanyId теперь int?)
+                        Company? company = null;
+                        if (!string.IsNullOrEmpty(inn))
                         {
-                            errorCount++;
-                            errorMessages.Add($"Строка {lineNumber} ({lastName}): Отсутствует ИНН организации.");
-                            continue;
+                            company = await _context.Companies.FirstOrDefaultAsync(c => c.Inn == inn);
+                            if (company == null)
+                            {
+                                errorCount++;
+                                errorMessages.Add($"Строка {lineNumber} ({lastName}): Организация с ИНН '{inn}' отсутствует в системе.");
+                                continue;
+                            }
                         }
 
-                        var company = await _context.Companies.FirstOrDefaultAsync(c => c.Inn == inn);
-                        if (company == null)
-                        {
-                            errorCount++;
-                            errorMessages.Add($"Строка {lineNumber} ({lastName}): Организация с ИНН '{inn}' отсутствует в системе.");
-                            continue;
-                        }
-
-                        // 2. Валидация группы (Если шифр указан, проверяем её существование в БД)
+                        // 2. Валидация группы по ID
                         Group? targetGroup = null;
                         if (!string.IsNullOrEmpty(groupNumberStr))
                         {
-                            // Пытаемся перевести текстовое значение из ячейки CSV в число int
                             if (int.TryParse(groupNumberStr.Trim(), out int groupId))
                             {
-                                // Ищем группу в базе данных напрямую по её ID
                                 targetGroup = await _context.Groups.FindAsync(groupId);
-
                                 if (targetGroup == null)
                                 {
                                     errorCount++;
@@ -422,7 +423,7 @@ public class UsersController : Controller
                             else
                             {
                                 errorCount++;
-                                errorMessages.Add($"Строка {lineNumber} ({lastName}): В колонке группы указано не число. Для импорта требуется строго ID группы (например: 1, 2, 3).");
+                                errorMessages.Add($"Строка {lineNumber} ({lastName}): В колонке группы указано не число. Требуется ID группы.");
                                 continue;
                             }
                         }
@@ -431,31 +432,29 @@ public class UsersController : Controller
                         DateTime? birthDate = null;
                         if (DateTime.TryParse(birthDateStr, out DateTime parsedDate)) birthDate = parsedDate;
 
-                        // Объявляем переменную для студента (нового или существующего)
                         User? studentToProcess = null;
 
-                        // 3. УМНЫЙ АПДЕЙТ: Проверяем, есть ли уже в базе СНИЛС
+                        // 3. УМНЫЙ АПДЕЙТ ПО СНИЛС
                         if (!string.IsNullOrEmpty(snils))
                         {
                             studentToProcess = await _context.Users.FirstOrDefaultAsync(u => u.Snils == snils.Trim());
                         }
+
                         if (studentToProcess != null)
                         {
-                            // СЦЕНАРИЙ А: Слушатель уже существует в СДО — обновляем его данные
                             studentToProcess.LastName = lastName;
                             studentToProcess.FirstName = firstName;
                             studentToProcess.MiddleName = string.IsNullOrEmpty(middleName) ? null : middleName;
                             studentToProcess.Gender = gender;
                             studentToProcess.BirthDate = birthDate;
                             studentToProcess.Department = string.IsNullOrEmpty(department) ? null : department;
-                            studentToProcess.CompanyId = company.Id;
-                            studentToProcess.Position = string.IsNullOrEmpty(position) ? null : position; // Обновляем должность
+                            studentToProcess.CompanyId = company?.Id; // Запишет ID или null для физлиц
+                            studentToProcess.Position = string.IsNullOrEmpty(position) ? null : position;
 
                             _context.Users.Update(studentToProcess);
                         }
                         else
                         {
-                            // СЦЕНАРИЙ Б: Новая учетная запись — генерируем логин и пароль
                             string baseTranslit = Transliterate(lastName.ToLower());
                             string generatedLogin = "";
                             bool isLoginUnique = false;
@@ -485,56 +484,58 @@ public class UsersController : Controller
                                 Snils = string.IsNullOrEmpty(snils) ? null : snils,
                                 Department = string.IsNullOrEmpty(department) ? null : department,
                                 Role = UserRole.Обучающийся,
-                                CompanyId = company.Id,
-                                Position = string.IsNullOrEmpty(position) ? null : position // Записываем должность
+                                CompanyId = company?.Id, // Запишет ID или null для физлиц
+                                Position = string.IsNullOrEmpty(position) ? null : position
                             };
 
                             _context.Users.Add(studentToProcess);
                         }
 
-                        // Срочно сохраняем пользователя, чтобы получить его Id (если он был новым)
                         await _context.SaveChangesAsync();
 
-                        // 4. МAГИЯ АВТОМАТИЧЕСКОГО ЗАЧИСЛЕНИЯ В ГРУППУ И НА КУРСЫ
+                        // 4. МАГИЯ АВТОМАТИЧЕСКОГО ЗАЧИСЛЕНИЯ В ГРУППУ И НА КУРСЫ
                         if (targetGroup != null)
                         {
-                            // Проверяем, зачислен ли уже этот студент в данную группу ранее
-                            bool alreadyInGroup = await _context.GroupStudents
-                                .AnyAsync(gs => gs.GroupId == targetGroup.Id && gs.StudentId == studentToProcess.Id);
+                            // Разрешаем зачисление, если это физлицо (company == null)
+                            // ИЛИ если компания этого юзера привязана к данной группе потока обучения
+                            bool isAllowedToGroup = company == null || await _context.GroupCompanies
+                                .AnyAsync(gc => gc.GroupId == targetGroup.Id && gc.CompanyId == company.Id);
 
-                            if (!alreadyInGroup)
+                            if (isAllowedToGroup)
                             {
-                                // Привязываем к общему костяку учебной группы
-                                _context.GroupStudents.Add(new GroupStudent
+                                bool alreadyInGroup = await _context.GroupStudents
+                                    .AnyAsync(gs => gs.GroupId == targetGroup.Id && gs.StudentId == studentToProcess.Id);
+
+                                if (!alreadyInGroup)
                                 {
-                                    GroupId = targetGroup.Id,
-                                    StudentId = studentToProcess.Id
-                                });
+                                    _context.GroupStudents.Add(new GroupStudent
+                                    {
+                                        GroupId = targetGroup.Id,
+                                        StudentId = studentToProcess.Id
+                                    });
+                                    await _context.SaveChangesAsync();
+                                }
+
+                                var courseConfigs = await _context.GroupCourseConfigs
+                                    .Where(cc => cc.GroupId == targetGroup.Id)
+                                    .ToListAsync();
+
+                                foreach (var config in courseConfigs)
+                                {
+                                    var allowedIds = string.IsNullOrEmpty(config.AllowedStudentIds)
+                                        ? new List<int>()
+                                        : config.AllowedStudentIds.Split(',').Select(int.Parse).ToList();
+
+                                    if (!allowedIds.Contains(studentToProcess.Id))
+                                    {
+                                        allowedIds.Add(studentToProcess.Id);
+                                        config.AllowedStudentIds = string.Join(",", allowedIds);
+                                        _context.GroupCourseConfigs.Update(config);
+                                    }
+                                }
+
                                 await _context.SaveChangesAsync();
                             }
-
-                            // Подтягиваем все курсы, которые админ привязал к этой группе
-                            var courseConfigs = await _context.GroupCourseConfigs
-                                .Where(cc => cc.GroupId == targetGroup.Id)
-                                .ToListAsync();
-
-                            foreach (var config in courseConfigs)
-                            {
-                                // Парсим текущие допущенные ID студентов из строки через запятую
-                                var allowedIds = string.IsNullOrEmpty(config.AllowedStudentIds)
-                                    ? new List<int>()
-                                    : config.AllowedStudentIds.Split(',').Select(int.Parse).ToList();
-
-                                // Если студента еще нет в допусках этого курса — добавляем его
-                                if (!allowedIds.Contains(studentToProcess.Id))
-                                {
-                                    allowedIds.Add(studentToProcess.Id);
-                                    config.AllowedStudentIds = string.Join(",", allowedIds);
-                                    _context.GroupCourseConfigs.Update(config);
-                                }
-                            }
-
-                            await _context.SaveChangesAsync();
                         }
 
                         successCount++;
@@ -554,6 +555,8 @@ public class UsersController : Controller
 
         return Json(new { success = true, successCount, errorCount, errors = errorMessages });
     }
+
+
 
     private string Transliterate(string text)
     {

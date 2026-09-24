@@ -13,7 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<CourseMaterial> CourseMaterials => Set<CourseMaterial>();
     public DbSet<StudentSubmission> StudentSubmissions => Set<StudentSubmission>();
-    public DbSet<SubmissionMessage> SubmissionMessages => Set<SubmissionMessage>(); 
+    public DbSet<SubmissionMessage> SubmissionMessages => Set<SubmissionMessage>();
     public DbSet<TestQuestion> TestQuestions => Set<TestQuestion>();
     public DbSet<TestAnswerOption> TestAnswerOptions => Set<TestAnswerOption>();
     public DbSet<Group> Groups => Set<Group>();
@@ -21,7 +21,12 @@ public class AppDbContext : DbContext
     public DbSet<GroupCourseConfig> GroupCourseConfigs => Set<GroupCourseConfig>();
     public DbSet<CourseProgress> CourseProgresses => Set<CourseProgress>();
     public DbSet<TestAttempt> TestAttempts => Set<TestAttempt>();
-    
+    public DbSet<GroupCompany> GroupCompanies => Set<GroupCompany>();
+    public DbSet<KnowledgeBaseDocument> KnowledgeBaseDocuments => Set<KnowledgeBaseDocument>();
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+    public DbSet<TicketFile> TicketFiles => Set<TicketFile>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -55,12 +60,12 @@ public class AppDbContext : DbContext
                 Id = 2,
                 Login = "admin",
                 Password = "123",
-                LastName = "Петрова",
-                FirstName = "Анна",
-                MiddleName = "Сергеевна",
+                LastName = "Петров",
+                FirstName = "Петр",
+                MiddleName = "Петрович",
                 BirthDate = new DateTime(1993, 8, 22),
                 Snils = "987-654-321 00",
-                Gender = Gender.Жен,
+                Gender = Gender.Муж,
                 Department = "Отдел кадров",
                 Role = UserRole.Админ,
                 CompanyId = 1

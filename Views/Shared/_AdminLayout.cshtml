@@ -74,6 +74,9 @@
                                 <a class="nav-link active" href="/Users/Index">Пользователи</a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link" href="/KnowledgeBase/Index">📚 База знаний</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center justify-content-between"
                                    href="/AssignmentReview/Index">
                                     <span>📥 Проверка заданий</span>
@@ -82,47 +85,69 @@
                                           style="font-size: 0.75rem; padding: 4px 8px;">0</span>
                                 </a>
                             </li>
-                        </ul>
-
-                        <hr class="mx-3 bg-secondary mt-4">
-                        <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link text-danger" href="/Auth/Logout">Выйти из системы</a>
-                            </li>
-                        </ul>
-                    </div>
-                </nav>
+                                <a class="nav-link d-flex align-items-center justify-content-between"
+                                   href="/Support/AdminIndex">
+                                    <span>🛠️ Тех. поддержка</span>
+                                    <!-- Красный кружок-счетчик незакрытых тикетов (изначально скрыт) -->
+                                    <span id="sidebarSupportBadge" class="badge bg-danger rounded-pill d-none"
+                                          style="font-size: 0.75rem; padding: 4px 8px;">0</span>
+                                </a>
+                            </ul>
 
-                <!-- Основное рабочее пространство -->
-                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4">
-                    @RenderBody()
-                </main>
+                            <hr class="mx-3 bg-secondary mt-4">
+                            <ul class="nav flex-column">
+                                <li class="nav-item">
+                                    <a class="nav-link text-danger" href="/Auth/Logout">Выйти из системы</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+
+                    <!-- Основное рабочее пространство -->
+                    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4">
+                        @RenderBody()
+                    </main>
+                </div>
             </div>
-        </div>
-        <script src="~/lib/jquery/dist/jquery.min.js"></script>
-        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-            // Автоматический опрос бэкенда для вывода количества заданий в меню
-            async function updateSidebarAssignmentCount() {
-            try {
-            const response = await fetch('/AssignmentReview/GetPendingCount');
-            const data = await response.json();
-            const badge = document.getElementById('sidebarAssignmentBadge');
+            <script src="~/lib/jquery/dist/jquery.min.js"></script>
+            <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+                    // Автоматический опрос бэкенда для вывода количества заданий и тикетов в меню
+                    async function updateSidebarBadges() {
+                        try {
+                            // 1. Опрос счетчика домашних заданий (Твой оригинал)
+                            const responseAssign = await fetch('/AssignmentReview/GetPendingCount');
+                            const dataAssign = await responseAssign.json();
+                            const badgeAssign = document.getElementById('sidebarAssignmentBadge');
 
-            if (badge && data.count > 0) {
-            badge.textContent = data.count;
-            badge.classList.remove('d-none'); // Показываем кружок, если есть задания
-            } else if (badge) {
-            badge.classList.add('d-none'); // Прячем, если всё проверено
-            }
-            } catch (err) {
-            console.error('Ошибка обновления счетчика меню:', err);
-            }
-            }
+                            if (badgeAssign && dataAssign.count > 0) {
+                                badgeAssign.textContent = dataAssign.count;
+                                badgeAssign.classList.remove('d-none');
+                            } else if (badgeAssign) {
+                                badgeAssign.classList.add('d-none');
+                            }
 
-            // Вызываем проверку счетчика при каждой загрузке любой страницы админки
-            document.addEventListener("DOMContentLoaded", updateSidebarAssignmentCount);
-        </script>
-    </body>
+                            // 2. НОВОЕ: Опрос счетчика незакрытых обращений техподдержки
+                            const responseSupport = await fetch('/Support/GetActiveTicketsCount');
+                            const dataSupport = await responseSupport.json();
+                            const badgeSupport = document.getElementById('sidebarSupportBadge');
 
-</html>
+                            if (badgeSupport && dataSupport.count > 0) {
+                                badgeSupport.textContent = dataSupport.count;
+                                badgeSupport.classList.remove('d-none'); // Показываем кружок, если есть открытые тикеты
+                            } else if (badgeSupport) {
+                                badgeSupport.classList.add('d-none'); // Прячем, если всё решено и закрыто
+                            }
+
+                        } catch (err) {
+                            console.error('Ошибка обновления счетчиков меню:', err);
+                        }
+                    }
+
+                    // Вызываем комплексную проверку счетчиков при каждой загрузке любой страницы админки
+                    document.addEventListener("DOMContentLoaded", updateSidebarBadges);
+            </script>
+        </body>
+
+    </html>

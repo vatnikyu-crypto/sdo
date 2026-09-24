@@ -99,7 +99,7 @@ public class CoursesController : Controller
         else
         {
             // Если картинка не выбрана, ставим заглушку
-            savedImageUrl = "/uploads/courses/default-course.jpg";
+            savedImageUrl = "/uploads/courses/default-course.jpeg";
         }
 
         var newCourse = new Course

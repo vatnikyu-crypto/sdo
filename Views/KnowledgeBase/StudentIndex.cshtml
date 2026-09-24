@@ -1,0 +1,165 @@
+@model IEnumerable<SdoApp.Models.KnowledgeBaseDocument>
+@{
+    Layout = "_StudentLayout"; // Замени на твой студенческий лейаут
+    ViewData["Title"] = "База нормативных документов";
+}
+
+<style>
+    .kb-card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kb-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
+    }
+    .category-btn {
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+</style>
+
+<!-- 1. ВЕРХНЯЯ ШАПКА -->
+<div class="mb-4 mt-2">
+    <h2 class="fw-bold text-dark m-0">📚 База знаний СДО</h2>
+    <p class="text-muted small mb-0">Официальные нормативные правовые акты, ГОСТы и технические регламенты, доступные для скачивания</p>
+</div>
+
+<!-- 2. ЖИВОЙ ПОИСК СРЕДИ КАРТОЧЕК -->
+<div class="mb-4" style="max-width: 500px;">
+    <div class="input-group shadow-sm">
+        <span class="input-group-text bg-white border-end-0 text-muted">🔍</span>
+        <input type="text" id="kbCardSearchInput" class="form-control border-start-0 ps-0 py-2.5" 
+               placeholder="Введите шифр, номер или название документа..." autocomplete="off" />
+    </div>
+</div>
+
+<!-- 3. ВКЛАДКИ ФИЛЬТРАЦИИ ПО НАПРАВЛЕНИЯМ БЕЗОПАСНОСТИ -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <button class="btn btn-primary btn-sm category-btn px-3 py-1.5 rounded-pill shadow-sm" data-category="all">🌐 Все направления</button>
+    <button class="btn btn-outline-secondary btn-sm category-btn px-3 py-1.5 rounded-pill bg-white text-dark border" data-category="Промышленная безопасность">Промышленная</button>
+    <button class="btn btn-outline-secondary btn-sm category-btn px-3 py-1.5 rounded-pill bg-white text-dark border" data-category="Энергетическая безопасность">Энергетическая</button>
+    <button class="btn btn-outline-secondary btn-sm category-btn px-3 py-1.5 rounded-pill bg-white text-dark border" data-category="Охрана труда">Охрана труда</button>
+    <button class="btn btn-outline-secondary btn-sm category-btn px-3 py-1.5 rounded-pill bg-white text-dark border" data-category="Пожарная безопасность">Пожарная</button>
+    <button class="btn btn-outline-secondary btn-sm category-btn px-3 py-1.5 rounded-pill bg-white text-dark border" data-category="Экологическая безопасность">Экологическая</button>
+    <button class="btn btn-outline-secondary btn-sm category-btn px-3 py-1.5 rounded-pill bg-white text-dark border" data-category="Гражданская оборона и защита от ЧС">ГО и ЧС</button>
+    <button class="btn btn-outline-secondary btn-sm category-btn px-3 py-1.5 rounded-pill bg-white text-dark border" data-category="Внутренние регламенты и инструкции">Регламенты</button>
+</div>
+
+<!-- 4. СЕТКА КАРТОЧЕК ДОКУМЕНТОВ -->
+<div class="row g-3" id="kbCardsContainer">
+    @if (!Model.Any())
+    {
+        <div class="col-12 text-center py-5 text-muted" id="studentEmptyState">
+            <span style="font-size: 3rem;">📂</span>
+            <h5 class="fw-bold mt-2">База знаний временно пуста</h5>
+            <p class="small">Администратор еще не загрузил справочные документы.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var d in Model)
+        {
+            string fileIcon = d.FileExtension == ".pdf" ? "📄" : 
+                              (d.FileExtension == ".doc" || d.FileExtension == ".docx") ? "📝" : 
+                              (d.FileExtension == ".xls" || d.FileExtension == ".xlsx") ? "📊" : "📁";
+
+            <div class="col-xl-4 col-md-6 kb-card-item" 
+                 data-number="@d.DocumentNumber.ToLower()" 
+                 data-title="@d.Title.ToLower()" 
+                 data-category="@d.Category">
+                <div class="card bg-white h-100 shadow-sm p-3.5 kb-card">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="fs-1 bg-light p-2 rounded-3 text-center d-inline-block" style="min-width:60px;">@fileIcon</span>
+                        <div class="overflow-hidden flex-grow-1">
+                            <span class="badge bg-light text-secondary border mb-1.5" style="font-size:0.7rem;">@d.Category</span>
+                            <div class="fw-bold text-secondary small tracking-wide text-uppercase mb-1">@d.DocumentNumber</div>
+                            <h6 class="fw-bold text-dark mb-2 text-truncate-2" style="font-size:0.95rem; line-height:1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="@d.Title">@d.Title</h6>
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2.5 border-top">
+                                <span class="text-muted" style="font-size:0.75rem;">Редакция: <strong>@d.DocumentRevisionDate?.ToString("dd.MM.yyyy")</strong></span>
+                                <a href="@d.FilePath" download="@d.Title@d.FileExtension" 
+                                   class="btn btn-sm btn-success fw-bold px-3 d-flex align-items-center gap-1">
+                                    💾 Скачать <small style="font-size:0.7rem;">(@d.FileSizeMb МБ)</small>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        
+        <!-- Заглушка для живого поиска, если ничего не найдено -->
+        <div class="col-12 text-center py-5 text-muted d-none" id="searchEmptyState">
+            <span style="font-size: 2.5rem;">🔍</span>
+            <h5 class="fw-bold mt-2">Ничего не найдено</h5>
+            <p class="small">Попробуйте изменить поисковый запрос или выбрать другое направление.</p>
+        </div>
+    }
+</div>
+
+<script>
+    const searchInput = document.getElementById('kbCardSearchInput');
+    const cardsContainer = document.getElementById('kbCardsContainer');
+    const cardItems = Array.from(document.querySelectorAll('.kb-card-item'));
+    const categoryButtons = document.querySelectorAll('.category-btn');
+    const searchEmptyState = document.getElementById('searchEmptyState');
+    
+    let activeCategory = "all";
+
+    // ФУНКЦИЯ ДИНАМИЧЕСКОЙ ФИЛЬТРАЦИИ КАРТОЧЕК (Локально в памяти браузера)
+    function filterCards() {
+        const searchText = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        cardItems.forEach(card => {
+            const num = card.getAttribute('data-number') || "";
+            const title = card.getAttribute('data-title') || "";
+            const category = card.getAttribute('data-category') || "";
+
+            // Проверяем соответствие поисковому тексту
+            const matchesSearch = searchText.length === 0 || num.includes(searchText) || title.includes(searchText);
+            // Проверяем соответствие выбранной категории
+            const matchesCategory = activeCategory === "all" || category === activeCategory;
+
+            if (matchesSearch && matchesCategory) {
+                card.classList.remove('d-none');
+                visibleCount++;
+            } else {
+                card.classList.add('d-none');
+            }
+        });
+
+        // Управляем показом заглушки «Ничего не найдено»
+        if (searchEmptyState) {
+            if (visibleCount === 0 && cardItems.length > 0) {
+                searchEmptyState.classList.remove('d-none');
+            } else {
+                searchEmptyState.classList.add('d-none');
+            }
+        }
+    }
+
+    // Обработчик ввода букв в поисковую строку
+    searchInput.addEventListener('input', filterCards);
+
+    // Обработчик клика по кнопкам-категориям
+    categoryButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Снимаем активный класс со всех кнопок и красим их обратно в белый цвет
+            categoryButtons.forEach(b => {
+                b.classList.remove('btn-primary', 'shadow-sm');
+                b.classList.add('btn-outline-secondary', 'bg-white', 'text-dark', 'border');
+            });
+
+            // Красим выбранную кнопку в синий цвет
+            this.classList.remove('btn-outline-secondary', 'bg-white', 'text-dark', 'border');
+            this.classList.add('btn-primary', 'shadow-sm');
+
+            activeCategory = this.getAttribute('data-category');
+            filterCards(); // Перезапускаем фильтр
+        });
+    });
+</script>

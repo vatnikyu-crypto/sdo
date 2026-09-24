@@ -22,22 +22,17 @@
                 <!-- Иконка: Компас знаний со стрелкой на Северо-Восток -->
                 <svg xmlns="http://w3.org" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1cc88a"
                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <!-- Круг компаса -->
                     <circle cx="12" cy="12" r="10" stroke="#eaecf4" stroke-width="1.5" />
-                    <!-- Засечки сторон света -->
                     <line x1="12" y1="2" x2="12" y2="4" />
                     <line x1="12" y1="20" x2="12" y2="22" />
                     <line x1="2" y1="12" x2="4" y2="12" />
                     <line x1="20" y1="12" x2="22" y2="12" />
-                    <!-- Направленная стрелка-книга -->
                     <polygon points="16,8 11,11 8,16 13,13" fill="rgba(28, 200, 138, 0.2)" />
                     <line x1="12" y1="12" x2="15.5" y2="8.5" stroke-width="2.5" />
                 </svg>
-                <!-- Текстовая часть -->
                 <span class="text-white fw-bold tracking-wide"
                       style="font-family: 'Segoe UI', sans-serif; letter-spacing: 0.8px; font-size: 1.15rem;">
-                    АЗИМУТ <span
-                    style="color: #1cc88a; font-weight: 300; font-size: 0.85rem; letter-spacing: 1px; display: block; margin-top: -5px;">СДО</span>
+                    АЗИМУТ <span style="color: #1cc88a; font-weight: 300; font-size: 0.85rem; letter-spacing: 1px; display: block; margin-top: -5px;">СДО</span>
                 </span>
             </a>
 
@@ -47,9 +42,21 @@
             <div class="collapse navbar-collapse" id="studentNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active fw-bold" href="/Dashboard/Student">🏠 Мои курсы</a>
+                        <a class="nav-link fw-bold" href="/Dashboard/Student">🏠 Мои курсы</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold text-white" href="/KnowledgeBase/Index" target="_self" style="opacity: 0.85;">📚 База знаний</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold text-white d-flex align-items-center gap-1.5" href="/Support/StudentIndex" target="_self" style="opacity: 0.85;">
+                            <span>🛠️ Тех. поддержка</span>
+                            <!-- Счётчик непрочитанных ответов техподдержки -->
+                            <span id="studentSupportMenuBadge" class="badge bg-danger rounded-pill d-none"
+                                  style="font-size: 0.7rem; padding: 4px 7px; line-height: 1;">0</span>
+                        </a>
                     </li>
                 </ul>
+                
                 <!-- Блок пользователя и кнопка безопасного выхода -->
                 <div class="d-flex align-items-center gap-3">
                     <span class="text-white-50 small d-none d-sm-inline">
@@ -70,10 +77,36 @@
         </main>
     </div>
 
-    <!-- СКРИПТЫ -->
+    <!-- СКРИПТЫ (ПРАВИЛЬНЫЙ ПОРЯДОК ПОДКЛЮЧЕНИЯ) -->
     <script src="/lib/jquery/dist/jquery.min.js"></script>
     <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/site.js" asp-append-version="true"></script>
+
+    <!-- ТВОЙ ОПРОС СЧЁТЧИКА (СТРОГО ПОСЛЕ БИБЛИОТЕК) -->
+    <script>
+        async function updateStudentSupportMenuBadge() {
+            try {
+                const response = await fetch('/Support/GetStudentUnreadCount');
+                const data = await response.json();
+                const badge = document.getElementById('studentSupportMenuBadge');
+
+                if (badge && data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.classList.remove('d-none'); // Включаем красный кружок
+                } else if (badge) {
+                    badge.classList.add('d-none'); // Отключаем кружок
+                }
+            } catch (err) {
+                console.error('Ошибка обновления счетчика поддержки в меню:', err);
+            }
+        }
+
+        // Выносим в глобальное окно, чтобы StudentIndex.cshtml мог сбросить счётчик при чтении
+        window.updateStudentSupportBadge = updateStudentSupportMenuBadge;
+
+        document.addEventListener("DOMContentLoaded", updateStudentSupportMenuBadge);
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 

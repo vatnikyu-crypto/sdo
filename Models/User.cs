@@ -35,9 +35,7 @@ public class User
     [Required]
     public UserRole Role { get; set; }
 
-    // Внешний ключ для связи с Компанией
-    [Required]
-    public int CompanyId { get; set; }
+    public int? CompanyId { get; set; }
     
     [ForeignKey("CompanyId")]
     public Company? Company { get; set; }

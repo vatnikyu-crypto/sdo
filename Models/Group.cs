@@ -11,4 +11,6 @@ public class Group
     public DateTime StartDate { get; set; }                 // Дата начала обучения (без времени)
     public DateTime EndDate { get; set; }                   // Дата окончания обучения (без времени)
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<GroupCompany> GroupCompanies { get; set; } = new List<GroupCompany>();
 }

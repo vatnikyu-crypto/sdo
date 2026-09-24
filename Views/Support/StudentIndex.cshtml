@@ -1,0 +1,387 @@
+@model IEnumerable<SdoApp.Models.SupportTicket>
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Техническая поддержка";
+}
+
+<style>
+    .ticket-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid #e3e6f0;
+    }
+
+    .ticket-card:hover {
+        background-color: #f8f9fc;
+        border-color: #b7ceec;
+    }
+
+    .ticket-card.active {
+        background-color: #eaecf4;
+        border-color: #4e73df;
+    }
+
+    .chat-box {
+        background-color: #f8f9fc;
+        border-radius: 12px;
+        height: 360px;
+        overflow-y: auto;
+        padding: 15px;
+    }
+
+    .msg-bubble {
+        max-width: 75%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+
+    .msg-student {
+        background-color: #4e73df;
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 2px;
+    }
+
+    .msg-admin {
+        background-color: #eaecf4;
+        color: #333;
+        margin-right: auto;
+        border-bottom-left-radius: 2px;
+        border: 1px solid #d1d3e2;
+    }
+</style>
+
+<div class="mb-4 mt-2">
+    <h2 class="fw-bold text-dark m-0">🛠️ Служба технической поддержки</h2>
+    <p class="text-muted small">Если у вас возникли технические проблемы, отправьте обращение нашим администраторам</p>
+</div>
+
+<div class="row g-4">
+    <!-- ЛЕВАЯ КОЛОНКА: ИСТОРИЯ ОБРАЩЕНИЙ -->
+    <div class="col-lg-5">
+        <div class="card bg-white border-0 shadow-sm p-4 h-100" style="border-radius: 12px; min-height: 520px;">
+            <h5 class="fw-bold text-dark mb-3">📋 Ваши обращения</h5>
+            
+            <div class="d-flex flex-column gap-2" id="ticketsContainer" style="max-height: 440px; overflow-y: auto;">
+                @if (!Model.Any())
+                {
+                    <div class="text-center py-5 text-muted small" id="noTicketsPlaceholder">
+                        <span style="font-size: 2.5rem;">📨</span>
+                        <h6 class="fw-bold mt-2 mb-1">Обращений пока нет</h6>
+                        <p class="mb-0">Заполните форму справа, чтобы сформировать первый тикет.</p>
+                    </div>
+                }
+                else
+                {
+                    foreach (var t in Model)
+                    {
+                        string badgeClass = t.Status == SdoApp.Models.TicketStatus.Открыто ? "bg-success" : "bg-secondary";
+                        
+                        // 1. Сортируем сообщения тикета по дате и берём самое последнее
+                        var lastMessage = t.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault();
+                        
+                        // 2. Проверяем: если тикет открыт и последнее сообщение написал КТО-ТО ДРУГОЙ (админ), а не сам студент
+                        bool isNewReplyFromAdmin = t.Status == SdoApp.Models.TicketStatus.Открыто &&
+                                                   lastMessage != null &&
+                                                   lastMessage.SenderId != t.StudentId;
+
+                        <div class="p-3 rounded ticket-card position-relative" id="ticket-item-@t.Id"
+                             onclick="window.loadTicketChat(@t.Id)">
+                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge @badgeClass fw-bold" style="font-size:0.7rem;">@t.Status</span>
+                                    
+                                    <!-- ЯРКИЙ ИНДИКАТОР ОТВЕТА ДЛЯ СТУДЕНТА -->
+                                    @if (isNewReplyFromAdmin)
+                                    {
+                                        <span class="badge bg-warning text-dark fw-bold" style="font-size:0.65rem;">⚠️ Ответ
+                                            техподдержки</span>
+                                        }
+                                    </div>
+                                    <small class="text-muted" style="font-size:0.7rem;">@t.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                                </div>
+                                <div class="fw-bold text-dark text-truncate" style="font-size:0.9rem;">
+                                    📞 Контакт: @t.Phone
+                                </div>
+                                <small class="text-muted d-block text-truncate">Нажмите для просмотра переписки</small>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА: ФОРМА ИЛИ ЧАТ -->
+        <div class="col-lg-7">
+            <!-- ОКНО А: СОЗДАНИЕ ПЕРВОГО ТИКЕТА -->
+            <div class="card bg-white border-0 shadow-sm p-4 h-100" id="createTicketCard" style="border-radius: 12px;">
+                <h5 class="fw-bold text-dark mb-1">✍️ Новое обращение</h5>
+                <p class="text-muted small mb-3">Опишите проблему, и мы ответим вам в ближайшее время</p>
+            
+                <form id="createTicketForm" autocomplete="off" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">ВАШ НОМЕР ТЕЛЕФОНА ДЛЯ СВЯЗИ <span
+                            class="text-danger">*</span></label>
+                            <input type="text" id="ticketPhone" name="phone" class="form-control fw-bold" required
+                                   placeholder="Например: +7 (999) 123-45-67" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">ОПИСАНИЕ ТЕХНИЧЕСКОЙ ПРОБЛЕМЫ <span
+                                class="text-danger">*</span></label>
+                                <textarea id="ticketText" name="text" class="form-control" rows="5" required
+                                          placeholder="Подробно опишите вашу проблему..."></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label text-muted small fw-bold">ПРИКРЕПИТЬ ФАЙЛЫ (ДО 3 ШТУК, ДО 15 МБ)</label>
+                                <input type="file" id="ticketFiles" name="files" class="form-control" multiple />
+                                <div id="fileValidationFeedback" class="text-danger small mt-1 d-none"></div>
+                            </div>
+                            <button type="button" id="submitTicketBtn"
+                                    class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Отправить обращение</button>
+                        </form>
+                    </div>
+
+                    <!-- ОКНО Б: ИНТЕРАКТИВНЫЙ ДИАЛОГ ЧАТА -->
+                    <div class="card bg-white border-0 shadow-sm p-4 h-100 d-none" id="chatTicketCard" style="border-radius: 12px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <div>
+                                <h5 class="fw-bold text-dark m-0" id="chatTitle">Обращение №00</h5>
+                                <small class="text-muted" id="chatPhone">Контактный телефон: —</small>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary fw-bold" onclick="window.showCreateForm()">➕ Новый
+                                    тикет</button>
+                                </div>
+                            </div>
+
+                            <!-- Лента сообщений -->
+                            <div class="chat-box mb-3 d-flex flex-column" id="chatBoxContainer"></div>
+
+                            <!-- БЛОК ПОВТОРНОГО ОТВЕТА С ФАЙЛАМИ -->
+                            <div id="studentReplyFormContainer">
+                                <form id="studentReplyForm" autocomplete="off" enctype="multipart/form-data">
+                                    <div class="mb-2">
+                                        <textarea id="studentReplyText" class="form-control form-control-sm" rows="2"
+                                                  placeholder="Напишите ответ техподдержке..."></textarea>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <div style="max-width: 230px;">
+                                            <input type="file" id="studentReplyFiles" name="files" class="form-control form-control-sm"
+                                                   multiple />
+                                        </div>
+                                        <button class="btn btn-sm btn-primary fw-bold px-4 py-2" type="button"
+                                                id="studentSubmitReplyBtn">💬 Ответить</button>
+                                    </div>
+                                    <div id="replyFileValidationFeedback" class="text-danger small mt-1 d-none"></div>
+                                </form>
+                            </div>
+
+                            <!-- ПЛАШКА БЛОКИРОВКИ 1: ЖДЕМ ОТВЕТА АДМИНА -->
+                            <div id="studentReplyWaitingNotice"
+                                 class="alert alert-light border border-primary text-center small text-muted p-2.5 m-0 d-none"
+                                 style="border-radius: 8px;">
+                                ⏳ Вы отправили сообщение. Ожидайте официального ответа техподдержки.
+                            </div>
+
+                            <!-- ПЛАШКА БЛОКИРОВКИ 2: АДМИН ЗАКРЫЛ ТИКЕТ -->
+                            <div id="studentReplyLockedNotice" class="alert alert-secondary text-center small text-muted p-2 m-0 d-none"
+                                 style="border-radius: 8px;">
+                                🔒 Это обращение успешно решено и закрыто техподдержкой. Диалог заблокирован.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    let currentActiveTicketId = null;
+    
+                    const createTicketCard = document.getElementById('createTicketCard');
+                    const chatTicketCard = document.getElementById('chatTicketCard');
+                    const createForm = document.getElementById('createTicketForm');
+    
+                    const fileInput = document.getElementById('ticketFiles');
+                    const feedback = document.getElementById('fileValidationFeedback');
+                    const submitBtn = document.getElementById('submitTicketBtn');
+                    const chatBoxContainer = document.getElementById('chatBoxContainer');
+    
+                    const studentReplyFormContainer = document.getElementById('studentReplyFormContainer');
+                    const studentReplyWaitingNotice = document.getElementById('studentReplyWaitingNotice');
+                    const studentReplyLockedNotice = document.getElementById('studentReplyLockedNotice');
+    
+                    const studentReplyText = document.getElementById('studentReplyText');
+                    const replyFileInput = document.getElementById('studentReplyFiles');
+                    const replyFeedback = document.getElementById('replyFileValidationFeedback');
+                    const studentSubmitReplyBtn = document.getElementById('studentSubmitReplyBtn');
+
+                    // Функция валидации файлов
+                    function validateFiles(inputEl, feedbackEl, buttonEl) {
+                        feedbackEl.classList.add('d-none');
+                        buttonEl.disabled = false;
+                        const files = inputEl.files;
+                        if (files.length === 0) return true;
+        
+                        if (files.length > 3) {
+                            feedbackEl.textContent = '⚠️ Ошибка: Можно прикрепить не более 3 файлов!';
+                            feedbackEl.classList.remove('d-none');
+                            buttonEl.disabled = true;
+                            return false;
+                        }
+                        let totalBytes = 0;
+                        for (let i = 0; i < files.length; i++) totalBytes += files[i].size;
+                        const totalMb = totalBytes / (1024 * 1024);
+                        if (totalMb > 15.0) {
+                            feedbackEl.textContent = `⚠️ Ошибка: Вес файлов (${totalMb.toFixed(2)} МБ) превышает 15 МБ!`;
+                            feedbackEl.classList.remove('d-none');
+                            buttonEl.disabled = true;
+                            return false;
+                        }
+                        return true;
+                    }
+
+                    if (fileInput) fileInput.addEventListener('change', () => validateFiles(fileInput, feedback, submitBtn));
+                    if (replyFileInput) replyFileInput.addEventListener('change', () => validateFiles(replyFileInput, replyFeedback, studentSubmitReplyBtn));
+
+                    // Отправка первого тикета
+                    if (submitBtn) {
+                        submitBtn.addEventListener('click', async function () {
+                            const phone = document.getElementById('ticketPhone').value.trim();
+                            const text = document.getElementById('ticketText').value.trim();
+                            if (!phone || !text) { alert('Заполните обязательные поля!'); return; }
+                            this.disabled = true; this.textContent = 'Отправка...';
+                            const formData = new FormData(); formData.append('phone', phone); formData.append('text', text);
+                            for (let i = 0; i < fileInput.files.length; i++) formData.append('files', fileInput.files[i]);
+                            try {
+                                const response = await fetch('/Support/CreateTicket', { method: 'POST', body: formData });
+                                const result = await response.json();
+                                if (result.success) { alert('Обращение успешно отправлено!'); window.location.reload(); }
+                                else { alert(result.message); this.disabled = false; this.textContent = 'Отправить обращение'; }
+                            } catch (err) { alert('Ошибка сети.'); this.disabled = false; }
+                        });
+                    }
+
+                    // Загрузка чата
+                    window.loadTicketChat = async function (ticketId) {
+                        currentActiveTicketId = ticketId;
+                        Array.from(document.querySelectorAll('.ticket-card')).forEach(c => c.classList.remove('active'));
+        
+                        const targetCard = document.getElementById(`ticket-item-${ticketId}`);
+                        if (targetCard) targetCard.classList.add('active');
+
+                        const adminReplyBadge = targetCard.querySelector('.badge.bg-warning');
+            if (adminReplyBadge) {
+                adminReplyBadge.remove(); // Бейдж исчезает без перезагрузки страницы!
+            }
+
+                        try {
+                            const response = await fetch(`/Support/GetDetails/${ticketId}`);
+                            const data = await response.json();
+
+                            createTicketCard.classList.add('d-none');
+                            chatTicketCard.classList.remove('d-none');
+
+                            document.getElementById('chatTitle').textContent = `Обращение №${data.ticketId}`;
+                            document.getElementById('chatPhone').textContent = `Контакт: ${data.phone} | Создано: ${data.createdAt}`;
+
+                            if (data.messages.length === 0) {
+                                chatBoxContainer.innerHTML = '<div class="text-center text-muted small py-4">Диалог пуст.</div>';
+                                return;
+                            }
+
+                            chatBoxContainer.innerHTML = data.messages.map(m => {
+                                const bubbleClass = m.isAdminMessage ? 'msg-admin' : 'msg-student';
+                                const nameStyle = m.isAdminMessage ? 'color: #e74a3b;' : 'color: #eaecf4;';
+
+                                let filesHtml = '';
+                                if (m.files && m.files.length > 0) {
+                                    filesHtml = '<div class="mt-2 border-top pt-1 small font-monospace">' + m.files.map(f => `
+                                        <div class="d-flex align-items-center gap-1">
+                                            📎 <a href="${f.url}" download="${f.name}" class="${m.isAdminMessage ? 'text-primary' : 'text-white'} fw-bold text-decoration-underline text-truncate d-inline-block" style="max-width:200px;">${f.name}</a>
+                                        </div>
+                                    `).join('') + '</div>';
+                                }
+
+                                return `
+                                <div class="d-flex flex-column w-100">
+                                    <div class="msg-bubble ${bubbleClass}">
+                                        <div style="font-size:0.75rem; ${nameStyle}" class="fw-bold mb-1">${m.senderFio}</div>
+                                        <div style="font-size:0.9rem; white-space:pre-line;">${m.text}</div>
+                                        ${filesHtml}
+                                    </div>
+                                    <small class="text-muted mb-3 ${m.isAdminMessage ? 'ps-2' : 'text-end pe-2'}" style="font-size:0.65rem; margin-top:-8px;">${m.createdAt}</small>
+                                </div>`;
+                            }).join('');
+
+                            chatBoxContainer.scrollTop = chatBoxContainer.scrollHeight;
+
+                            if (data.status === 1) {
+                                studentReplyFormContainer.classList.add('d-none');
+                                studentReplyWaitingNotice.classList.add('d-none');
+                                studentReplyLockedNotice.classList.remove('d-none');
+                            } else {
+                                const lastMessage = data.messages[data.messages.length - 1];
+                                if (lastMessage.isAdminMessage) {
+                                    studentReplyFormContainer.classList.remove('d-none');
+                                    studentReplyWaitingNotice.classList.add('d-none');
+                                    studentReplyLockedNotice.classList.add('d-none');
+                                } else {
+                                    studentReplyFormContainer.classList.add('d-none');
+                                    studentReplyWaitingNotice.classList.remove('d-none');
+                                    studentReplyLockedNotice.classList.add('d-none');
+                                }
+                            }
+
+                            if (window.updateStudentSupportBadge) await window.updateStudentSupportBadge();
+
+                        } catch (err) {
+                            alert('Не удалось подгрузить историю диалога.');
+                        }
+                    }
+
+                    // Слушатель повторного ответа
+                    if (studentSubmitReplyBtn) {
+                        studentSubmitReplyBtn.addEventListener('click', async function () {
+                            const text = studentReplyText.value.trim();
+                            if (!text && replyFileInput.files.length === 0) {
+                                alert('Пожалуйста, введите текст ответа или прикрепите файлы!');
+                                return;
+                            }
+
+                            this.disabled = true;
+                            this.textContent = 'Отправка...';
+
+                            const formData = new FormData();
+                            formData.append('ticketId', currentActiveTicketId);
+                            formData.append('text', text);
+            
+                            for (let i = 0; i < replyFileInput.files.length; i++) {
+                                formData.append('replyFile', replyFileInput.files[i]);
+                            }
+
+                            try {
+                                const response = await fetch('/Support/SendAdminReply', { method: 'POST', body: formData });
+                                const result = await response.json();
+
+                                if (result.success) {
+                                    studentReplyText.value = "";
+                                    replyFileInput.value = "";
+                                    this.disabled = false;
+                                    this.textContent = '💬 Ответить';
+                                    await window.loadTicketChat(currentActiveTicketId);
+                                } else {
+                                    alert(result.message);
+                                    this.disabled = false; this.textContent = '💬 Ответить';
+                                }
+                            } catch (err) {
+                                alert('Ошибка сети при отправке ответа.');
+                                this.disabled = false; this.textContent = '💬 Ответить';
+                            }
+                        });
+                    }
+
+                    window.showCreateForm = function () {
+                        Array.from(document.querySelectorAll('.ticket-card')).forEach(c => c.classList.remove('active'));
+                        chatTicketCard.classList.add('d-none'); createTicketCard.classList.remove('d-none');
+                        if (createForm) createForm.reset();
+                        feedback.classList.add('d-none'); submitBtn.disabled = false;
+                    }
+                </script>

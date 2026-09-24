@@ -25,6 +25,8 @@ public class GroupsController : Controller
     public async Task<IActionResult> Index()
     {
         var groups = await _context.Groups
+            .Include(g => g.GroupCompanies)
+            .ThenInclude(gc => gc.Company)
             .OrderByDescending(g => g.CreatedAt)
             .ToListAsync();
         return View(groups);
@@ -108,7 +110,6 @@ public class GroupsController : Controller
         }
     }
 
-    // GET: /Groups/Edit/5
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
@@ -119,8 +120,19 @@ public class GroupsController : Controller
         ViewBag.GroupNumber = group.GroupNumber;
         ViewBag.GroupTitle = group.Title;
 
-        // ДОБАВЛЕНО: Передаем список всех существующих курсов для выпадающего меню селекта
+        // Передаем список всех существующих курсов для выпадающего меню селекта
         ViewBag.AllAvailableCourses = await _context.Courses.OrderBy(c => c.Title).ToListAsync();
+
+        // 1. ВЫТАСКИВАЕМ ВСЕ КОМПАНИИ: Чтобы админ мог выбрать их на странице
+        ViewBag.AllAvailableCompanies = await _context.Companies
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        // 2. ВЫТАСКИВАЕМ ТЕКУЩИЕ СВЯЗИ: ID компаний, которые уже закреплены за этой группой
+        ViewBag.CurrentCompanyIds = await _context.GroupCompanies
+            .Where(gc => gc.GroupId == id)
+            .Select(gc => gc.CompanyId)
+            .ToListAsync();
 
         return View();
     }
@@ -157,25 +169,24 @@ public class GroupsController : Controller
     }
 
     // GET: /Groups/GetGroupData/5
-    // Отдает текущий состав группы + вообще всех студентов системы для живого поиска на клиенте
     [HttpGet]
     public async Task<IActionResult> GetGroupData(int id)
     {
-        // 1. Текущие студенты этой группы
+        // 1. Текущие студенты этой группы (Твой оригинал)
         var studentsInGroup = await _context.GroupStudents
             .Include(s => s.Student)
-                .ThenInclude(st => st!.Company)
+            .ThenInclude(st => st!.Company)
             .Where(s => s.GroupId == id)
             .Select(s => new
             {
                 id = s.StudentId,
-                fio = $"{s.Student!.LastName} {s.Student.FirstName} {s.Student.MiddleName}".Trim(),
+                fio = $"{s.Student!.LastName ?? ""} {s.Student.FirstName ?? ""} {s.Student.MiddleName ?? ""}".Trim(),
                 company = s.Student.Company != null ? s.Student.Company.Name : "Частное лицо",
                 position = s.Student.Position ?? "—"
             })
             .ToListAsync();
 
-        // 2. Текущие курсы этой группы
+        // 2. Текущие курсы этой группы (Твой оригинал)
         var coursesInGroup = await _context.GroupCourseConfigs
             .Include(c => c.Course)
             .Where(c => c.GroupId == id)
@@ -191,13 +202,24 @@ public class GroupsController : Controller
             })
             .ToListAsync();
 
-        // 3. ИСПРАВЛЕННЫЙ И БЕЗОПАСНЫЙ ВАРИАНТ ДЛЯ ЛЮБОГО НАПОЛНЕНИЯ БАЗЫ:
+        // 3. Текущие привязанные компании этой группы (Твой оригинал)
+        var companiesInGroup = await _context.GroupCompanies
+            .Include(gc => gc.Company)
+            .Where(gc => gc.GroupId == id)
+            .Select(gc => new
+            {
+                id = gc.CompanyId,
+                name = gc.Company!.Name,
+                inn = gc.Company.Inn
+            })
+            .ToListAsync();
+
+        // 4. Твой оригинальный склад ВСЕХ студентов для сверхбыстрого поиска на клиенте
         var allSystemStudents = await _context.Users
             .Include(u => u.Company)
             .Where(u => u.Role == UserRole.Обучающийся)
-            .ToListAsync(); // Сначала выгружаем плоский список
+            .ToListAsync();
 
-        // Спокойно и безопасно клеим ФИО в памяти, защищаясь от null-полей
         var safeStudentsStore = allSystemStudents.Select(u => new
         {
             id = u.Id,
@@ -206,28 +228,40 @@ public class GroupsController : Controller
             position = u.Position ?? "—"
         }).ToList();
 
+        // =================================================================
+        // 5. ИСПРАВЛЕНИЕ: Выгружаем ВСЕ компании системы для живого поиска на клиенте
+        // =================================================================
+        var allSystemCompanies = await _context.Companies
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        var safeCompaniesStore = allSystemCompanies.Select(c => new
+        {
+            id = c.Id,
+            name = c.Name ?? "",
+            inn = c.Inn ?? ""
+        }).ToList();
+
+        // Возвращаем объект со ВСЕМИ нужными складами данных
         return Json(new
         {
             students = studentsInGroup,
             courses = coursesInGroup,
-            allStudentsStore = safeStudentsStore // Отдаем гарантированно заполненный массив!
+            companies = companiesInGroup,
+            allStudentsStore = safeStudentsStore,
+            allCompaniesStore = safeCompaniesStore // <-- ТЕПЕРЬ ДАННЫЕ СЮДА КЛАДУТСЯ!
         });
     }
 
-
-
-
     // POST: /Groups/SaveGroupSkeleton
-    // Сохраняет базовый состав группы (людей и выбранные курсы)
     [HttpPost]
-    public async Task<IActionResult> SaveGroupSkeleton(int groupId, List<int> studentIds, List<int> courseIds)
+    public async Task<IActionResult> SaveGroupSkeleton(int groupId, List<int> studentIds, List<int> courseIds, List<int> companyIds)
     {
         try
         {
             // 1. Обновляем список студентов в группе
             var oldStudents = await _context.GroupStudents.Where(s => s.GroupId == groupId).ToListAsync();
             _context.GroupStudents.RemoveRange(oldStudents);
-
             if (studentIds != null)
             {
                 foreach (var sId in studentIds)
@@ -236,27 +270,29 @@ public class GroupsController : Controller
                 }
             }
 
-            // 2. Обновляем список курсов в группе (не затирая старые протоколы и даты, если курс уже был привязан)
+            // 2. Обновляем список курсов в группе
             var currentConfigs = await _context.GroupCourseConfigs.Where(c => c.GroupId == groupId).ToListAsync();
-
-            // Удаляем те конфигурации, которые админ убрал из списка
             var configsToRemove = currentConfigs.Where(cc => courseIds == null || !courseIds.Contains(cc.CourseId)).ToList();
             _context.GroupCourseConfigs.RemoveRange(configsToRemove);
-
-            // Добавляем новые конфигурации для свежепривязанных курсов
             if (courseIds != null)
             {
                 foreach (var cId in courseIds)
                 {
                     if (!currentConfigs.Any(cc => cc.CourseId == cId))
                     {
-                        _context.GroupCourseConfigs.Add(new GroupCourseConfig
-                        {
-                            GroupId = groupId,
-                            CourseId = cId,
-                            AllowedStudentIds = "" // По умолчанию пусто (будут допущены все при тонкой настройке)
-                        });
+                        _context.GroupCourseConfigs.Add(new GroupCourseConfig { GroupId = groupId, CourseId = cId, AllowedStudentIds = "" });
                     }
+                }
+            }
+
+            // 3. НОВОЕ: Обновляем привязанные компании группы
+            var oldCompanies = await _context.GroupCompanies.Where(gc => gc.GroupId == groupId).ToListAsync();
+            _context.GroupCompanies.RemoveRange(oldCompanies);
+            if (companyIds != null)
+            {
+                foreach (var cId in companyIds)
+                {
+                    _context.GroupCompanies.Add(new GroupCompany { GroupId = groupId, CompanyId = cId });
                 }
             }
 
@@ -268,6 +304,7 @@ public class GroupsController : Controller
             return Json(new { success = false, message = $"Ошибка сохранения костяка: {ex.Message}" });
         }
     }
+
 
     // POST: /Groups/SaveCourseConfig
     // Тонкая настройка конкретного курса: сохранение протокола, дат и строки с ID студентов
@@ -297,5 +334,33 @@ public class GroupsController : Controller
         {
             return Json(new { success = false, message = $"Ошибка сохранения курса: {ex.Message}" });
         }
+    }
+
+    // GET: /Groups/SearchCompanies?term=Техно
+    [HttpGet]
+    public async Task<IActionResult> SearchCompanies(string term)
+    {
+        if (string.IsNullOrWhiteSpace(term)) return Json(new List<object>());
+
+        string lowerTerm = term.ToLower();
+
+        // 1. Вытаскиваем все компании в память (как и студентов), чтобы защитить кириллицу от капризов SQLite
+        var companies = await _context.Companies
+            .ToListAsync();
+
+        // 2. Мягко фильтруем в памяти, проверяя совпадение по названию или ИНН
+        var filteredCompanies = companies
+            .Where(c => (c.Name != null && c.Name.ToLower().Contains(lowerTerm)) ||
+                        (c.Inn != null && c.Inn.Contains(lowerTerm)))
+            .Take(10)
+            .Select(c => new
+            {
+                id = c.Id,
+                name = c.Name,
+                inn = c.Inn
+            })
+            .ToList();
+
+        return Json(filteredCompanies);
     }
 }

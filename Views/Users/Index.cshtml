@@ -108,7 +108,7 @@
                     </th>
                     <th>ФИО слушателя</th>
                     <th>Данные доступа</th>
-                    <th>Организация / Отделение</th>
+                    <th>Компания / Отделение</th>
                     <th>СНИЛС</th>
                     <th class="text-end" style="width: 150px;">Действия</th>
                 </tr>
@@ -152,7 +152,9 @@
                                 </td>
                                 <!-- Было в вашей 4-й колонке: -->
                                 <td>
-                                    <div class="small fw-bold text-secondary">@student.Company?.Name</div>
+                                    <div class="small fw-bold text-secondary">
+                                        @(student.Company != null ? student.Company.Name : "Физ. лицо")
+                                    </div>
 
                                     <!-- Вывод должности: если она есть, выводим. Если нет — тег не создается -->
                                     @if (!string.IsNullOrWhiteSpace(student.Position))

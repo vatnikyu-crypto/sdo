@@ -71,6 +71,7 @@
                     <th style="width: 70px;">ID</th>
                     <th style="width: 160px;">Номер группы</th>
                     <th>Наименование группы</th>
+                    <th>Организации</th>
                     <th style="width: 150px;">Дата начала</th>
                     <th style="width: 150px;">Дата окончания</th>
                     <th style="width: 100px;" class="text-end pe-4">Действия</th>
@@ -80,7 +81,7 @@
                 @if (!Model.Any())
                 {
                     <tr id="noGroupsRow">
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <span style="font-size: 2.5rem;">👥</span>
                             <h5 class="fw-bold mt-2 text-dark">Учебные группы отсутствуют</h5>
                             <p class="small mb-0">Нажмите кнопку «Создать группу», чтобы начать формирование.</p>
@@ -98,6 +99,26 @@
                             <td class="text-muted fw-bold">#@g.Id</td>
                             <td class="fw-bold text-secondary group-cell-number">@g.GroupNumber</td>
                             <td class="fw-bold text-dark group-cell-title">@g.Title</td>
+                            <!-- НОВАЯ ЯЧЕЙКА: Вывод компаний группы -->
+                            <td>
+                                @if (g.GroupCompanies != null && g.GroupCompanies.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var gc in g.GroupCompanies)
+                                        {
+                                            <span class="badge bg-light text-dark border px-2 py-1 text-truncate"
+                                                  style="max-width: 180px; font-size: 0.75rem;"
+                                                  title="@gc.Company?.Name (ИНН: @gc.Company?.Inn)">
+                                                🏢 @gc.Company?.Name
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small"><em>Частные лица (нет компаний)</em></span>
+                                }
+                            </td>
                             <td class="text-muted small">@g.StartDate.ToString("dd.MM.yyyy")</td>
                             <td class="text-muted small">@g.EndDate.ToString("dd.MM.yyyy")</td>
                             <td class="text-end pe-4">
@@ -231,13 +252,23 @@
 
                             // 1. Фильтрация по Поиску (по номеру или названию)
                             let filteredRows = rows;
+                            // 1. Фильтрация по Поиску (по номеру, названию группы или названию компаний)
                             if (searchText.length > 0) {
                                 filteredRows = rows.filter(row => {
                                     const num = row.querySelector('.group-cell-number')?.textContent?.toLowerCase() ?? "";
                                     const title = row.querySelector('.group-cell-title')?.textContent?.toLowerCase() ?? "";
-                                    return num.includes(searchText) || title.includes(searchText);
+        
+                                    // НОВОЕ: Собираем текст всех бейджиков компаний в этой строке
+                                    const companiesText = Array.from(row.querySelectorAll('.badge'))
+                                        .map(badge => badge.textContent.toLowerCase())
+                                        .join(' ');
+            
+                                    return num.includes(searchText) ||
+                                        title.includes(searchText) ||
+                                        companiesText.includes(searchText); // Теперь ищет и по компаниям!
                                 });
                             }
+
 
                             const totalRows = filteredRows.length;
 

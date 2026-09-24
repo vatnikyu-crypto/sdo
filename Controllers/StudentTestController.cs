@@ -194,7 +194,7 @@ public class StudentTestController : Controller
         return View(finalQuestions);
     }
 
-    // GET: /StudentTest/DownloadResult?attemptId=123
+    // GET: /StudentTest/DownloadResult?attemptId
     [HttpGet]
     public async Task<IActionResult> DownloadResult(int attemptId)
     {
@@ -239,7 +239,7 @@ public class StudentTestController : Controller
                 pHeader.Alignment = Alignment.center;
                 pHeader.FontSize(10).Bold();
                 doc.InsertParagraph("\n");
-
+                
                 // ЗАГОЛОВОК ДОКУМЕНТА
                 var pTitle = doc.InsertParagraph($"ИТОГОВЫЙ ЭКЗАМЕН № {attempt.Id}-{attempt.StudentId}");
                 pTitle.Alignment = Alignment.center;

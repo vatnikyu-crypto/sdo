@@ -1,0 +1,23 @@
+@{
+    Layout = "_StudentLayout"; // Замени на имя твоего студенческого лейаута, если он называется иначе
+    ViewData["Title"] = "Доступ ограничен";
+}
+
+<div class="container py-5 text-center mt-5">
+    <div class="card bg-white border-0 shadow-sm p-5 mx-auto" style="max-width: 550px; border-radius: 16px;">
+        <div class="text-danger mb-4">
+            <span style="font-size: 4.5rem; line-height: 1;">🔒</span>
+        </div>
+        <h3 class="fw-bold text-dark mb-3">Доступ к Базе знаний ограничен</h3>
+        <p class="text-muted small mb-4">
+            Извините, но просматривать и скачивать нормативные документы могут только слушатели СДО, 
+            проходящие обучение в данный момент. Срок действия ваших учебных допусков истек или еще не начался.
+        </p>
+        <div class="border-top pt-4">
+            <p class="small text-secondary mb-3">Для продления доступа или по вопросам обучения свяжитесь с вашим куратором.</p>
+            <a href="/Dashboard/Student" class="btn btn-primary fw-bold px-4 shadow-sm py-2">
+                ↩️ Вернуться к моим курсам
+            </a>
+        </div>
+    </div>
+</div>
