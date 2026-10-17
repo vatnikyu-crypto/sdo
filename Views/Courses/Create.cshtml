@@ -1,26 +1,38 @@
 @{
-    Layout = "_AdminLayout"; // Изучаем админский Layout с боковым меню
+    Layout = "_AdminLayout";
     ViewData["Title"] = "Создание учебного курса";
 }
+
+<style>
+    /* Прячем «голый» селект до того, как Tom Select превратит его в комбобокс */
+    #mintrudSelect:not(.tomselected) {
+        display: none !important;
+    }
+    
+    /* Делаем красивую фиксированную высоту для родительского контейнера, 
+       чтобы верстка формы не прыгала вверх-вниз при загрузке */
+    .input-group .tom-select {
+        min-height: 38px;
+    }
+</style>
 
 <!-- НАВИГАЦИОННАЯ ШАПКА -->
 <div class="mb-3 mt-2">
     <a href="/Courses/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1">
         <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+            <path fill-rule="evenodd"
+                  d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
         </svg>
         Назад к курсам
     </a>
     <h2 class="fw-bold text-dark mt-2 m-0">Новый курс</h2>
-    <small class="text-muted">Регистрация карточки курса и загрузка маркетинговой обложки</small>
+    <small class="text-muted">Создание карточки курса</small>
 </div>
 
 <!-- КАРТОЧКА С ФОРМОЙ -->
 <div class="card card-custom p-4 bg-white border-0 shadow-sm mb-4" style="max-width: 700px; border-radius: 12px;">
-    <!-- Критически важно: enctype позволяет отправлять файлы (картинки) через форму -->
     <form asp-action="Create" asp-controller="Courses" method="post" enctype="multipart/form-data">
         
-        <!-- Вывод серверных ошибок валидации -->
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="alert alert-danger border-0 small py-2 mb-4" role="alert">
@@ -31,60 +43,335 @@
         <!-- НАЗВАНИЕ КУРСА -->
         <div class="mb-3">
             <label class="form-label text-muted small fw-bold">НАЗВАНИЕ КУРСА <span class="text-danger">*</span></label>
-            <input name="Title" type="text" class="form-control" required 
-                   placeholder="Например: Безопасность на высоте при строительных работах" autocomplete="off"/>
+            <input name="Title" type="text" class="form-control" required autocomplete="off" />
         </div>
 
         <!-- ОПИСАНИЕ КУРСА -->
         <div class="mb-3">
             <label class="form-label text-muted small fw-bold">КРАТКОЕ ОПИСАНИЕ</label>
-            <textarea name="Description" class="form-control" rows="4" 
-                      placeholder="Опишите, для кого предназначен этот курс, какие навыки получат слушатели..." autocomplete="off">@ViewBag.Description</textarea>
+            <textarea name="Description" class="form-control" rows="4"
+                      autocomplete="off">@ViewBag.Description</textarea>
         </div>
-        <!-- ВЫБОР И ПРЕДПРОСМОТР КАРТИНКИ -->
+
+        <!-- НОВЫЙ БЛОК: ДОПОЛНИТЕЛЬНЫЕ ПАРАМЕТРЫ КУРСА -->
+        <div class="row mb-3">
+            <!-- КОЛИЧЕСТВО ЧАСОВ -->
+            <div class="col-md-6 mb-3 mb-md-0">
+                <label class="form-label text-muted small fw-bold">ОБЪЕМ КУРСА (В ЧАСАХ)</label>
+                <div class="input-group">
+                    <input type="number" name="durationHours" class="form-control" min="1" max="1000"
+                           placeholder="Например: 72" autocomplete="off" />
+                    <span class="input-group-text bg-light text-muted small">ак. ч.</span>
+                </div>
+            </div>
+
+            <!-- ПЕРИОД ПЕРЕАТТЕСТАЦИИ -->
+            <div class="col-md-6">
+                <label class="form-label text-muted small fw-bold">ПЕРИОД ПЕРЕАТТЕСТАЦИИ</label>
+                <select name="recertificationMonths" class="form-select">
+                    <option value="">Бессрочно</option>
+                    <option value="6">6 мес. (полгода)</option>
+                    <option value="12">12 мес. (1 год)</option>
+                    <option value="18">18 мес. (1.5 года)</option>
+                    <option value="24">24 мес. (2 года)</option>
+                    <option value="36">36 мес. (3 года)</option>
+                    <option value="48">48 мес. (4 года)</option>
+                    <option value="60">60 мес. (5 лет)</option>
+                </select>
+            </div>
+        </div>
+
+
+        <!-- ПРОГРАММА МИНТРУДА (КОМБОБОКС С УПРАВЛЕНИЕМ) -->
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">ПРОГРАММА ОБУЧЕНИЯ (МИНТРУД)</label>
+            <div class="input-group">
+                <div style="flex-grow: 1;">
+                    <select name="programId" id="mintrudSelect"
+                            placeholder="Выберите программу или начните ввод...">
+                        <option value="">-- Не выбрано (Внутренний / общий курс) --</option>
+                        @if (ViewBag.MintrudPrograms != null)
+                        {
+                            foreach (var program in ViewBag.MintrudPrograms)
+                            {
+                                <option value="@program.Id" data-code="@program.Code" data-name="@program.Name">
+                                    @program.Name @(!string.IsNullOrEmpty(program.Code) ? $"({program.Code})" : "")
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <button type="button" class="btn btn-outline-secondary border shadow-sm" id="btnOpenAddModal"
+                        title="Добавить новую программу">
+                    <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd"
+                              d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5a.5.5 0 0 1 .5-.5" />
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-outline-secondary border shadow-sm d-none" id="btnOpenEditModal"
+                        title="Редактировать выбранную">
+                    <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path
+                        d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-outline-danger border shadow-sm d-none" id="btnDeleteMintrud"
+                        title="Удалить выбранную программу">
+                    <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path
+                        d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5m3 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5m3 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5" />
+                    </svg>
+                </button>
+            </div>
+            <div class="form-text text-muted small">Управление справочником доступно маленькими кнопками справа.</div>
+        </div>
+
+        <!-- ОБЛОЖКА КУРСА -->
         <div class="mb-4">
             <label class="form-label text-muted small fw-bold">ОБЛОЖКА КУРСА (ИЗОБРАЖЕНИЕ)</label>
-            <input type="file" name="imageFile" id="courseImageFileInput" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
-            <div class="form-text text-muted small">Рекомендуемый формат: 16:9 (.jpg, .png, .webp). Если файл не выбран, система установит стандартную обложку.</div>
+            <input type="file" name="imageFile" id="courseImageFileInput" class="form-control"
+                   accept=".jpg,.jpeg,.png,.webp" />
             
-            <!-- Скрытый по умолчанию блок для отображения выбранной картинки -->
             <div class="mt-3 text-start d-none" id="previewImageContainer">
                 <p class="text-muted small fw-bold mb-1">ПРЕДПРОСМОТР ОБЛОЖКИ:</p>
-                <div style="width: 240px; height: 135px; border-radius: 8px; overflow: hidden; background-color: #eaecf4;">
-                    <img id="courseImagePreview" src="#" alt="Предпросмотр" style="width: 100%; height: 100%; object-fit: cover;" />
+                <div
+                    style="width: 240px; height: 135px; border-radius: 8px; overflow: hidden; background-color: #eaecf4;">
+                    <img id="courseImagePreview" src="#" alt="Предпросмотр"
+                         style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
             </div>
         </div>
 
-        <!-- КНОПКИ УПРАВЛЕНИЯ -->
+        <!-- КНОПКИ УПРАВЛЕНИЯ ФОРМОЙ -->
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">Создать карточку курса</button>
             <a href="/Courses/Index" class="btn btn-light px-4 py-2 fw-bold border text-secondary">Отмена</a>
         </div>
     </form>
 </div>
+<!-- MODAL: ДОБАВЛЕНИЕ НОВОЙ ПРОГРАММЫ -->
+<div class="modal fade" id="modalAddMintrud" tabindex="-1" aria-labelledby="modalAddMintrudLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-dark" id="modalAddMintrudLabel">Новая программа Минтруда</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">КОД / ШИФР ПРОГРАММЫ</label>
+                    <input type="text" id="addMintrudCode" class="form-control" placeholder="Например: ИД46В_25"
+                           autocomplete="off">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">ПОЛНОЕ НАЗВАНИЕ <span
+                        class="text-danger">*</span></label>
+                        <textarea id="addMintrudName" class="form-control" rows="3"
+                                  placeholder="Введите официальное наименование..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-light border text-secondary fw-bold"
+                            data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success fw-bold px-4" id="btnSubmitAddMintrud">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- JAVASCRIPT ДЛЯ ИНТЕРAКТИВНОГО ПРЕДПРОСМОТРА ОБЛОЖКИ -->
-<script>
-    const fileInput = document.getElementById('courseImageFileInput');
-    const previewContainer = document.getElementById('previewImageContainer');
-    const previewImage = document.getElementById('courseImagePreview');
+    <!-- MODAL: РЕДАКТИРОВАНИЕ ВЫБРАННОЙ ПРОГРАММЫ -->
+    <div class="modal fade" id="modalEditMintrud" tabindex="-1" aria-labelledby="modalEditMintrudLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header bg-light border-0">
+                    <h5 class="modal-title fw-bold text-dark" id="modalEditMintrudLabel">Редактирование программы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="editMintrudId">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">КОД / ШИФР ПРОГРАММЫ</label>
+                        <input type="text" id="editMintrudCode" class="form-control" autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">ПОЛНОЕ НАЗВАНИЕ <span
+                            class="text-danger">*</span></label>
+                            <textarea id="editMintrudName" class="form-control" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light">
+                        <button type="button" class="btn btn-light border text-secondary fw-bold"
+                                data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary fw-bold px-4" id="btnSubmitEditMintrud">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    fileInput.addEventListener('change', function() {
-        const file = this.files[0];
-        
-        if (file) {
-            const reader = new FileReader();
+        <!-- Гарантируем наличие скрипта модальных окон Bootstrap (на случай отсутствия в Layout) -->
+        <script src="https://cloudflare.com"></script>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // 1. Инициализация плагина умного поиска
+                const tsControl = new TomSelect("#mintrudSelect", {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" }
+                });
+
+                // 2. Связывание окон управления Bootstrap
+                const addModal = new bootstrap.Modal(document.getElementById('modalAddMintrud'));
+                const editModal = new bootstrap.Modal(document.getElementById('modalEditMintrud'));
+
+                const btnOpenAddModal = document.getElementById('btnOpenAddModal');
+                const btnOpenEditModal = document.getElementById('btnOpenEditModal');
+                const btnDeleteMintrud = document.getElementById('btnDeleteMintrud');
+
+                // Функция переключения видимости кнопок изменения и удаления
+                function toggleActionButtons(value) {
+                    if (value && value !== "") {
+                        btnOpenEditModal.classList.remove('d-none');
+                        btnDeleteMintrud.classList.remove('d-none');
+                    } else {
+                        btnOpenEditModal.classList.add('d-none');
+                        btnDeleteMintrud.classList.add('d-none');
+                    }
+                }
+
+                // Проверяем статус кнопок при старте страницы
+                toggleActionButtons(tsControl.getValue());
+
+                // Отслеживаем изменение выбора в комбобоксе
+                tsControl.on('change', function (value) {
+                    toggleActionButtons(value);
+                });
+
+                // Открытие окна добавления (Плюс)
+                btnOpenAddModal.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.getElementById('addMintrudCode').value = '';
+                    document.getElementById('addMintrudName').value = '';
+                    addModal.show();
+                });
+
+                // Открытие окна изменения (Карандаш)
+                btnOpenEditModal.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const selectedValue = tsControl.getValue();
+                    if (selectedValue) {
+                        const optElement = document.querySelector(`#mintrudSelect option[value="${selectedValue}"]`);
+                        if (optElement) {
+                            document.getElementById('editMintrudId').value = selectedValue;
+                            document.getElementById('editMintrudCode').value = optElement.getAttribute('data-code') || '';
+                            document.getElementById('editMintrudName').value = optElement.getAttribute('data-name') || '';
+                            editModal.show();
+                        }
+                    }
+                });
+
+                // AJAX: Отправка и создание новой программы
+                document.getElementById('btnSubmitAddMintrud').addEventListener('click', async () => {
+                    const code = document.getElementById('addMintrudCode').value;
+                    const name = document.getElementById('addMintrudName').value;
+
+                    if (!name.trim()) return alert('Название обязательно!');
+
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('code', code);
+
+                    const response = await fetch('/Courses/CreateMintrudProgram', { method: 'POST', body: formData });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const displayText = result.name + (result.code ? ` (${result.code})` : '');
+                        const selectEl = document.getElementById('mintrudSelect');
             
-            // Как только файл прочитан браузером локально, подставляем его в src картинки
-            reader.onload = function(e) {
-                previewImage.src = e.target.result;
-                previewContainer.classList.remove('d-none'); // Показываем блок предпросмотра
-            }
+                        const newOpt = new Option(displayText, result.id);
+                        newOpt.setAttribute('data-code', result.code);
+                        newOpt.setAttribute('data-name', result.name);
+                        selectEl.add(newOpt);
+
+                        tsControl.addOption({ value: result.id, text: displayText });
+                        tsControl.setValue(result.id);
+                        addModal.hide();
+                    } else {
+                        alert(result.message);
+                    }
+                });
+
+                // AJAX: Обновление изменений (Редактирование)
+                document.getElementById('btnSubmitEditMintrud').addEventListener('click', async () => {
+                    const id = document.getElementById('editMintrudId').value;
+                    const code = document.getElementById('editMintrudCode').value;
+                    const name = document.getElementById('editMintrudName').value;
+
+                    if (!name.trim()) return alert('Название обязательно!');
+
+                    const formData = new FormData();
+                    formData.append('id', id);
+                    formData.append('name', name);
+                    formData.append('code', code);
+
+                    const response = await fetch('/Courses/EditMintrudProgram', { method: 'POST', body: formData });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const displayText = result.name + (result.code ? ` (${result.code})` : '');
+                        const optElement = document.querySelector(`#mintrudSelect option[value="${id}"]`);
             
-            reader.readAsDataURL(file);
-        } else {
-            previewContainer.classList.add('d-none'); // Скрываем блок, если выбор отменен
-        }
-    });
-</script>
+                        optElement.text = displayText;
+                        optElement.setAttribute('data-code', result.code);
+                        optElement.setAttribute('data-name', result.name);
+
+                        tsControl.updateOption(id, { value: id, text: displayText });
+                        tsControl.refreshOptions(false);
+                        editModal.hide();
+                    } else {
+                        alert(result.message);
+                    }
+                });
+
+                // AJAX: Безопасное удаление программы из базы
+                btnDeleteMintrud.addEventListener('click', async () => {
+                    const id = tsControl.getValue();
+                    if (!id || !confirm('Удалить эту программу из справочника Минтруда?')) return;
+
+                    const formData = new FormData();
+                    formData.append('id', id);
+
+                    const response = await fetch('/Courses/DeleteMintrudProgram', { method: 'POST', body: formData });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        document.querySelector(`#mintrudSelect option[value="${id}"]`).remove();
+                        tsControl.removeItem(id);
+                        tsControl.removeOption(id);
+                        tsControl.clear();
+                    } else {
+                        alert(result.message);
+                    }
+                });
+
+                // Интерактивный предпросмотр изображения обложки курса
+                const fileInput = document.getElementById('courseImageFileInput');
+                const previewContainer = document.getElementById('previewImageContainer');
+                const previewImage = document.getElementById('courseImagePreview');
+
+                if (fileInput) {
+                    fileInput.addEventListener('change', function () {
+                        const file = this.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function (e) {
+                                previewImage.src = e.target.result;
+                                if (previewContainer) previewContainer.classList.remove('d-none');
+                            }
+                            reader.readAsDataURL(file);
+                        } else {
+                            if (previewContainer) previewContainer.classList.add('d-none');
+                        }
+                    });
+                }
+            });
+        </script>

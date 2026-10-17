@@ -1,0 +1,257 @@
+@model IEnumerable<SdoApp.Models.Group>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Отчетность по группам";
+    var groupConfigs = ViewBag.GroupConfigs as List<SdoApp.Models.GroupCourseConfig> ?? new();
+    var studentsMap = ViewBag.Students as Dictionary<int, SdoApp.Models.User> ?? new();
+    var commission = ViewBag.Commission as List<SdoApp.Models.CommissionMember> ?? new();
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">📋 Раздел: Отчетность</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">Нет созданных групп для формирования отчетов.</div>
+    }
+    else
+    {
+        <div class="accordion" id="groupsAccordion">
+            @foreach (var group in Model)
+            {
+                <div class="accordion-item mb-3 border shadow-sm">
+                    <h2 class="accordion-header" id="headingGroup-@group.Id">
+                        <button class="accordion-button collapsed bg-light text-dark shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGroup-@group.Id">
+                            <span class="fs-5"><strong>Группа № @group.GroupNumber</strong> &nbsp;—&nbsp; @group.Title</span>
+                            <span class="badge bg-secondary ms-3">@group.StartDate.ToString("dd.MM.yyyy") - @group.EndDate.ToString("dd.MM.yyyy")</span>
+                        </button>
+                    </h2>
+                    
+                    <div id="collapseGroup-@group.Id" class="accordion-collapse collapse" data-bs-parent="#groupsAccordion">
+                        <div class="accordion-body bg-white">
+                            <h5 class="mb-3 text-muted">Курсы, закрепленные за группой:</h5>
+                            
+                            @{ var currentGroupConfigs = groupConfigs.Where(c => c.GroupId == group.Id).ToList(); }
+
+                            <div class="accordion" id="coursesAccordion-@group.Id">
+                                <!-- Переходим к Части 2 -->
+                                @foreach (var config in currentGroupConfigs)
+                                {
+                                    var allowedIds = config.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+                                    var totalStudentsCount = allowedIds.Count(id => studentsMap.ContainsKey(id));
+
+                                    <div class="accordion-item mb-2 border rounded">
+                                        <h2 class="accordion-header" id="headingConfig-@config.Id">
+                                            <button class="accordion-button collapsed bg-white text-dark shadow-none p-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig-@config.Id">
+                                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center w-100 me-3">
+                                                    <div class="mb-2 mb-sm-0">
+                                                        <span class="text-primary fw-bold fs-6">📖 @config.Course?.Title</span>
+                                                        <span class="badge bg-primary rounded-pill ms-2">Слушателей: @totalStudentsCount</span>
+                                                        <div class="text-muted mt-1" style="font-size: 0.85rem;">Протокол: <strong>@config.ProtocolNumber</strong></div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        
+                                        <div id="collapseConfig-@config.Id" class="accordion-collapse collapse" data-bs-parent="#coursesAccordion-@group.Id">
+                                            <div class="accordion-body bg-light border-top p-3">
+                                                
+                                                <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 border rounded shadow-sm">
+                                                    <span class="text-muted fw-semibold ps-2" style="font-size: 0.9rem;">Генерация документов по курсу:</span>
+                                                    <div>
+                                                        @if (config.Course?.DocumentTemplates != null && config.Course.DocumentTemplates.Any())
+                                                        {
+                                                            <div class="dropdown">
+                                                                <button class="btn btn-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">⚙️ Сделать отчет</button>
+                                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                                    @foreach (var template in config.Course.DocumentTemplates.OrderBy(t => t.SortOrder))
+                                                                    {
+                                                                        <li>
+                                                                            @if (template.RequiresCommission)
+                                                                            {
+                                                                                <button type="button" class="dropdown-item" onclick="openCommissionModal(@config.Id, @template.Id)">
+                                                                                    💼 📄 @template.Name (Требуется комиссия)
+                                                                                </button>
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <form asp-action="GenerateCourseReport" method="post" class="d-inline">
+                                                                                    <input type="hidden" name="groupConfigId" value="@config.Id" />
+                                                                                    <input type="hidden" name="templateId" value="@template.Id" />
+                                                                                    <button type="submit" class="dropdown-item">📄 @template.Name</button>
+                                                                                </form>
+                                                                            }
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <!-- Таблица студентов -->
+                                                <div class="bg-white p-3 rounded border shadow-sm">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover table-bordered bg-white m-0 align-middle" style="cursor: pointer; font-size: 0.9rem;">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th style="width: 5%; text-align: center;">№</th>
+                                                                    <th>ФИО полностью</th>
+                                                                    <th>Должность</th>
+                                                                    <th>Организация</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @{ int rowNumber = 1; 
+                                                                   var courseStudents = allowedIds.Where(id => studentsMap.ContainsKey(id)).Select(id => studentsMap[id]).OrderBy(s => s.LastName).ToList(); }
+                                                                @foreach (var student in courseStudents)
+                                                                {
+                                                                    <tr onclick="openStudentPushModal(@student.Id, @config.CourseId, '@student.LastName @student.FirstName @student.MiddleName')">
+                                                                        <td style="text-align: center;" class="text-muted">@(rowNumber++)</td>
+                                                                        <td class="fw-bold text-dark">👤 @student.LastName @student.FirstName @student.MiddleName</td>
+                                                                        <td>@student.Position</td>
+                                                                        <td>@((student.Company?.Name) ?? "—")</td>
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+<!-- МОДАЛЬНОЕ ОКНО 1: РЕЗУЛЬТАТЫ СТУДЕНТА -->
+<div class="modal fade" id="studentReportModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">📊 Результаты обучения</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2"><strong>Слушатель:</strong> <span id="modalStudentName" class="text-primary fs-5"></span></div>
+                <table class="table table-bordered align-middle">
+                    <thead class="table-secondary"><tr><th>Тест</th><th>Статус</th><th>Баллы</th><th>Верно</th><th>Дата</th><th>Действие</th></tr></thead>
+                    <tbody id="modalAttemptsTableBody"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО 2: ВЫБОР КОМИССИИ ДЛЯ ПРОТОКОЛА -->
+<div class="modal fade" id="commissionModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <form asp-action="GenerateCourseReport" method="post">
+                <input type="hidden" id="modalGroupConfigId" name="groupConfigId" value="" />
+                <input type="hidden" id="modalTemplateId" name="templateId" value="" />
+                
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">💼 Состав квалификационной комиссии</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Выберите членов комиссии из списка или введите новые данные вручную в формате: <code>Фамилия И.О., Должность</code></p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">👨‍💼 Председатель комиссии:</label>
+                        <select id="selectChairman" name="chairmanInput" class="commission-select" required placeholder="Выберите или введите ФИО..."></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">👤 Член комиссии №1:</label>
+                        <select id="selectMember1" name="member1Input" class="commission-select" required placeholder="Выберите или введите ФИО..."></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">👤 Член комиссии №2:</label>
+                        <select id="selectMember2" name="member2Input" class="commission-select" required placeholder="Выберите или введите ФИО..."></select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">📥 Сформировать и скачать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+<script>
+    // Массив членов комиссии, прилетевший из бэкенда для инициализации Tom Select
+    const commissionData = [
+        @foreach (var c in commission) {
+            // НАДО СДЕЛАТЬ:
+@: { value: '@c.Id', text: '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(c.DisplayName)' },
+        }
+    ];
+
+    let tsChairman, tsMember1, tsMember2;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const config = {
+            options: commissionData,
+            valueField: 'value',
+            labelField: 'text',
+            searchField: ['text'],
+            create: true, // ВКЛЮЧАЕТ ВОЗМОЖНОСТЬ РУЧНОГО ВВОДА ТЕКСТА
+            createOnBlur: true,
+            persist: false,
+            plugins: ['dropdown_input']
+        };
+
+        // Инициализируем Tom Select для трех полей ввода комиссии
+        tsChairman = new TomSelect('#selectChairman', config);
+        tsMember1 = new TomSelect('#selectMember1', config);
+        tsMember2 = new TomSelect('#selectMember2', config);
+    });
+
+    function openCommissionModal(groupConfigId, templateId) {
+        document.getElementById('modalGroupConfigId').value = groupConfigId;
+        document.getElementById('modalTemplateId').value = templateId;
+        
+        // Очищаем старые значения селекторов перед показом окна
+        if (tsChairman) { tsChairman.clear(); tsMember1.clear(); tsMember2.clear(); }
+
+        const modal = new bootstrap.Modal(document.getElementById('commissionModal'));
+        modal.show();
+    }
+
+    function openStudentPushModal(studentId, courseId, fullName) {
+        document.getElementById('modalStudentName').innerText = fullName;
+        const tableBody = document.getElementById('modalAttemptsTableBody');
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Загрузка данных...</td></tr>';
+        
+        const myModal = new bootstrap.Modal(document.getElementById('studentReportModal'));
+        myModal.show();
+        
+                fetch(`/Report/GetStudentTestAttempts?studentId=${studentId}&courseId=${courseId}`)
+            .then(res => res.json())
+            .then(data => {
+                tableBody.innerHTML = '';
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Попыток не найдено.</td></tr>';
+                    return;
+                }
+                data.forEach(a => {
+                    // Исправленная строка с проверкой на 'Passed'
+                    let badge = (a.status === 'Passed' || a.status === 'Success' || a.status === 'Completed') 
+                        ? '<span class="badge bg-success">Сдано</span>' 
+                        : '<span class="badge bg-danger">Не сдано</span>';
+
+                    tableBody.insertAdjacentHTML('beforeend', `<tr><td><strong>${a.testName}</strong></td><td>${badge}</td><td>${a.scorePercentage}%</td><td>${a.correctAnswersCount}/${a.totalQuestionsCount}</td><td><small>${a.finishedAt}</small></td><td><a href="/Report/DownloadTestResult?attemptId=${a.id}" class="btn btn-sm btn-outline-primary">💾</a></td></tr>`);
+                });
+            });
+    }
+</script>
+}

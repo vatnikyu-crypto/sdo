@@ -63,4 +63,10 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
+app.MapGet("/", async context =>
+{
+    context.Response.Redirect("/Auth/Login");
+    await Task.CompletedTask;
+});
+
 app.Run();

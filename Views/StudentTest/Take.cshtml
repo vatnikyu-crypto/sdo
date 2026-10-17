@@ -1,4 +1,4 @@
-@model IEnumerable<SdoApp.Models.TestQuestion>
+@model IEnumerable<SdoApp.Models.DTO.StudentQuestionDto>
 @{
     Layout = "_StudentLayout";
     ViewData["Title"] = $"Тестирование: {ViewBag.TestTitle}";
@@ -236,6 +236,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     testId: @ViewBag.TestId,
+                    courseId: @ViewBag.CourseId, // Передаем ID курса в DTO
                     studentAnswers: answersPayload
                 })
             });
@@ -254,7 +255,11 @@
             } else {
                 alert("Ошибка: " + result.message);
                 // Если время вышло на бэкенде — возвращаем на плеер курса
-                window.location.href = "/CourseMaterials/StudentView?courseId=@ViewBag.CourseId&activeId=@ViewBag.TestId";
+                if (result.redirectUrl) {
+                    window.location.href = result.redirectUrl;
+                } else {
+                    window.location.href = "/CourseMaterials/StudentView?courseId=@ViewBag.CourseId&activeId=@ViewBag.TestId";
+                }
             }
         } catch {
             alert("Критический сбой сети при отправке пакета ответов.");

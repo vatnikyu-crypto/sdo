@@ -7,6 +7,9 @@
     <title>@ViewData["Title"] | Панель Администратора</title>
     <!-- Локальный Bootstrap без внешних ссылок -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- ПОДКЛЮЧЕНИЕ ЛОКАЛЬНЫХ ФАЙЛОВ PLUG-IN'А -->
+    <link href="/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="/js/tom-select.complete.js"></script>
     <style>
             body {
                 background-color: #f8f9fc;
@@ -62,7 +65,7 @@
 
                         <ul class="nav flex-column mt-2">
                             <li class="nav-item">
-                                <a class="nav-link active" href="/Companies/Index">Компании</a>
+                                <a class="nav-link" href="/Companies/Index">Компании</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="/Groups/Index">👥 Группы</a>
@@ -71,7 +74,10 @@
                                 <a class="nav-link" href="/Courses/Index">Курсы</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link active" href="/Users/Index">Пользователи</a>
+                                <a class="nav-link" href="/Users/Index">Пользователи</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Report/Index">Отчетность</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="/KnowledgeBase/Index">📚 База знаний</a>
@@ -148,6 +154,7 @@
                     // Вызываем комплексную проверку счетчиков при каждой загрузке любой страницы админки
                     document.addEventListener("DOMContentLoaded", updateSidebarBadges);
             </script>
+            @await RenderSectionAsync("Scripts", required: false)
         </body>
 
     </html>

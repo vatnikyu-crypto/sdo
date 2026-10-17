@@ -11,23 +11,27 @@
         border-radius: 12px;
         overflow: hidden;
     }
+
     .course-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
     }
+
     .course-img-container {
         height: 180px;
         background-color: #eaecf4;
         position: relative;
     }
+
     .course-img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
-    .fade-out { 
-        opacity: 0; 
-        transition: opacity 0.3s ease; 
+
+    .fade-out {
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
 </style>
 
@@ -39,7 +43,8 @@
     </div>
     <a href="/Courses/Create" class="btn btn-primary px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
         <svg xmlns="http://w3.org" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+            <path
+            d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
         </svg>
         Создать курс
     </a>
@@ -58,7 +63,7 @@
     <div class="col-sm ms-auto" style="max-width: 400px;">
         <div class="input-group input-group-sm">
             <span class="input-group-text bg-light text-muted">🔍</span>
-            <input type="text" id="courseTableSearchInput" class="form-control" 
+            <input type="text" id="courseTableSearchInput" class="form-control"
                    placeholder="Поиск по названию или описанию..." autocomplete="off" />
         </div>
     </div>
@@ -81,14 +86,19 @@
             <div class="col course-card-wrapper" id="course-card-@course.Id" data-id="@course.Id">
                 <div class="card h-100 shadow-sm course-card bg-white">
                     <div class="course-img-container">
-                        <img src="@course.ImageUrl" class="course-img" alt="Обложка курса" 
+                        <img src="@course.ImageUrl" class="course-img" alt="Обложка курса"
                              onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://w3.org\' width=\'100%\' height=\'100%\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\' %234e73df\'/><text x=\'50%\' y=\'55%\' font-family=\'sans-serif\' font-weight=\'bold\' font-size=\'14\' fill=\'white\' text-anchor=\'middle\'>📚 СДО Курс</text></svg>';">
                     </div>
                     
                     <div class="card-body d-flex flex-column p-4">
                         <h5 class="card-title fw-bold text-dark mb-2 course-title">@course.Title</h5>
                         <p class="card-text text-muted small flex-grow-1 course-description">
-                            @(string.IsNullOrWhiteSpace(course.Description) ? "Описание курса отсутствует." : (course.Description.Length > 120 ? course.Description.Substring(0, 115) + "..." : course.Description))
+                            @if (!string.IsNullOrWhiteSpace(course.Description))
+                            {
+                                <!-- Выводим текст, только если описание заполнено. Если длинное — обрезаем. -->
+                                @(course.Description.Length > 120 ? course.Description.Substring(0, 115) + "..." :
+                                                course.Description)
+                            }
                         </p>
                         
                         <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
@@ -103,18 +113,22 @@
                     
                     <!-- ИСПРАВЛЕННАЯ СТРУКТУРА КНОПОК: Наполнение (Большая), Карандаш и Корзина (Маленькие справа) -->
                     <div class="card-footer bg-light border-0 p-3 d-flex gap-1.5 align-items-center">
-                        <a href="/CourseMaterials/Index?courseId=@course.Id" class="btn btn-sm btn-primary fw-bold flex-grow-1 py-1.5">
+                        <a href="/CourseMaterials/Index?courseId=@course.Id"
+                           class="btn btn-sm btn-primary fw-bold flex-grow-1 py-1.5">
                             ⚙️ Наполнение
                         </a>
-                        <a href="/Courses/Edit/@course.Id" class="btn btn-sm btn-light border text-secondary px-2.5 py-1.5" title="Редактировать карточку">
+                        <a href="/Courses/Edit/@course.Id" class="btn btn-sm btn-light border text-secondary px-2.5 py-1.5"
+                           title="Редактировать карточку">
                             ✏️
                         </a>
                         <button class="btn btn-sm btn-outline-danger px-2.5 py-1.5" title="Удалить учебный курс"
                                 data-bs-toggle="modal" data-bs-target="#deleteCourseModal"
                                 onclick="prepareDeleteCourse(@course.Id, '@course.Title')">
                             <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                <path
+                                d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                <path
+                                d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
                             </svg>
                         </button>
                     </div>
@@ -147,8 +161,10 @@
                 <p id="deleteCourseNameText" class="fw-bold text-danger mb-4"></p>
                 
                 <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50" data-bs-dismiss="modal">Отмена</button>
-                    <button id="confirmDeleteCourseBtn" type="button" class="btn btn-danger px-4 fw-bold w-50">Удалить</button>
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50"
+                            data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmDeleteCourseBtn" type="button"
+                            class="btn btn-danger px-4 fw-bold w-50">Удалить</button>
                 </div>
             </div>
         </div>
@@ -240,12 +256,12 @@
         paginationContainer.appendChild(nextLi);
     }
 
-    searchInput.addEventListener('input', function() {
+    searchInput.addEventListener('input', function () {
         currentPage = 1;
         updateCoursePagination();
     });
 
-    pageSizeSelect.addEventListener('change', function() {
+    pageSizeSelect.addEventListener('change', function () {
         pageSize = parseInt(this.value);
         currentPage = 1;
         updateCoursePagination();
@@ -259,7 +275,7 @@
         document.getElementById('deleteCourseNameText').textContent = courseTitle;
     }
 
-    document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async function() {
+    document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async function () {
         if (!courseIdToDelete) return;
 
         try {
@@ -300,7 +316,7 @@
         }
     });
 
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         updateCoursePagination();
     });
 </script>

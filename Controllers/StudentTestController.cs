@@ -6,6 +6,7 @@ using SdoApp.Models;
 using SdoApp.Services;
 using Xceed.Document.NET;
 using Xceed.Words.NET;
+using SdoApp.Models.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -185,13 +186,27 @@ public class StudentTestController : Controller
         ViewBag.TestId = testMaterial.Id;
         ViewBag.TestTitle = testMaterial.Title;
         ViewBag.TestKind = testMaterial.TestKind;
+        ViewBag.CourseId = testMaterial.CourseId;
 
         // Передаем точное число секунд для запуска таймера на фронте
         ViewBag.RemainingSeconds = activeAttempt.HardDeadline.HasValue
             ? (int)Math.Max(0, (activeAttempt.HardDeadline.Value - DateTime.UtcNow).TotalSeconds)
             : 0;
 
-        return View(finalQuestions);
+        var safeQuestionsDto = finalQuestions.Select(q => new StudentQuestionDto
+        {
+            Id = q.Id,
+            QuestionText = q.QuestionText,
+            Hint = q.Hint,
+            Answers = q.Answers.Select(a => new StudentAnswerOptionDto
+            {
+                Id = a.Id,
+                AnswerText = a.AnswerText,
+                ImageUrl = a.ImageUrl
+            }).ToList()
+        }).ToList();
+
+        return View(safeQuestionsDto);
     }
 
     // GET: /StudentTest/DownloadResult?attemptId
@@ -230,7 +245,7 @@ public class StudentTestController : Controller
             .Where(q => answeredQuestionIds.Contains(q.Id))
             .ToListAsync();
 
-        using (var memoryStream = new MemoryStream())
+        var memoryStream = new MemoryStream();
         {
             using (var doc = DocX.Create(memoryStream))
             {
@@ -239,7 +254,7 @@ public class StudentTestController : Controller
                 pHeader.Alignment = Alignment.center;
                 pHeader.FontSize(10).Bold();
                 doc.InsertParagraph("\n");
-                
+
                 // ЗАГОЛОВОК ДОКУМЕНТА
                 var pTitle = doc.InsertParagraph($"ИТОГОВЫЙ ЭКЗАМЕН № {attempt.Id}-{attempt.StudentId}");
                 pTitle.Alignment = Alignment.center;
@@ -346,7 +361,7 @@ public class StudentTestController : Controller
 
                 // Считаем проценты
                 int errorsPercentage = totalQuestionsCount > 0 ? (int)Math.Round((double)errorsCount / totalQuestionsCount * 100) : 0;
-                
+
                 // Допустимое количество ошибок (на основе PassPercentage, например, если порог 70%, то допустимо 30% ошибок)
                 int allowedErrorsPercentage = 100 - attempt.CourseMaterial!.PassPercentage;
                 int allowedErrorsCount = (int)Math.Floor((double)totalQuestionsCount * allowedErrorsPercentage / 100);
@@ -386,82 +401,98 @@ public class StudentTestController : Controller
             }
 
             string fileName = $"Protocol_{attempt.Id}_{attempt.Student?.LastName}.docx";
-            return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
+            memoryStream.Position = 0;
+            return File(memoryStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
         }
     }
 
     // POST: /StudentTest/SubmitAnswers
-    // Фиксация ответов, сохранение слепка JSON и закрытие попытки
     [HttpPost]
     public async Task<IActionResult> SubmitAnswers([FromBody] TestSubmissionDto model)
     {
         if (model == null) return Json(new { success = false, message = "Некорректные данные!" });
 
-        // Извлекаем ID из твоей системы авторизации (AuthController)
         var userIdClaim = User.FindFirst("UserId")?.Value;
         if (userIdClaim == null) return Json(new { success = false, message = "Вы не авторизованы!" });
         int studentId = int.Parse(userIdClaim);
 
         var testMaterial = await _context.CourseMaterials.FindAsync(model.TestId);
-        if (testMaterial == null || testMaterial.Type != MaterialType.Test)
-            return Json(new { success = false, message = "Тест не найден!" });
 
-        // Ищем строго текущую открытую попытку
+        // Формируем резервный URL редиректа на случай падения или таймаута
+        int courseId = testMaterial?.CourseId ?? model.CourseId;
+        string returnUrl = $"/CourseMaterials/StudentView?courseId={courseId}&activeId={model.TestId}";
+
+        if (testMaterial == null || testMaterial.Type != MaterialType.Test)
+            return Json(new { success = false, message = "Тест не найден!", redirectUrl = returnUrl });
+
         var attempt = await _context.TestAttempts
             .FirstOrDefaultAsync(a => a.CourseMaterialId == model.TestId && a.StudentId == studentId && a.Status == AttemptStatus.InProgress);
 
         if (attempt == null)
-            return Json(new { success = false, message = "Активная сессия тестирования не найдена или уже завершена по таймауту." });
+            return Json(new { success = false, message = "Активная сессия тестирования не найдена или уже завершена по таймауту.", redirectUrl = returnUrl });
 
-        // Проверка времени сервером
         if (attempt.HardDeadline.HasValue && DateTime.UtcNow > attempt.HardDeadline.Value)
         {
             attempt.Status = AttemptStatus.Failed;
             attempt.FinishedAt = attempt.HardDeadline;
             await _context.SaveChangesAsync();
-            return Json(new { success = false, message = "⏱️ Время тестирования истекло! Результат не засчитан." });
+            // Передаем URL редиректа даже при ошибке таймаута!
+            return Json(new { success = false, message = "⏱️ Время тестирования истекло! Результат не засчитан.", redirectUrl = returnUrl });
         }
 
         var answeredQuestionIds = model.StudentAnswers.Keys.ToList();
+        // 1. Извлекаем ВСЕ вопросы, которые привязаны к данному тесту
         var questions = await _context.TestQuestions
             .Include(q => q.Answers)
-            .Where(q => answeredQuestionIds.Contains(q.Id))
+            .Where(q => q.CourseMaterialId == model.TestId)
             .ToListAsync();
+
+        // На всякий случай страхуемся: если в тесте физически нет вопросов, выдаем ошибку
+        if (!questions.Any())
+        {
+            return Json(new { success = false, message = "В данном тесте отсутствуют вопросы. Обратитесь к администратору.", redirectUrl = returnUrl });
+        }
 
         int correctQuestionsCount = 0;
 
+        // 2. Честно перебираем каждый вопрос теста
         foreach (var q in questions)
         {
+            // Смотрим, ответил ли что-то студент на этот конкретный вопрос
             model.StudentAnswers.TryGetValue(q.Id, out var selectedAnswerIds);
-            selectedAnswerIds ??= new List<int>();
+            selectedAnswerIds ??= new List<int>(); // Если не ответил — будет пустой список
+
+            // Получаем правильные ID ответов из базы
             var correctOptionIds = q.Answers.Where(a => a.IsCorrect).Select(a => a.Id).ToList();
 
+            // Сравниваем списки
             bool isUserCorrect = correctOptionIds.Count == selectedAnswerIds.Count && !correctOptionIds.Except(selectedAnswerIds).Any();
-            if (isUserCorrect) correctQuestionsCount++;
+            if (isUserCorrect)
+            {
+                correctQuestionsCount++;
+            }
         }
 
+        // 3. За общее число вопросов берем реальное количество вопросов в тесте
         int totalQuestions = attempt.TotalQuestionsCount > 0 ? attempt.TotalQuestionsCount : questions.Count;
-        int finalScorePercentage = totalQuestions > 0 ? (int)Math.Round((double)correctQuestionsCount / totalQuestions * 100) : 0;
 
+        // Расчет процентов теперь на 100% застрахован от деления на 0
+        int finalScorePercentage = totalQuestions > 0 ? (int)Math.Round((double)correctQuestionsCount / totalQuestions * 100) : 0;
         bool isPassed = finalScorePercentage >= testMaterial.PassPercentage;
 
-        // Фиксируем результаты и закрываем попытку
+        // 4. Фиксируем результаты и закрываем попытку
         attempt.ScorePercentage = finalScorePercentage;
         attempt.CorrectAnswersCount = correctQuestionsCount;
         attempt.TotalQuestionsCount = totalQuestions;
         attempt.Status = isPassed ? AttemptStatus.Passed : AttemptStatus.Failed;
         attempt.FinishedAt = DateTime.UtcNow;
 
-        // КРИТИЧЕСКИ ВАЖНО: Сохраняем слепок ответов студента для корректного DOCX!
+        // Сохраняем слепок ответов (даже если он пустой, структура JSON сохранится для корректного DOCX)
         attempt.StudentAnswersJson = System.Text.Json.JsonSerializer.Serialize(model.StudentAnswers);
-
         await _context.SaveChangesAsync();
 
-        // Пересчитываем общую успеваемость по курсу через GradeService
-        await GradeService.RecalculateCourseProgressAsync(_context, studentId, testMaterial.CourseId);
 
-        // Динамический URL редиректа на страницу плеера курса
-        string returnUrl = $"/CourseMaterials/StudentView?courseId={testMaterial.CourseId}&activeId={testMaterial.Id}";
+        await GradeService.RecalculateCourseProgressAsync(_context, studentId, testMaterial.CourseId);
 
         return Json(new
         {
@@ -473,11 +504,4 @@ public class StudentTestController : Controller
             message = isPassed ? "🎉 Поздравляем! Тест успешно сдан." : "❌ К сожалению, вы не набрали проходной балл."
         });
     }
-}
-
-
-public class TestSubmissionDto
-{
-    public int TestId { get; set; }
-    public Dictionary<int, List<int>> StudentAnswers { get; set; } = new();
 }

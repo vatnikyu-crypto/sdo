@@ -38,18 +38,29 @@ public class CoursesController : Controller
 
     // GET: /Courses/Create
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        // Загружаем программы Минтруда для комбобокса, сортируя по алфавиту
+        ViewBag.MintrudPrograms = await _context.MintrudPrograms
+            .OrderBy(p => p.Name)
+            .ToListAsync();
+
         return View();
     }
 
     // POST: /Courses/Create
-    // Обработка формы и загрузка картинок на сервер
+    // Обработка формы, привязка программы Минтруда и загрузка картинок на сервер
     [HttpPost]
-    public async Task<IActionResult> Create(string title, string? description, IFormFile? imageFile)
+    public async Task<IActionResult> Create(string title, string? description, IFormFile? imageFile, int? programId, int? durationHours, int? recertificationMonths)
     {
+        // Буферизируем текстовые данные на случай ошибки валидации
         ViewBag.Title = title;
         ViewBag.Description = description;
+
+        // Перевызываем наполнение списка, чтобы комбобокс не опустел при возврате страницы с ошибкой
+        ViewBag.MintrudPrograms = await _context.MintrudPrograms
+            .OrderBy(p => p.Name)
+            .ToListAsync();
 
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -58,12 +69,10 @@ public class CoursesController : Controller
         }
 
         string? savedImageUrl = null;
-
         if (imageFile != null && imageFile.Length > 0)
         {
             var extension = Path.GetExtension(imageFile.FileName).ToLower();
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-
             if (!allowedExtensions.Contains(extension))
             {
                 ModelState.AddModelError("", "Ошибка: Разрешены только форматы изображений (.jpg, .jpeg, .png, .webp)!");
@@ -102,17 +111,20 @@ public class CoursesController : Controller
             savedImageUrl = "/uploads/courses/default-course.jpeg";
         }
 
+        // Создаем новый курс с привязкой к программе Минтруда
         var newCourse = new Course
         {
             Title = title.Trim(),
             Description = description?.Trim(),
             ImageUrl = savedImageUrl,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            MintrudProgramId = programId,
+            DurationHours = durationHours,
+            RecertificationMonths = recertificationMonths
         };
 
         _context.Courses.Add(newCourse);
         await _context.SaveChangesAsync();
-
         return RedirectToAction(nameof(Index));
     }
 
@@ -179,63 +191,95 @@ public class CoursesController : Controller
 
 
     // GET: /Courses/Edit/5
-    // Открывает страницу редактирования с заполненными данными курса
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var course = await _context.Courses.FindAsync(id);
+        // Загружаем курс из базы
+        var course = await _context.Courses
+    .Include(c => c.DocumentTemplates)
+    .FirstOrDefaultAsync(c => c.Id == id);
         if (course == null) return NotFound();
 
+        // Заполняем текстовые данные карточки
         ViewBag.Id = course.Id;
         ViewBag.CourseTitle = course.Title;
         ViewBag.Description = course.Description;
         ViewBag.ImageUrl = course.ImageUrl;
+        ViewBag.DurationHours = course.DurationHours;
+        ViewBag.RecertificationMonths = course.RecertificationMonths;
+        ViewBag.DocumentTemplates = course.DocumentTemplates.OrderBy(t => t.SortOrder).ToList();
+
+        // Передаем текущий ID привязанной программы
+        ViewBag.CurrentMintrudProgramId = course.MintrudProgramId;
+
+        // ГАРАНТИРОВАННО загружаем программы Минтруда и проверяем, чтобы список не был пустым
+        var dbPrograms = await _context.MintrudPrograms.OrderBy(p => p.Name).ToListAsync();
+
+        // Если справочник вдруг пуст (база пересоздалась без сидинга), создадим временный список, чтобы страница не висла
+        if (dbPrograms == null || !dbPrograms.Any())
+        {
+            dbPrograms = new List<MintrudProgram>
+        {
+            new MintrudProgram { Id = 1, Code = "ИД46А", Name = "Тестовая программа (Проверьте сидинг базы!)" }
+        };
+        }
+
+        ViewBag.MintrudPrograms = dbPrograms;
 
         return View();
     }
 
     // POST: /Courses/Edit/5
-    // Сохраняет изменения, проверяет файлы и удаляет старую обложку при замене
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, string title, string? description, IFormFile? imageFile)
+    public async Task<IActionResult> Edit(
+        int id,
+        string title,
+        string? description,
+        IFormFile? imageFile,
+        int? programId,
+        int? durationHours,
+        int? recertificationMonths,
+        List<CourseDocumentTemplateInput> templates) // <-- Принимаем список шаблонов из формы
     {
-        var course = await _context.Courses.FindAsync(id);
+        var course = await _context.Courses
+            .Include(c => c.DocumentTemplates) // Обязательно подтягиваем старые шаблоны для обновления
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (course == null) return NotFound();
 
-        // Буферизируем данные на случай ошибки
+        // Буферизация данных для возврата в View в случае ошибок валидации
         ViewBag.Id = course.Id;
         ViewBag.CourseTitle = title;
         ViewBag.Description = description;
         ViewBag.ImageUrl = course.ImageUrl;
+        ViewBag.DurationHours = durationHours;
+        ViewBag.RecertificationMonths = recertificationMonths;
+        ViewBag.CurrentMintrudProgramId = programId;
+        ViewBag.MintrudPrograms = await _context.MintrudPrograms.OrderBy(p => p.Name).ToListAsync();
 
         if (string.IsNullOrWhiteSpace(title))
         {
             ModelState.AddModelError("", "Ошибка: Название курса является обязательным полем!");
-            return View();
+            return View(course);
         }
 
-        // Если админ загрузил новую картинку
+        // 1. ОБРАБОТКА ОБЛОЖКИ КУРСА
         if (imageFile != null && imageFile.Length > 0)
         {
-            var extension = Path.GetExtension(imageFile.FileName).ToLower();
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-
-            if (!allowedExtensions.Contains(extension))
+            var ext = Path.GetExtension(imageFile.FileName).ToLower();
+            var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            if (!allowedExts.Contains(ext))
             {
-                ModelState.AddModelError("", "Ошибка: Разрешены только форматы изображений (.jpg, .jpeg, .png, .webp)!");
-                return View();
+                ModelState.AddModelError("", "Ошибка обложки: Разрешены только форматы .jpg, .jpeg, .png, .webp!");
+                return View(course);
             }
 
             try
             {
                 string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "courses");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-                // Генерируем новое уникальное имя
-                string uniqueFileName = Guid.NewGuid().ToString() + extension;
+                string uniqueFileName = Guid.NewGuid().ToString() + ext;
                 string fileSavePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                 using (var fileStream = new FileStream(fileSavePath, FileMode.Create))
@@ -243,35 +287,175 @@ public class CoursesController : Controller
                     await imageFile.CopyToAsync(fileStream);
                 }
 
-                // УДАЛЕНИЕ СТАРOЙ КАРТИНКИ: если она была и она не дефолтная
                 if (!string.IsNullOrEmpty(course.ImageUrl) && !course.ImageUrl.Contains("default-course.jpeg"))
                 {
-                    string oldImagePath = Path.Combine(_env.WebRootPath, course.ImageUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(oldImagePath))
-                    {
-                        System.IO.File.Delete(oldImagePath);
-                    }
+                    string oldPath = Path.Combine(_env.WebRootPath, course.ImageUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
                 }
 
-                // Записываем новый путь в модель
                 course.ImageUrl = $"/uploads/courses/{uniqueFileName}";
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", $"Ошибка при обновлении файла: {ex.Message}");
-                return View();
+                ModelState.AddModelError("", $"Ошибка при обновлении обложки: {ex.Message}");
+                return View(course);
             }
         }
 
-        // Обновляем текстовые поля
+        // 2. ОБРАБОТКА ШАБЛОНОВ ДОКУМЕНТОВ
+        // Сначала удаляем файлы старых шаблонов, которые админ решил убрать
+        var inputIds = templates?.Select(t => t.Id).Where(id => id > 0).ToList() ?? new List<int>();
+        var templatesToRemove = course.DocumentTemplates.Where(t => !inputIds.Contains(t.Id)).ToList();
+
+        foreach (var oldTemp in templatesToRemove)
+        {
+            if (!string.IsNullOrEmpty(oldTemp.FilePath))
+            {
+                string oldFilePath = Path.Combine(_env.WebRootPath, oldTemp.FilePath.TrimStart('/'));
+                if (System.IO.File.Exists(oldFilePath)) System.IO.File.Delete(oldFilePath);
+            }
+            _context.CourseDocumentTemplates.Remove(oldTemp);
+        }
+
+        // Папка для хранения шаблонов документов Word/Excel
+        string docFolder = Path.Combine(_env.WebRootPath, "uploads", "templates");
+        if (!Directory.Exists(docFolder)) Directory.CreateDirectory(docFolder);
+
+        if (templates != null)
+        {
+            for (int i = 0; i < templates.Count; i++)
+            {
+                var tInput = templates[i];
+
+                // Если это абсолютно пустой блок без имени — игнорируем его
+                if (string.IsNullOrWhiteSpace(tInput.Name)) continue;
+
+                string? currentFilePath = tInput.ExistingFilePath;
+
+                // Если загружен новый файл для этого шаблона
+                if (tInput.File != null && tInput.File.Length > 0)
+                {
+                    var fileExt = Path.GetExtension(tInput.File.FileName).ToLower();
+                    var allowedDocExts = new[] { ".docx", ".xlsx" };
+
+                    if (!allowedDocExts.Contains(fileExt))
+                    {
+                        ModelState.AddModelError("", $"Ошибка в документе '{tInput.Name}': Разрешены только файлы .docx и .xlsx!");
+                        return View(course);
+                    }
+
+                    // Удаляем старый файл шаблона, если он заменяется новым
+                    if (!string.IsNullOrEmpty(currentFilePath))
+                    {
+                        string oldFile = Path.Combine(_env.WebRootPath, currentFilePath.TrimStart('/'));
+                        if (System.IO.File.Exists(oldFile)) System.IO.File.Delete(oldFile);
+                    }
+
+                    // Сохраняем новый файл документа
+                    string uniqueDocName = Guid.NewGuid().ToString() + fileExt;
+                    string docSavePath = Path.Combine(docFolder, uniqueDocName);
+
+                    using (var stream = new FileStream(docSavePath, FileMode.Create))
+                    {
+                        await tInput.File.CopyToAsync(stream);
+                    }
+                    currentFilePath = $"/uploads/templates/{uniqueDocName}";
+                }
+
+                if (tInput.Id > 0)
+                {
+                    // Редактирование существующего шаблона
+                    var existingTemplate = course.DocumentTemplates.FirstOrDefault(t => t.Id == tInput.Id);
+                    if (existingTemplate != null)
+                    {
+                        existingTemplate.Name = tInput.Name.Trim();
+                        existingTemplate.IsPerStudent = tInput.IsPerStudent;
+                        existingTemplate.RequiresCommission = tInput.RequiresCommission;
+                        existingTemplate.SortOrder = i; // Сохраняем актуальный порядок после перетаскивания
+                        existingTemplate.FilePath = currentFilePath;
+                        _context.CourseDocumentTemplates.Update(existingTemplate);
+                    }
+                }
+                else
+                {
+                    // Создание нового шаблона
+                    var newTemplate = new CourseDocumentTemplate
+                    {
+                        Name = tInput.Name.Trim(),
+                        IsPerStudent = tInput.IsPerStudent,
+                        RequiresCommission = tInput.RequiresCommission,
+                        SortOrder = i,
+                        FilePath = currentFilePath,
+                        CourseId = course.Id
+                    };
+                    _context.CourseDocumentTemplates.Add(newTemplate);
+                }
+            }
+        }
+
+        // 3. ОБНОВЛЕНИЕ ОСНОВНЫХ ДАННЫХ КУРСА
         course.Title = title.Trim();
         course.Description = description?.Trim();
+        course.MintrudProgramId = programId;
+        course.DurationHours = durationHours;
+        course.RecertificationMonths = recertificationMonths;
 
         _context.Courses.Update(course);
         await _context.SaveChangesAsync();
-
         return RedirectToAction(nameof(Index));
     }
 
+    // POST: /Courses/CreateMintrudProgram
+    [HttpPost]
+    public async Task<IActionResult> CreateMintrudProgram(string name, string code)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Json(new { success = false, message = "Название не может быть пустым" });
+
+        var program = new MintrudProgram { Name = name.Trim(), Code = code?.Trim() ?? string.Empty };
+        _context.MintrudPrograms.Add(program);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, id = program.Id, name = program.Name, code = program.Code });
+    }
+
+    // POST: /Courses/EditMintrudProgram
+    [HttpPost]
+    public async Task<IActionResult> EditMintrudProgram(int id, string name, string code)
+    {
+        var program = await _context.MintrudPrograms.FindAsync(id);
+        if (program == null)
+            return Json(new { success = false, message = "Программа не найдена" });
+
+        if (string.IsNullOrWhiteSpace(name))
+            return Json(new { success = false, message = "Название не может быть пустым" });
+
+        program.Name = name.Trim();
+        program.Code = code?.Trim() ?? string.Empty;
+
+        _context.MintrudPrograms.Update(program);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, id = program.Id, name = program.Name, code = program.Code });
+    }
+
+    // POST: /Courses/DeleteMintrudProgram
+    [HttpPost]
+    public async Task<IActionResult> DeleteMintrudProgram(int id)
+    {
+        var program = await _context.MintrudPrograms.FindAsync(id);
+        if (program == null)
+            return Json(new { success = false, message = "Программа не найдена" });
+
+        // Проверяем, не привязана ли программа к курсам, чтобы не нарушить целостность
+        bool hasCourses = await _context.Courses.AnyAsync(c => c.MintrudProgramId == id);
+        if (hasCourses)
+            return Json(new { success = false, message = "Нельзя удалить: эта программа уже привязана к существующим курсам!" });
+
+        _context.MintrudPrograms.Remove(program);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true });
+    }
 }
 

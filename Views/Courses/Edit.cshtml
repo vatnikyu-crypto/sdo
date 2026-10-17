@@ -12,73 +12,393 @@
         Назад к курсам
     </a>
     <h2 class="fw-bold text-dark mt-2 m-0">Редактирование курса</h2>
-    <small class="text-muted">Изменение названия, описания или маркетинговой обложки курса</small>
+    <small class="text-muted">Управление параметрами обучения и конструктором шаблонов документов</small>
 </div>
 
-<!-- КАРТОЧКА С ФОРМОЙ -->
-<div class="card card-custom p-4 bg-white border-0 shadow-sm mb-4" style="max-width: 700px; border-radius: 12px;">
-    <!-- Передаем ID курса в параметрах роута формы -->
-    <form href="/Courses/Edit/@ViewBag.Id" method="post" enctype="multipart/form-data">
-        
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-danger border-0 small py-2 mb-4" role="alert">
-                <div asp-validation-summary="All"></div>
-            </div>
-        }
+<!-- ГЛАВНАЯ ФОРМА (ДВЕ КОЛОНКИ) -->
+<form asp-action="Edit" asp-controller="Courses" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="@ViewBag.Id" />
 
-        <!-- НАЗВАНИЕ КУРСА -->
-        <div class="mb-3">
-            <label class="form-label text-muted small fw-bold">НАЗВАНИЕ КУРСА <span class="text-danger">*</span></label>
-<input name="Title" type="text" class="form-control" required autocomplete="off" value="@ViewBag.CourseTitle" />        </div>
-
-        <!-- ОПИСАНИЕ КУРСА -->
-        <div class="mb-3">
-            <label class="form-label text-muted small fw-bold">КРАТКОЕ ОПИСАНИЕ</label>
-            <textarea name="Description" class="form-control" rows="4" autocomplete="off">@ViewBag.Description</textarea>
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger border-0 small py-2 mb-4" role="alert">
+            <div asp-validation-summary="All"></div>
         </div>
-        <!-- ВЫБОР И ИНТЕРAКТИВНЫЙ ПРЕДПРОСМОТР КАРТИНКИ -->
-        <div class="mb-4">
-            <label class="form-label text-muted small fw-bold">ОБЛОЖКА КУРСА (ИЗОБРАЖЕНИЕ)</label>
-            <input type="file" name="imageFile" id="courseImageFileInput" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
-            <div class="form-text text-muted small">Оставьте поле пустым, если не хотите менять текущую обложку. Разрешены: .jpg, .png, .webp.</div>
-            
-            <!-- Блок предпросмотра (при редактировании он сразу показывает ТЕКУЩУЮ обложку из базы) -->
-            <div class="mt-3 text-start" id="previewImageContainer">
-                <p class="text-muted small fw-bold mb-1" id="previewLabelText">ТЕКУЩАЯ ОБЛОЖКА КУРСА:</p>
-                <div style="width: 240px; height: 135px; border-radius: 8px; overflow: hidden; background-color: #eaecf4;">
-                    <img id="courseImagePreview" src="@ViewBag.ImageUrl" alt="Предпросмотр обложки" style="width: 100%; height: 100%; object-fit: cover;" />
+    }
+
+    <div class="row">
+        <!-- ЛЕВАЯ КОЛОНКА: ДАННЫЕ КУРСА -->
+        <div class="col-lg-5 mb-4">
+            <div class="card p-4 bg-white border-0 shadow-sm" style="border-radius: 12px;">
+                <h5 class="fw-bold text-dark mb-3">Параметры курса</h5>
+
+                <!-- НАЗВАНИЕ КУРСА -->
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">НАЗВАНИЕ КУРСА <span class="text-danger">*</span></label>
+                    <input name="Title" type="text" class="form-control" required autocomplete="off" value="@ViewBag.CourseTitle" />
+                </div>
+
+                <!-- ОПИСАНИЕ КУРСА -->
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">КРАТКОЕ ОПИСАНИЕ</label>
+                    <textarea name="Description" class="form-control" rows="4" autocomplete="off">@ViewBag.Description</textarea>
+                </div>
+
+                <!-- ПРОГРАММА МИНТРУДА -->
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">ПРОГРАММА ОБУЧЕНИЯ (МИНТРУД)</label>
+                    <div class="input-group">
+                        <div style="flex-grow: 1;">
+                            <select name="programId" id="mintrudSelect" class="form-select" style="display: none;" placeholder="Выберите программу...">
+                                <option value="">-- Не выбрано (Внутренний / общий курс) --</option>
+                                @if (ViewBag.MintrudPrograms != null)
+                                {
+                                    foreach (var program in (IEnumerable<SdoApp.Models.MintrudProgram>)ViewBag.MintrudPrograms)
+                                    {
+                                        <option value="@program.Id" data-code="@program.Code" data-name="@program.Name"
+                                                selected="@(program.Id == ViewBag.CurrentMintrudProgramId ? "selected" : null)">
+                                            @program.Name @(!string.IsNullOrEmpty(program.Code) ? $"({program.Code})" : "")
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary border shadow-sm" id="btnOpenAddModal" title="Добавить новую программу">
+                            <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5a.5.5 0 0 1 .5-.5"/></svg>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary border shadow-sm d-none" id="btnOpenEditModal" title="Редактировать выбранную">
+                            <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger border shadow-sm d-none" id="btnDeleteMintrud" title="Удалить выбранную программу">
+                            <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5m3 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5m3 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ЧАСЫ И ПЕРЕАТТЕСТАЦИЯ -->
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label class="form-label text-muted small fw-bold">ОБЪЕМ КУРСА (В ЧАСАХ)</label>
+                        <div class="input-group">
+                            <input type="number" name="durationHours" class="form-control" min="1" max="1000" value="@ViewBag.DurationHours" placeholder="72" autocomplete="off"/>
+                            <span class="input-group-text bg-light text-muted small">ак. ч.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">ПЕРИОД ПЕРЕАТТЕСТАЦИИ</label>
+                        <select name="recertificationMonths" class="form-select">
+                            <option value="" selected="@(ViewBag.RecertificationMonths == null ? "selected" : null)">Бессрочно</option>
+                            <option value="6" selected="@(ViewBag.RecertificationMonths == 6 ? "selected" : null)">6 мес. (полгода)</option>
+                            <option value="12" selected="@(ViewBag.RecertificationMonths == 12 ? "selected" : null)">12 мес. (1 год)</option>
+                            <option value="18" selected="@(ViewBag.RecertificationMonths == 18 ? "selected" : null)">18 мес. (1.5 года)</option>
+                            <option value="24" selected="@(ViewBag.RecertificationMonths == 24 ? "selected" : null)">24 мес. (2 года)</option>
+                            <option value="36" selected="@(ViewBag.RecertificationMonths == 36 ? "selected" : null)">36 мес. (3 года)</option>
+                            <option value="48" selected="@(ViewBag.RecertificationMonths == 48 ? "selected" : null)">48 мес. (4 года)</option>
+                            <option value="60" selected="@(ViewBag.RecertificationMonths == 60 ? "selected" : null)">60 мес. (5 лет)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ОБЛОЖКА КУРСА -->
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">ОБЛОЖКА КУРСА (ИЗОБРАЖЕНИЕ)</label>
+                    <input type="file" name="imageFile" id="courseImageFileInput" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                    
+                    <div class="mt-3 text-start" id="previewImageContainer">
+                        <p class="text-muted small fw-bold mb-1" id="previewLabelText">ТЕКУЩАЯ ОБЛОЖКА КУРСА:</p>
+                        <div style="width: 240px; height: 135px; border-radius: 8px; overflow: hidden; background-color: #eaecf4;">
+                            <img id="courseImagePreview" src="@ViewBag.ImageUrl" alt="Предпросмотр обложки" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- КНОПКИ УПРАВЛЕНИЯ ФОРМОЙ -->
+                <div class="d-flex gap-2 mt-4 pt-2 border-top">
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">Сохранить изменения</button>
+                    <a href="/Courses/Index" class="btn btn-light px-4 py-2 fw-bold border text-secondary">Отмена</a>
                 </div>
             </div>
         </div>
+        <!-- ПРАВАЯ КОЛОНКА: КОНСТРУКТОР ШАБЛОНОВ ДОКУМЕНТОВ -->
+        <div class="col-lg-7 mb-4">
+            <div class="card p-4 bg-white border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-dark m-0">Шаблоны документов</h5>
+                        <small class="text-muted">Перетаскивайте блоки для изменения порядка</small>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm fw-bold px-3 shadow-sm d-flex align-items-center gap-1" id="btnAddDocumentTemplate">
+                        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>
+                        Добавить шаблон
+                    </button>
+                </div>
 
-        <!-- КНОПКИ УПРАВЛЕНИЯ -->
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">Сохранить изменения</button>
-            <a href="/Courses/Index" class="btn btn-light px-4 py-2 fw-bold border text-secondary">Отмена</a>
+                <!-- КОНТЕЙНЕР ДЛЯ ДИНАМИЧЕСКИХ КАРТОЧЕК -->
+                <div id="documentTemplatesContainer" class="d-flex flex-column gap-3">
+                    @if (ViewBag.DocumentTemplates != null)
+                    {
+                        var index = 0;
+                        foreach (var template in (IEnumerable<SdoApp.Models.CourseDocumentTemplate>)ViewBag.DocumentTemplates)
+                        {
+                            <div class="card border border-light shadow-sm p-3 position-relative doc-template-card" data-index="@index" draggable="true" style="border-radius: 10px; cursor: move; background-color: #fcfcfd;">
+                                <input type="hidden" name="templates[@index].Id" value="@template.Id" />
+                                <input type="hidden" name="templates[@index].ExistingFilePath" value="@template.FilePath" />
+
+                                <div class="row align-items-center">
+                                    <!-- Иконка стрелочек перемещения -->
+                                    <div class="col-auto text-muted pe-0" style="cursor: move;">
+                                        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V13h1.5a.5.5 0 0 0 .354-.854l-2-2a.5.5 0 0 0-.708 0l-2 2A.5.5 0 0 0 9 13h1.5v1.5a.5.5 0 0 0 .5-.5M4 11.5a.5.5 0 0 1 .5-.5H6V9.5a.5.5 0 0 1 .354-.354l2-2a.5.5 0 0 1 .708 0l2 2A.5.5 0 0 1 11.5 9.5H10V11a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0V12H9v1.5a.5.5 0 0 1-.5-.5h-4a.5.5 0 0 1-.5-.5M4.5 5a.5.5 0 0 0-.5.5V7h-1.5a.5.5 0 0 0-.354.854l2 2a.5.5 0 0 0 .708 0l2-2A.5.5 0 0 0 6 7H4.5V5.5a.5.5 0 0 0-.5-.5"/></svg>
+                                    </div>
+
+                                    <!-- Поля Названия и Чекбоксы -->
+                                    <div class="col-md-7">
+                                        <div class="mb-2">
+                                            <label class="form-label text-muted small fw-bold mb-1">НАЗВАНИЕ ШАБЛОНА <span class="text-danger">*</span></label>
+                                            <input type="text" name="templates[@index].Name" class="form-control form-control-sm doc-name-input" required value="@template.Name" placeholder="Например: Протокол проверки знаний" autocomplete="off" />
+                                        </div>
+                                        <div class="form-check form-switch small mb-1">
+                                            <input class="form-check-input" type="checkbox" name="templates[@index].IsPerStudent" value="true" checked="@(template.IsPerStudent ? "checked" : null)" />
+                                            <label class="form-check-label text-secondary">Формируется отдельно на каждого слушателя</label>
+                                        </div>
+                                        <div class="form-check form-switch small">
+                                            <input class="form-check-input" type="checkbox" name="templates[@index].RequiresCommission" value="true" checked="@(template.RequiresCommission ? "checked" : null)" />
+                                            <label class="form-check-label text-secondary">Требуется выбор комиссии</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Загрузка файла документа и корзина -->
+                                    <div class="col-md-4 d-flex flex-column justify-content-between position-relative pe-4">
+                                        <div>
+                                            <label class="form-label text-muted small fw-bold mb-1">ФАЙЛ ШАБЛОНА</label>
+                                            <input type="file" name="templates[@index].File" class="form-control form-control-sm" accept=".docx,.xlsx" />
+                                            @if (!string.IsNullOrEmpty(template.FilePath))
+                                            {
+                                                <div class="mt-2 text-truncate small bg-light p-1 rounded border text-success fw-bold d-flex align-items-center gap-1" title="Файл сохранен">
+                                                    <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                                                    Файл загружен
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <button type="button" class="btn btn-link text-danger p-0 position-absolute end-0 bottom-0 mb-1 btn-remove-doc" title="Удалить">
+                                            <svg xmlns="http://w3.org" width="18" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg>
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                            index++;
+                        }
+                    }
+                </div> <!-- Конец контейнера -->
+            </div>
         </div>
-    </form>
+    </div> <!-- Конец главной строки row -->
+</form>
+<!-- MODAL: ДОБАВЛЕНИЕ НОВОЙ ПРОГРАММЫ МИНТРУДА -->
+<div class="modal fade" id="modalAddMintrud" tabindex="-1" aria-labelledby="modalAddMintrudLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-dark" id="modalAddMintrudLabel">Новая программа Минтруда</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">КОД / ШИФР ПРОГРАММЫ</label>
+                    <input type="text" id="addMintrudCode" class="form-control" placeholder="Например: ИД46В_25" autocomplete="off">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">ПОЛНОЕ НАЗВАНИЕ <span class="text-danger">*</span></label>
+                    <textarea id="addMintrudName" class="form-control" rows="3" placeholder="Введите официальное наименование..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-light border text-secondary fw-bold" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-success fw-bold px-4" id="btnSubmitAddMintrud">Добавить</button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- СKРИПТ ДЛЯ ЖИВОЙ СМЕНЫ ПРЕДПРОСМОТРА КАРТИНКИ -->
-<script>
-    const fileInput = document.getElementById('courseImageFileInput');
-    const previewLabelText = document.getElementById('previewLabelText');
-    const previewImage = document.getElementById('courseImagePreview');
+<!-- MODAL: РЕДАКТИРОВАНИЕ ПРОГРАММЫ МИНТРУДА -->
+<div class="modal fade" id="modalEditMintrud" tabindex="-1" aria-labelledby="modalEditMintrudLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-dark" id="modalEditMintrudLabel">Редактирование программы</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="editMintrudId">
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">КОД / ШИФР ПРОГРАММЫ</label>
+                    <input type="text" id="editMintrudCode" class="form-control" autocomplete="off">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">ПОЛНОЕ НАЗВАНИЕ <span class="text-danger">*</span></label>
+                    <textarea id="editMintrudName" class="form-control" rows="3" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-light border text-secondary fw-bold" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary fw-bold px-4" id="btnSubmitEditMintrud">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Обеспечиваем работу модальных окон Bootstrap (если нет в Layout) -->
+<script src="https://cloudflare.com"></script>
 
-    fileInput.addEventListener('change', function() {
-        const file = this.files;
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. ИНИЦИАЛИЗАЦИЯ COMBOBOX МИНТРУДА
+    const tsControl = new TomSelect("#mintrudSelect", {
+        create: false,
+        sortField: { field: "text", direction: "asc" }
+    });
+
+    const addModal = new bootstrap.Modal(document.getElementById('modalAddMintrud'));
+    const editModal = new bootstrap.Modal(document.getElementById('modalEditMintrud'));
+    const btnOpenAddModal = document.getElementById('btnOpenAddModal');
+    const btnOpenEditModal = document.getElementById('btnOpenEditModal');
+    const btnDeleteMintrud = document.getElementById('btnDeleteMintrud');
+
+    function toggleActionButtons(value) {
+        if (value && value !== "") {
+            btnOpenEditModal.classList.remove('d-none');
+            btnDeleteMintrud.classList.remove('d-none');
+        } else {
+            btnOpenEditModal.classList.add('d-none');
+            btnDeleteMintrud.classList.add('d-none');
+        }
+    }
+    toggleActionButtons(tsControl.getValue());
+    tsControl.on('change', function(value) { toggleActionButtons(value); });
+
+    // (Сюда же автоматически подвяжутся твои старые AJAX вызовы fetch для Минтруда — они остаются прежними)
+
+    // 2. ДИНАМИЧЕСКИЙ КОНСТРУКТОР ШАБЛОНОВ ДОКУМЕНТОВ
+    const container = document.getElementById('documentTemplatesContainer');
+    const btnAddDoc = document.getElementById('btnAddDocumentTemplate');
+
+    // Функция перерасчета индексов name="templates[X].Property" перед отправкой
+    function recalculateIndices() {
+        const cards = container.querySelectorAll('.doc-template-card');
+        cards.forEach((card, index) => {
+            card.setAttribute('data-index', index);
+            
+            // Находим все инпуты внутри карточки и обновляем их имена
+            card.querySelectorAll('input, textarea, select').forEach(input => {
+                const nameAttr = input.getAttribute('name');
+                if (nameAttr) {
+                    // Заменяем старый индекс между квадратными скобками на актуальный
+                    const updatedName = nameAttr.replace(/templates\[\d+\]/, `templates[${index}]`);
+                    input.setAttribute('name', updatedName);
+                }
+            });
+        });
+    }
+
+    // Кнопка: Добавить новый чистый шаблон
+    btnAddDoc.addEventListener('click', function () {
+        const nextIndex = container.querySelectorAll('.doc-template-card').length;
         
-        if (file) {
-            const reader = new FileReader();
+        const cardHtml = `
+            <div class="card border border-light shadow-sm p-3 position-relative doc-template-card" data-index="${nextIndex}" draggable="true" style="border-radius: 10px; cursor: move; background-color: #fcfcfd;">
+                <input type="hidden" name="templates[${nextIndex}].Id" value="0" />
+                <div class="row align-items-center">
+                    <div class="col-auto text-muted pe-0" style="cursor: move;">
+                        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V13h1.5a.5.5 0 0 0 .354-.854l-2-2a.5.5 0 0 0-.708 0l-2 2A.5.5 0 0 0 9 13h1.5v1.5a.5.5 0 0 0 .5-.5M4 11.5a.5.5 0 0 1 .5-.5H6V9.5a.5.5 0 0 1 .354-.354l2-2a.5.5 0 0 1 .708 0l2 2A.5.5 0 0 1 11.5 9.5H10V11a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0V12H9v1.5a.5.5 0 0 1-.5-.5h-4a.5.5 0 0 1-.5-.5M4.5 5a.5.5 0 0 0-.5.5V7h-1.5a.5.5 0 0 0-.354.854l2 2a.5.5 0 0 0 .708 0l2-2A.5.5 0 0 0 6 7H4.5V5.5a.5.5 0 0 0-.5-.5"/></svg>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-bold mb-1">НАЗВАНИЕ ШАБЛОНА <span class="text-danger">*</span></label>
+                            <input type="text" name="templates[${nextIndex}].Name" class="form-control form-control-sm doc-name-input" required placeholder="Например: Новая форма приказа" autocomplete="off" />
+                        </div>
+                        <div class="form-check form-switch small mb-1">
+                            <input class="form-check-input" type="checkbox" name="templates[${nextIndex}].IsPerStudent" value="true" checked />
+                            <label class="form-check-label text-secondary">Формируется отдельно на каждого слушателя</label>
+                        </div>
+                        <div class="form-check form-switch small">
+                            <input class="form-check-input" type="checkbox" name="templates[${nextIndex}].RequiresCommission" value="true" />
+                            <label class="form-check-label text-secondary">Требуется выбор комиссии</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex flex-column justify-content-between position-relative pe-4">
+                        <div>
+                            <label class="form-label text-muted small fw-bold mb-1">ФАЙЛ ШАБЛОНА</label>
+                            <input type="file" name="templates[${nextIndex}].File" class="form-control form-control-sm" accept=".docx,.xlsx" required />
+                        </div>
+                        <button type="button" class="btn btn-link text-danger p-0 position-absolute end-0 bottom-0 mb-1 btn-remove-doc" title="Удалить">
+                            <svg xmlns="http://w3.org" width="18" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
             
-            reader.onload = function(e) {
-                previewImage.src = e.target.result;
-                // Меняем текст надписи, чтобы админ понял, что видит новый файл до сохранения
-                previewLabelText.innerHTML = '<span class="text-success">✨ ВЫБРАНА НОВАЯ ОБЛОЖКА (ЕЩЕ НЕ СОХРАНЕНА):</span>';
+        container.insertAdjacentHTML('beforeend', cardHtml);
+        initDragAndDrop(); // Переинициализируем события перетаскивания для нового элемента
+    });
+
+    // Кнопка: Удаление карточки шаблона
+    container.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-remove-doc');
+        if (btn) {
+            const card = btn.closest('.doc-template-card');
+            if (card && confirm('Убрать этот шаблон документа из курса?')) {
+                card.remove();
+                recalculateIndices(); // Сдвигаем индексы массива, чтобы не сломать Model Binding
             }
-            
-            reader.readAsDataURL(file);
         }
     });
+
+    // 3. ЛОГИКА DRAG AND DROP ДЛЯ ПЕРЕТАСКИВАНИЯ
+    let dragSrcEl = null;
+
+    function handleDragStart(e) {
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+        this.style.opacity = '0.4';
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) { e.preventDefault(); }
+        return false;
+    }
+
+    function handleDragDrop(e) {
+        e.stopPropagation();
+        if (dragSrcEl !== this) {
+            // Перемещаем карточки в DOM дереве местами
+            const allCards = Array.from(container.querySelectorAll('.doc-template-card'));
+            const srcIndex = allCards.indexOf(dragSrcEl);
+            const targetIndex = allCards.indexOf(this);
+
+            if (srcIndex < targetIndex) {
+                this.insertAdjacentElement('afterend', dragSrcEl);
+            } else {
+                this.insertAdjacentElement('beforebegin', dragSrcEl);
+            }
+            recalculateIndices(); // Сразу пересчитываем индексы под новый порядок
+        }
+        return false;
+    }
+
+    function handleDragEnd(e) {
+        this.style.opacity = '1.0';
+    }
+
+    function initDragAndDrop() {
+        const cards = container.querySelectorAll('.doc-template-card');
+        cards.forEach(card => {
+            card.addEventListener('dragstart', handleDragStart, false);
+            card.addEventListener('dragover', handleDragOver, false);
+            card.addEventListener('drop', handleDragDrop, false);
+            card.addEventListener('dragend', handleDragEnd, false);
+        });
+    }
+
+    initDragAndDrop(); // Включаем Drag-and-Drop для уже сохраненных в базе карточек
+});
 </script>
