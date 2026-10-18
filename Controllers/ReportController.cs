@@ -1,10 +1,19 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
-using MiniSoftware;
-using Net.Codecrete.QrCodeGenerator;
 using SdoApp.Models;
-using System.Text.Json;
+using MiniSoftware;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text.Encodings.Web;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SdoApp.Controllers;
 
@@ -19,26 +28,25 @@ public class ReportController : Controller
         _env = env;
     }
 
-    // Главная страница: список групп -> курсы -> студенты
+    // [Переходим к Части 2...]
+    // 1. Главная страница: список групп -> курсы -> студенты
     public async Task<IActionResult> Index()
     {
-        // Загружаем группы со всеми связями
         var groups = await _context.Groups
             .Include(g => g.GroupCompanies)
                 .ThenInclude(gc => gc.Company)
             .ToListAsync();
 
-        // Загружаем конфигурации курсов для групп
         var groupConfigs = await _context.GroupCourseConfigs
             .Include(c => c.Course)
                 .ThenInclude(c => c!.DocumentTemplates)
             .ToListAsync();
 
-        // Загружаем всех пользователей-слушателей для сопоставления по ID
         var students = await _context.Users
             .Where(u => u.Role == UserRole.Обучающийся)
             .ToDictionaryAsync(u => u.Id);
 
+        // Загружаем список всех членов комиссии для выпадающих списков
         var commission = await _context.CommissionMembers
             .OrderBy(c => c.LastName)
             .ToListAsync();
@@ -50,36 +58,41 @@ public class ReportController : Controller
         return View(groups);
     }
 
-    // AJAX-метод для получения сданных тестов студента (для Push-окна)
+    // 2. AJAX-метод для получения сданных тестов студента (для Push-окна)
     [HttpGet]
     public async Task<IActionResult> GetStudentTestAttempts(int studentId, int courseId)
     {
-    // Загружаем попытки в память через ToListAsync, чтобы .NET мог применить ToLocalTime()
-    var attempts = await _context.TestAttempts
-        .Include(a => a.CourseMaterial)
-        .Where(a => a.StudentId == studentId && a.CourseMaterial!.CourseId == courseId)
-        .ToListAsync();
+        var attempts = await _context.TestAttempts
+            .Include(a => a.CourseMaterial)
+            .Where(a => a.StudentId == studentId && a.CourseMaterial!.CourseId == courseId)
+            .ToListAsync();
 
-    var result = attempts.Select(a => new
-    {
-        a.Id,
-        TestName = a.CourseMaterial!.Title,
-        Status = a.Status.ToString(), // Теперь вернет "Passed", "Failed" и т.д.
-        a.ScorePercentage,
-        a.CorrectAnswersCount,
-        a.TotalQuestionsCount,
-        // Переводим UTC-время базы данных в локальное время вашего сервера
-        FinishedAt = a.FinishedAt.HasValue 
-            ? a.FinishedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") 
-            : "Не завершен"
-    }).ToList();
+        var result = attempts.Select(a => new
+        {
+            a.Id,
+            TestName = a.CourseMaterial!.Title,
+            Status = a.Status.ToString(), // Передает "Passed", "Failed" и т.д.
+            a.ScorePercentage,
+            a.CorrectAnswersCount,
+            a.TotalQuestionsCount,
+            FinishedAt = a.FinishedAt.HasValue
+                ? a.FinishedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                : "Не завершен"
+        }).ToList();
 
-    return Json(result);
+        return Json(result);
     }
 
-    // 3. Кнопка "Сделать отчет" — Чтение шаблона .docx и автоподстановка переменных через MiniWord
+    // [Переходим к Части 3...]
+    // 3. Кнопка "Сформировать" — Обработка параметров генерации отчета
     [HttpPost]
-    public async Task<IActionResult> GenerateCourseReport(int groupConfigId, int templateId, string chairmanInput, string member1Input, string member2Input)
+    public async Task<IActionResult> GenerateCourseReport(
+        int groupConfigId,
+        int templateId,
+        string? chairmanInput,
+        string? member1Input,
+        string? member2Input,
+        bool splitByCompany = false)
     {
         var config = await _context.GroupCourseConfigs
             .Include(c => c.Group)
@@ -94,11 +107,9 @@ public class ReportController : Controller
             return NotFound("Конфигурация курса или шаблон документа не найдены.");
         }
 
-        // Парсим ID студентов, привязанных к курсу в группе
         var studentIds = config.AllowedStudentIds
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(int.Parse)
-            .ToList();
+            .Select(int.Parse).ToList();
 
         var students = await _context.Users
             .Include(u => u.Company)
@@ -109,56 +120,142 @@ public class ReportController : Controller
         var member1Data = await ResolveCommissionMemberAsync(member1Input);
         var member2Data = await ResolveCommissionMemberAsync(member2Input);
 
+        var documentService = new DocumentGenerationService(_env.WebRootPath);
+        string groupNumber = config.Group?.GroupNumber ?? "Группа";
+
+        // =========================================================================
+        // РЕЖИМ А: Индивидуальные документы (IsPerStudent) — Склеиваем всё в ОДИН файл .docx
+        // =========================================================================
+        if (template.IsPerStudent)
+        {
+            byte[]? finalDocBytes = null;
+
+            foreach (var student in students)
+            {
+                var singleStudentList = new List<User> { student };
+                byte[] currentDocBytes = await documentService.GenerateDocxReportAsync(
+                    config, template, singleStudentList, chairmanData, member1Data, member2Data);
+
+                if (finalDocBytes == null)
+                {
+                    finalDocBytes = currentDocBytes;
+                }
+                else
+                {
+                    finalDocBytes = AppendDocxBytes(finalDocBytes, currentDocBytes);
+                }
+            }
+
+            if (finalDocBytes != null)
+            {
+                return File(finalDocBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}_{groupNumber}_Все_Слушатели.docx");
+            }
+            return BadRequest("Список студентов пуст.");
+        }
+
+        // =========================================================================
+        // РЕЖИМ Б: Разделение по компаниям (splitByCompany) — Упаковываем в ZIP
+        // =========================================================================
+        if (splitByCompany)
+        {
+            var studentGroups = students.GroupBy(s => s.Company?.Name ?? "Физические лица").ToList();
+
+            using (var zipMS = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(zipMS, ZipArchiveMode.Create, true))
+                {
+                    foreach (var group in studentGroups)
+                    {
+                        byte[] docBytes = await documentService.GenerateDocxReportAsync(
+                            config, template, group.ToList(), chairmanData, member1Data, member2Data);
+
+                        var zipEntry = archive.CreateEntry($"{template.Name}_{group.Key}.docx", CompressionLevel.Optimal);
+                        using (var entryStream = zipEntry.Open())
+                        {
+                            await entryStream.WriteAsync(docBytes, 0, docBytes.Length);
+                        }
+                    }
+                }
+                return File(zipMS.ToArray(), "application/zip", $"{template.Name}_{groupNumber}_По_Компаниям.zip");
+            }
+        }
+
+        // =========================================================================
+        // РЕЖИМ В: Обычный отчёт — Один файл со всеми студентами группы
+        // =========================================================================
         try
         {
-            // Передаем путь к wwwroot в наш обновленный сервис
-            var documentService = new DocumentGenerationService(_env.WebRootPath);
-            byte[] fileBytes = await documentService.GenerateDocxReportAsync(config, template, students, chairmanData, member1Data, member2Data);
+            byte[] fileBytes = await documentService.GenerateDocxReportAsync(
+                config, template, students, chairmanData, member1Data, member2Data);
 
-            string fileName = $"{template.Name}_{config.Group?.GroupNumber ?? "Группа"}.docx";
-
-            // Отдаем сгенерированный файл с корректным MIME-типом Word
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
-        }
-        catch (FileNotFoundException ex)
-        {
-            return BadRequest(ex.Message);
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}_{groupNumber}.docx");
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Внутренняя ошибка при генерации документа: {ex.Message}");
+            return StatusCode(500, $"Ошибка генерации: {ex.Message}");
         }
     }
 
-    private async Task<(string Name, string Position)> ResolveCommissionMemberAsync(string input)
+    // [Переходим к Части 4...]
+    // 4. Вспомогательный метод: Склейка двух документов OpenXML в один массив байт
+    private byte[] AppendDocxBytes(byte[] baseDocBytes, byte[] appendDocBytes)
+    {
+        using (var baseStream = new MemoryStream())
+        {
+            baseStream.Write(baseDocBytes, 0, baseDocBytes.Length);
+
+            using (var appendStream = new MemoryStream(appendDocBytes))
+            {
+                using (var mainDocument = WordprocessingDocument.Open(baseStream, true))
+                {
+                    var mainPart = mainDocument.MainDocumentPart;
+                    if (mainPart == null || mainPart.Document?.Body == null) return baseDocBytes;
+
+                    // Добавляем разрыв страницы (Page Break) в конец базового документа
+                    mainPart.Document.Body.AppendChild(new Paragraph(new Run(new Break { Type = BreakValues.Page })));
+
+                    // Регистрируем уникальный идентификатор для нового куска текста
+                    string altChunkId = "AltChunkId_" + Guid.NewGuid().ToString("N");
+
+                    // Встраиваем бинарный поток как альтернативный фрагмент разметки
+                    var chunk = mainPart.AddAlternativeFormatImportPart(AlternativeFormatImportPartType.WordprocessingML, altChunkId);
+                    chunk.FeedData(appendStream);
+
+                    // Добавляем altChunk элемент в дерево документа
+                    mainPart.Document.Body.AppendChild(new AltChunk { Id = altChunkId });
+                    mainPart.Document.Save();
+                }
+            }
+            return baseStream.ToArray();
+        }
+    }
+
+    // 5. Вспомогательный метод: Парсинг выбора Tom Select (База данных vs Ручной ввод)
+    private async Task<(string Name, string Position)> ResolveCommissionMemberAsync(string? input)
     {
         if (string.IsNullOrEmpty(input)) return ("—", "—");
 
-        // Сценарий 1: Если прилетел ID из базы данных (число)
+        // Если прилетел ID из базы данных (число)
         if (int.TryParse(input, out int id))
         {
             var member = await _context.CommissionMembers.FindAsync(id);
             if (member != null)
             {
-                // Собираем полное ФИО для документа
-                string fullName = $"{member.LastName} {member.FirstName} {member.MiddleName}".Trim();
-                return (fullName, member.Position);
+                return ($"{member.LastName} {member.FirstName} {member.MiddleName}".Trim(), member.Position);
             }
         }
 
-        // Сценарий 2: Если это ручной ввод и пользователь написал разделение через запятую
+        // Если это ручной ввод текста и пользователь написал "ФИО, Должность"
         if (input.Contains(','))
         {
-            // Делим строку на 2 части по первой запятой
             var parts = input.Split(',', 2);
             return (parts[0].Trim(), parts[1].Trim());
         }
 
-        // Сценарий 3: Если ввели просто текст без запятой (только ФИО)
         return (input.Trim(), "—");
     }
 
-    // 4. Заглушка для скачивания конкретного результата теста из push-окна
+    // 6. Заглушка для скачивания конкретного результата теста из push-окна
     [HttpGet]
     public IActionResult DownloadTestResult(int attemptId)
     {
@@ -167,8 +264,7 @@ public class ReportController : Controller
     }
 }
 
-// ОБНОВЛЕННЫЙ СЕРВИС: Обрабатывает реальные файлы через MiniWord
-public class DocumentGenerationService
+internal class DocumentGenerationService
 {
     private readonly string _webRootPath;
 
@@ -187,18 +283,17 @@ public class DocumentGenerationService
     {
         if (string.IsNullOrEmpty(template.FilePath))
         {
-            throw new FileNotFoundException("Путь к файлу шаблона не указан в базе данных.");
+            throw new FileNotFoundException("Путь к файлу шаблона не указан.");
         }
 
-        // Собираем точный физический путь к файлу на сервере
         string templateFullPath = Path.Combine(_webRootPath, template.FilePath.TrimStart('~', '/'));
 
         if (!File.Exists(templateFullPath))
         {
-            throw new FileNotFoundException($"Файл шаблона не найден на сервере по пути: {template.FilePath}");
+            throw new FileNotFoundException($"Файл шаблона не найден.");
         }
 
-        // Добавляем новые теги комиссии в словарь MiniWord
+        // 1. Одиночные переменные для шапки документа
         var valueMap = new Dictionary<string, object>
     {
         { "NumberGroup", config.Group?.GroupNumber ?? "—" },
@@ -208,8 +303,6 @@ public class DocumentGenerationService
         { "StartDate", config.CourseStartDate?.ToString("dd.MM.yyyy") ?? config.Group?.StartDate.ToString("dd.MM.yyyy") ?? "—" },
         { "EndDate", config.CourseEndDate?.ToString("dd.MM.yyyy") ?? config.Group?.EndDate.ToString("dd.MM.yyyy") ?? "—" },
         { "CurrentDate", DateTime.Today.ToString("dd.MM.yyyy") },
-
-        // Теги комиссии
         { "ChairmanName", chairman.Name },
         { "ChairmanPosition", chairman.Position },
         { "Member1Name", member1.Name },
@@ -218,41 +311,49 @@ public class DocumentGenerationService
         { "Member2Position", member2.Position }
     };
 
-        // Безопасный блок генерации списка студентов с проверками на null
-        var studentsList = students.Select((s, index) =>
+        // =========================================================================
+        // МАГИЯ ДЛЯ ДИПЛОМОВ (БЕЗ ТАБЛИЦ):
+        // Если передан ровно один студент, делаем его данные ПЛОСКИМИ одиночными тегами
+        // =========================================================================
+        if (students.Count == 1)
         {
-            var fullName = $"{s.LastName} {s.FirstName} {s.MiddleName}".Trim();
+            var s = students[0];
+            string fullName = $"{s.LastName} {s.FirstName} {s.MiddleName}".Trim();
 
-            // Ссылка проверки протокола
-            string qrText = $"https://dpo-energo.ru/";
-
-            // Генерируем QR-код
-            var qr = QrCode.EncodeText(qrText, QrCode.Ecc.High);
+            // Генерация QR для этого конкретного человека
+            string qrText = $"https://dpo-energo.ru";
+            var qr = Net.Codecrete.QrCodeGenerator.QrCode.EncodeText(qrText, Net.Codecrete.QrCodeGenerator.QrCode.Ecc.High);
             byte[] qrBytes = qr.ToPngBitmap();
 
-            return new Dictionary<string, object>
+            // Добавляем чистые теги БЕЗ префикса "t." прямо в корень словаря!
+            valueMap.Add("i", 1);
+            valueMap.Add("FullName", fullName);
+            valueMap.Add("Position", string.IsNullOrEmpty(s.Position) ? "—" : s.Position);
+            valueMap.Add("Company", s.Company != null ? (s.Company.Name ?? "—") : "Частное лицо");
+            valueMap.Add("QrCode", new MiniWordPicture { Bytes = qrBytes, Extension = "PNG", Width = 90, Height = 90 });
+        }
+        else
+        {
+            // Если студентов много (это обычный протокол с таблицей), собираем старую добрую таблицу под ключом "t"
+            var studentsList = students.Select((s, index) =>
             {
-        { "i", index + 1 },
-        { "FullName", fullName },
-        // Защита: если позиция пустая, ставим прочерк
-        { "Position", string.IsNullOrEmpty(s.Position) ? "—" : s.Position },
-        // ЗАЩИТА ОТ NULL: проверяем, привязана ли компания к студенту
-        { "Company", s.Company != null ? (s.Company.Name ?? "—") : "Частное лицо" },
+                var fullName = $"{s.LastName} {s.FirstName} {s.MiddleName}".Trim();
+                string qrText = $"https://dpo-energo.ru";
+                var qr = Net.Codecrete.QrCodeGenerator.QrCode.EncodeText(qrText, Net.Codecrete.QrCodeGenerator.QrCode.Ecc.High);
+                byte[] qrBytes = qr.ToPngBitmap();
 
-        { "QrCode", new MiniWordPicture
-    {
-        Bytes = qrBytes,
-        Extension = "PNG",          // Явно пишем null, чтобы движок MiniWord не спотыкался
-        Width = 90,
-        Height = 90
-    }
-}
-            };
-        }).ToList();
+                return new Dictionary<string, object>
+                {
+                { "i", index + 1 },
+                { "FullName", fullName },
+                { "Position", string.IsNullOrEmpty(s.Position) ? "—" : s.Position },
+                { "Company", s.Company != null ? (s.Company.Name ?? "—") : "Частное лицо" },
+                { "QrCode", new MiniWordPicture { Bytes = qrBytes, Extension = "PNG", Width = 90, Height = 90 } }
+                };
+            }).ToList();
 
-
-        // 3. ДОБАВЛЯЕМ ПОД КОРТКИМ КЛЮЧОМ "t"
-        valueMap.Add("t", studentsList);
+            valueMap.Add("t", studentsList);
+        }
 
         using (var outputStream = new MemoryStream())
         {
