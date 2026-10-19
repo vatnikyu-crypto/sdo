@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
+using ClosedXML.Excel;
 using SdoApp.Models;
+using System.IO.Compression; // Обязательно добавь для работы с ZIP
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -137,24 +139,43 @@ public class GroupsController : Controller
         return View();
     }
 
-    // GET: /Groups/SearchStudents?term=Ива
-    // API-метод для живого поиска студентов "на лету" без выгрузки всей базы
+    // GET: /Groups/SearchStudents?term=Ива&groupId=5
     [HttpGet]
-    public async Task<IActionResult> SearchStudents(string term)
+    public async Task<IActionResult> SearchStudents(string term, int groupId)
     {
         if (string.IsNullOrWhiteSpace(term)) return Json(new List<object>());
 
-        string lowerTerm = term.ToLower();
+        string lowerTerm = term.ToLower().Trim();
 
-        var students = await _context.Users
-    .Include(u => u.Company)
-    .Where(u => u.Role == UserRole.Обучающийся) // Проверяем строго enum роль
-    .ToListAsync(); // Вытаскиваем в память для мягкого поиска без капризов SQLite
+        // 1. Получаем ID компаний, которые уже сохранены в этой группе
+        var allowedCompanyIds = await _context.GroupCompanies
+            .Where(gc => gc.GroupId == groupId)
+            .Select(gc => gc.CompanyId)
+            .ToListAsync();
 
-        // Фильтруем в памяти, чтобы ТоLower() работал на 100% с русскими буквами
-        var filteredStudents = students
-            .Where(u => u.LastName.ToLower().Contains(lowerTerm) ||
-                       u.FirstName.ToLower().Contains(lowerTerm))
+        // 2. Вытаскиваем всех студентов в память (как в твоем изначальном коде)
+        var allStudents = await _context.Users
+            .Include(u => u.Company)
+            .Where(u => u.Role == UserRole.Обучающийся)
+            .ToListAsync();
+
+        // 3. Фильтруем в памяти
+        var filteredStudents = allStudents
+            // Ищем по фамилии или имени
+            .Where(u => (u.LastName != null && u.LastName.ToLower().Contains(lowerTerm)) ||
+                        (u.FirstName != null && u.FirstName.ToLower().Contains(lowerTerm)))
+            // Фильтруем по компаниям
+            .Where(u =>
+            {
+                // УСЛОВИЕ 1: Если у пользователя вообще нет компании (CompanyId == null) — это частное лицо, показываем.
+                if (u.CompanyId == null) return true;
+
+                // УСЛОВИЕ 2: Если к группе еще не привязана ни одна компания, скрываем корпоративных сотрудников
+                if (!allowedCompanyIds.Any()) return false;
+
+                // УСЛОВИЕ 3: Показываем, только если компания пользователя есть в списке группы
+                return allowedCompanyIds.Contains(u.CompanyId.Value);
+            })
             .Take(10)
             .Select(u => new
             {
@@ -362,5 +383,149 @@ public class GroupsController : Controller
             .ToList();
 
         return Json(filteredCompanies);
+    }
+
+    // GET: /Groups/DownloadAccesses/5
+    [HttpGet]
+    public async Task<IActionResult> DownloadAccesses(int id)
+    {
+        var group = await _context.Groups.FindAsync(id);
+        if (group == null) return NotFound("Группа не найдена");
+
+        // 2. Вытаскиваем всех студентов этой группы
+        var students = await _context.GroupStudents
+            .Where(gs => gs.GroupId == id)
+            .Include(gs => gs.Student)
+            .ThenInclude(s => s!.Company)
+            .Select(gs => gs.Student)
+            .Where(s => s != null)
+            .ToListAsync();
+
+        if (students == null || !students.Any())
+            return NotFound("В группе нет слушателей для выгрузки.");
+
+        // 3. Группируем студентов по названию компании
+        var studentsByCompany = students
+            .GroupBy(s => s.Company != null ? s.Company.Name : "Частное лицо")
+            .ToList();
+
+        // Функция для безопасного имени файла (убирает \, /, :, *, ?, ", <, >, |)
+        string SanitizeFileName(string name) => System.Text.RegularExpressions.Regex.Replace(name, @"[\\/:*?""<>|]", "").Trim();
+
+        // 4. Если компания только одна (или все физлица) — отдаем один Excel
+        if (studentsByCompany.Count == 1)
+        {
+            var singleGroup = studentsByCompany.First();
+            string companyName = SanitizeFileName(singleGroup.Key);
+
+            byte[] fileBytes = GenerateExcelForCompany(singleGroup.Key, singleGroup.ToList());
+            string fileName = $"Доступы для группы № {group.GroupNumber} - {companyName}.xlsx";
+
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        // 5. Если компаний несколько — создаем ZIP-архив
+        using (var memoryStream = new MemoryStream())
+        {
+            using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+            {
+                foreach (var companyGroup in studentsByCompany)
+                {
+                    string companyName = SanitizeFileName(companyGroup.Key);
+
+                    // Генерируем Excel для конкретной компании
+                    byte[] excelBytes = GenerateExcelForCompany(companyGroup.Key, companyGroup.ToList());
+
+                    // Имя файла внутри архива
+                    string entryName = $"Доступы для группы № {group.GroupNumber} - {companyName}.xlsx";
+
+                    // Создаем файл в архиве и записываем туда байты
+                    var zipEntry = zipArchive.CreateEntry(entryName, CompressionLevel.Optimal);
+                    using (var entryStream = zipEntry.Open())
+                    {
+                        entryStream.Write(excelBytes, 0, excelBytes.Length);
+                    }
+                }
+            }
+
+            string zipFileName = $"Доступы для группы № {group.GroupNumber} (по компаниям).zip";
+            return File(memoryStream.ToArray(), "application/zip", zipFileName);
+        }
+    }
+
+    private byte[] GenerateExcelForCompany(string companyName, List<User> students)
+    {
+        using (var workbook = new XLWorkbook())
+        {
+            var worksheet = workbook.Worksheets.Add("Доступы");
+
+            // --- ФОРМИРУЕМ ШАПКУ ---
+            // Строка 1
+            worksheet.Cell(1, 1).Value = "Данные для входа в систему https://sdo.dpo-energo.ru для слушателей организации";
+            worksheet.Range(1, 1, 1, 8).Merge();
+            worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Cell(1, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            worksheet.Cell(1, 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
+
+            // Строка 2 (Подставляем правильное название компании)
+            worksheet.Cell(2, 1).Value = companyName;
+            worksheet.Range(2, 1, 2, 8).Merge();
+            worksheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Cell(2, 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
+
+            // Строка 3 (Заголовки)
+            string[] headers = { "Фамилия", "Имя", "Отчество", "Логин", "Пароль", "Отдел", "Должность", "Ссылка для авторизации" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(3, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#F2F2F2");
+            }
+
+            // --- ЗАПОЛНЯЕМ ДАННЫЕ ---
+            int row = 4;
+            foreach (var user in students)
+            {
+                if (user == null) continue;
+
+                string escapedLogin = Uri.EscapeDataString(user.Login ?? "");
+                string escapedPassword = Uri.EscapeDataString(user.Password ?? "");
+
+                // Ссылка авторизации
+                string authUrl = $"http://localhost:5018/Auth/Login?login={escapedLogin}&password={escapedPassword}";
+
+                worksheet.Cell(row, 1).Value = user.LastName ?? "";
+                worksheet.Cell(row, 2).Value = user.FirstName ?? "";
+                worksheet.Cell(row, 3).Value = user.MiddleName ?? "";
+                worksheet.Cell(row, 4).Value = user.Login ?? "";
+                worksheet.Cell(row, 5).Value = user.Password ?? "";
+                worksheet.Cell(row, 6).Value = user.Department ?? "—";
+                worksheet.Cell(row, 7).Value = user.Position ?? "—";
+
+                var linkCell = worksheet.Cell(row, 8);
+                linkCell.Value = authUrl;
+                linkCell.SetHyperlink(new XLHyperlink(authUrl));
+                linkCell.Style.Font.FontColor = XLColor.Blue;
+                linkCell.Style.Font.Underline = XLFontUnderlineValues.Single;
+
+                // Рамки
+                worksheet.Range(row, 1, row, 8).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                worksheet.Range(row, 1, row, 8).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+                row++;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using (var stream = new MemoryStream())
+            {
+                workbook.SaveAs(stream);
+                return stream.ToArray();
+            }
+        }
     }
 }

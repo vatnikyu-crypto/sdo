@@ -11,25 +11,33 @@ public class AuthController : Controller
 {
     private readonly AppDbContext _context;
 
-    // Внедряем контекст БД через конструктор
     public AuthController(AppDbContext context)
     {
         _context = context;
     }
 
-    // Отображение страницы входа: GET /Auth/Login
+    // GET: /Auth/Login?login=test7226&password=y4dRBKPFyn
     [HttpGet]
-    public IActionResult Login()
+    public IActionResult Login(string? login, string? password)
     {
-        // Если пользователь уже авторизован, отправляем его в соответствующий ЛК
+        // Если пользователь уже авторизован, отправляем его в ЛК
         if (User.Identity?.IsAuthenticated == true)
         {
             return RedirectToDashboard(User.FindFirst(ClaimTypes.Role)?.Value);
         }
+
+        // Если пришли параметры из ссылки Excel — передаем их в HTML-форму
+        if (!string.IsNullOrWhiteSpace(login) && !string.IsNullOrWhiteSpace(password))
+        {
+            ViewBag.AutoLogin = login;
+            ViewBag.AutoPassword = password;
+        }
+
+        // Показываем страницу входа
         return View();
     }
 
-    // Обработка данных формы авторизации: POST /Auth/Login
+    // POST: /Auth/Login (Для обычного входа через форму на сайте)
     [HttpPost]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
@@ -38,73 +46,73 @@ public class AuthController : Controller
             return Json(new { success = false, message = "Заполните все поля!" });
         }
 
-        // Ищем пользователя в БД по логину и паролю
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Login == model.Username && u.Password == model.Password);
 
         if (user != null)
         {
-            // Формируем список утверждений (Claims) для авторизации
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Login),
-                new Claim(ClaimTypes.Role, user.Role.ToString()), // Сохраняем роль
-                new Claim("FullName", $"{user.FirstName} {user.LastName}"),
-                new Claim("UserId", user.Id.ToString())
-            };
+            // Авторизуем пользователя
+            await SignInUser(user);
 
-            var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
-
-            // Инициализируем сессию (записываем шифрованный куки-файл в браузер)
-            await HttpContext.SignInAsync("Cookies", new ClaimsPrincipal(claimsIdentity), new AuthenticationProperties
-            {
-                IsPersistent = true, // Запомнить браузер
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) // Сессия живет 7 дней
-            });
-
-            // Определяем целевой URL на основе роли пользователя
+            // Формируем URL для редиректа (как у тебя было в JS)
             string redirectUrl = user.Role switch
             {
                 UserRole.Главный_Админ => "/Dashboard/SuperAdmin",
                 UserRole.Админ => "/Users/Index",
-                _ => "/Dashboard/Student" // Для роли Обучающийся
+                _ => "/Dashboard/Student"
             };
 
-            return Json(new { success = true, redirectUrl = redirectUrl, message = "Успешный вход! Перенаправление..." });
+            return Json(new { success = true, redirectUrl = redirectUrl, message = "Успешный вход!" });
         }
 
         return Json(new { success = false, message = "Неверный логин или пароль!" });
     }
 
-    // Безопасный выход из системы: GET /Auth/Logout
+    // Вспомогательный метод для создания куки (чтобы не дублировать код)
+    private async Task SignInUser(User user)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, user.Login),
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim("FullName", $"{user.FirstName} {user.LastName}"),
+            new Claim("UserId", user.Id.ToString())
+        };
+
+        var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
+
+        await HttpContext.SignInAsync("Cookies", new ClaimsPrincipal(claimsIdentity), new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+        });
+    }
+
     [HttpGet]
     public async Task<IActionResult> Logout()
     {
-        // Уничтожаем сессионные куки
         await HttpContext.SignOutAsync("Cookies");
         return RedirectToAction("Login");
     }
 
-    // Отображение страницы отказа в доступе (Ошибка 403): GET /Auth/AccessDenied
     [HttpGet]
     public IActionResult AccessDenied()
     {
         return View();
     }
 
-    // Вспомогательный метод внутреннего редиректа по роли
+    // Твой вспомогательный метод (проверь, чтобы названия экшенов совпадали с твоими контроллерами)
     private IActionResult RedirectToDashboard(string? role)
     {
         return role switch
         {
             "Главный_Админ" => RedirectToAction("SuperAdmin", "Dashboard"),
-            "Админ" => RedirectToAction("Admin", "Dashboard"),
+            "Админ" => RedirectToAction("Admin", "Dashboard"), // Или на Users/Index, как в твоем коде
             _ => RedirectToAction("Student", "Dashboard")
         };
     }
 }
 
-// Модель для десериализации JSON данных, приходящих от фронтенда
 public class LoginModel
 {
     public string Username { get; set; } = string.Empty;

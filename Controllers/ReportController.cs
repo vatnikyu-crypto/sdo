@@ -92,6 +92,8 @@ public class ReportController : Controller
         string? chairmanInput,
         string? member1Input,
         string? member2Input,
+        string? commissionOrderNumber,
+        string? commissionOrderDate,
         bool splitByCompany = false)
     {
         var config = await _context.GroupCourseConfigs
@@ -134,7 +136,7 @@ public class ReportController : Controller
             {
                 var singleStudentList = new List<User> { student };
                 byte[] currentDocBytes = await documentService.GenerateDocxReportAsync(
-                    config, template, singleStudentList, chairmanData, member1Data, member2Data);
+                    config, template, singleStudentList, chairmanData, member1Data, member2Data, commissionOrderNumber, commissionOrderDate);
 
                 if (finalDocBytes == null)
                 {
@@ -167,7 +169,7 @@ public class ReportController : Controller
                     foreach (var group in studentGroups)
                     {
                         byte[] docBytes = await documentService.GenerateDocxReportAsync(
-                            config, template, group.ToList(), chairmanData, member1Data, member2Data);
+                            config, template, group.ToList(), chairmanData, member1Data, member2Data, commissionOrderNumber, commissionOrderDate);
 
                         var zipEntry = archive.CreateEntry($"{template.Name}_{group.Key}.docx", CompressionLevel.Optimal);
                         using (var entryStream = zipEntry.Open())
@@ -186,7 +188,7 @@ public class ReportController : Controller
         try
         {
             byte[] fileBytes = await documentService.GenerateDocxReportAsync(
-                config, template, students, chairmanData, member1Data, member2Data);
+                config, template, students, chairmanData, member1Data, member2Data, commissionOrderNumber, commissionOrderDate);
 
             return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}_{groupNumber}.docx");
         }
@@ -279,7 +281,9 @@ internal class DocumentGenerationService
     List<User> students,
     (string Name, string Position) chairman,
     (string Name, string Position) member1,
-    (string Name, string Position) member2)
+    (string Name, string Position) member2,
+    string? commissionOrderNumber,
+    string? commissionOrderDate)
     {
         if (string.IsNullOrEmpty(template.FilePath))
         {
@@ -308,7 +312,9 @@ internal class DocumentGenerationService
         { "Member1Name", member1.Name },
         { "Member1Position", member1.Position },
         { "Member2Name", member2.Name },
-        { "Member2Position", member2.Position }
+        { "Member2Position", member2.Position },
+        { "CommissionOrderNumber", commissionOrderNumber ?? "—" },
+        { "CommissionOrderDate", !string.IsNullOrEmpty(commissionOrderDate) ? DateTime.Parse(commissionOrderDate).ToString("dd.MM.yyyy") : "—" }
     };
 
         // =========================================================================

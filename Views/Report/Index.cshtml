@@ -23,326 +23,372 @@
             {
                 <div class="accordion-item mb-3 border shadow-sm">
                     <h2 class="accordion-header" id="headingGroup-@group.Id">
-                        <button class="accordion-button collapsed bg-light text-dark shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGroup-@group.Id">
+                        <button class="accordion-button collapsed bg-light text-dark shadow-none" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapseGroup-@group.Id">
                             <span class="fs-5"><strong>Группа № @group.GroupNumber</strong> &nbsp;—&nbsp; @group.Title</span>
-                            <span class="badge bg-secondary ms-3">@group.StartDate.ToString("dd.MM.yyyy") - @group.EndDate.ToString("dd.MM.yyyy")</span>
-                        </button>
-                    </h2>
+                            <span class="badge bg-secondary ms-3">@group.StartDate.ToString("dd.MM.yyyy") -
+                                @group.EndDate.ToString("dd.MM.yyyy")</span>
+                            </button>
+                        </h2>
                     
-                    <div id="collapseGroup-@group.Id" class="accordion-collapse collapse" data-bs-parent="#groupsAccordion">
-                        <div class="accordion-body bg-white">
-                            <h5 class="mb-3 text-muted">Курсы, закрепленные за группой:</h5>
+                        <div id="collapseGroup-@group.Id" class="accordion-collapse collapse" data-bs-parent="#groupsAccordion">
+                            <div class="accordion-body bg-white">
+                                <h5 class="mb-3 text-muted">Курсы, закрепленные за группой:</h5>
                             
-                            @{ 
-                                var currentGroupConfigs = groupConfigs.Where(c => c.GroupId == group.Id).ToList(); 
-                            }
+                                @{
+                                    var currentGroupConfigs = groupConfigs.Where(c => c.GroupId == group.Id).ToList();
+                                }
 
-                            @if (!currentGroupConfigs.Any())
-                            {
-                                <p class="text-muted italic">За данной группой еще не закреплены курсы.</p>
-                            }
-                            else
-                            {
-                                <!-- ВНУТРЕННИЙ АККОРДЕОН ДЛЯ КУРСОВ (Переход к Части 2) -->
-                                <div class="accordion" id="coursesAccordion-@group.Id">
-                                    @foreach (var config in currentGroupConfigs)
-                                    {
-                                        var allowedIds = config.AllowedStudentIds
-                                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                            .Select(int.Parse).ToList();
+                                @if (!currentGroupConfigs.Any())
+                                {
+                                    <p class="text-muted italic">За данной группой еще не закреплены курсы.</p>
+                                }
+                                else
+                                {
+                                    <!-- ВНУТРЕННИЙ АККОРДЕОН ДЛЯ КУРСОВ (Переход к Части 2) -->
+                                    <div class="accordion" id="coursesAccordion-@group.Id">
+                                        @foreach (var config in currentGroupConfigs)
+                                        {
+                                            var allowedIds = config.AllowedStudentIds
+                                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                .Select(int.Parse).ToList();
                                             
-                                        var totalStudentsCount = allowedIds.Count(id => studentsMap.ContainsKey(id));
+                                            var totalStudentsCount = allowedIds.Count(id => studentsMap.ContainsKey(id));
 
-                                        <div class="accordion-item mb-2 border rounded">
-                                            <h2 class="accordion-header" id="headingConfig-@config.Id">
-                                                <button class="accordion-button collapsed bg-white text-dark shadow-none p-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig-@config.Id">
-                                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center w-100 me-3">
-                                                        <div class="mb-2 mb-sm-0">
-                                                            <span class="text-primary fw-bold fs-6">📖 @config.Course?.Title</span>
-                                                            <span class="badge bg-primary rounded-pill ms-2">Слушателей: @totalStudentsCount</span>
-                                                            <div class="text-muted mt-1" style="font-size: 0.85rem;">Протокол/Приказ: <strong>@config.ProtocolNumber</strong></div>
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            </h2>
-                                            
-                                            <div id="collapseConfig-@config.Id" class="accordion-collapse collapse" data-bs-parent="#coursesAccordion-@group.Id">
-                                                <div class="accordion-body bg-light border-top p-3">
-                                                    
-                                                    <!-- Кнопка генерации отчетов по шаблонам -->
-                                                    <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 border rounded shadow-sm">
-                                                        <span class="text-muted fw-semibold ps-2" style="font-size: 0.9rem;">Генерация документов по курсу:</span>
-                                                        <div>
-                                                            @if (config.Course?.DocumentTemplates != null && config.Course.DocumentTemplates.Any())
-                                                            {
-                                                                <div class="dropdown">
-                                                                    <button class="btn btn-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                                        ⚙️ Сделать отчет
-                                                                    </button>
-                                                                    <ul class="dropdown-menu dropdown-menu-end">
-                                                                        @foreach (var template in config.Course.DocumentTemplates.OrderBy(t => t.SortOrder))
-                                                                        {
-                                                                            <li>
-                                                                                <button type="button" class="dropdown-item" onclick="openReportSetupModal(@config.Id, @template.Id, @(template.RequiresCommission ? "true" : "false"), @(template.IsPerStudent ? "true" : "false"))">
-                                                                                    📄 @template.Name @(template.RequiresCommission ? "💼" : "") @(template.IsPerStudent ? "🎓" : "")
-                                                                                </button>
-                                                                            </li>
-                                                                        }
-                                                                    </ul>
+                                            <div class="accordion-item mb-2 border rounded">
+                                                <h2 class="accordion-header" id="headingConfig-@config.Id">
+                                                    <button class="accordion-button collapsed bg-white text-dark shadow-none p-3"
+                                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig-@config.Id">
+                                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center w-100 me-3">
+                                                            <div class="mb-2 mb-sm-0">
+                                                                <span class="text-primary fw-bold fs-6">📖 @config.Course?.Title</span>
+                                                                <span class="badge bg-primary rounded-pill ms-2">Слушателей:
+                                                                    @totalStudentsCount</span>
+                                                                    <div class="text-muted mt-1" style="font-size: 0.85rem;">Протокол/Приказ:
+                                                                        <strong>@config.ProtocolNumber</strong></div>
+                                                                    </div>
                                                                 </div>
-                                                            }
-                                                            else
-                                                            {
-                                                                <button class="btn btn-secondary btn-sm" disabled>Сделать отчет (Нет шаблонов)</button>
-                                                            }
-                                                        </div>
-                                                    </div>
+                                                            </button>
+                                                        </h2>
+                                            
+                                                        <div id="collapseConfig-@config.Id" class="accordion-collapse collapse"
+                                                             data-bs-parent="#coursesAccordion-@group.Id">
+                                                            <div class="accordion-body bg-light border-top p-3">
+                                                    
+                                                                <!-- Кнопка генерации отчетов по шаблонам -->
+                                                                <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 border rounded shadow-sm">
+                                                                    <span class="text-muted fw-semibold ps-2" style="font-size: 0.9rem;">Генерация
+                                                                        документов по курсу:</span>
+                                                                        <div>
+                                                                            @if (config.Course?.DocumentTemplates != null &&
+                                                            config.Course.DocumentTemplates.Any())
+                                                                            {
+                                                                                <div class="dropdown">
+                                                                                    <button class="btn btn-success btn-sm dropdown-toggle" type="button"
+                                                                                            data-bs-toggle="dropdown">
+                                                                                        ⚙️ Сделать отчет
+                                                                                    </button>
+                                                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                                                        @foreach (var template in config.Course.DocumentTemplates.OrderBy(t => t.SortOrder))
+                                                                                        {
+                                                                                            <li>
+                                                                                                <button type="button" class="dropdown-item"
+                                                                                                        onclick="openReportSetupModal(@config.Id, @template.Id, @(template.RequiresCommission ? "true" : "false"), @(template.IsPerStudent ? "true" : "false"))">
+                                                                                                    📄 @template.Name @(template.RequiresCommission ? "💼" : "") @(template.IsPerStudent ? "🎓" : "")
+                                                                                                </button>
+                                                                                            </li>
+                                                                                        }
+                                                                                    </ul>
+                                                                                </div>
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <button class="btn btn-secondary btn-sm" disabled>Сделать отчет (Нет шаблонов)</button>
+                                                                            }
+                                                                        </div>
+                                                                    </div>
 
-                                                    <!-- ТАБЛИЦА СЛУШАТЕЛЕЙ (Переход к Части 3) -->
-                                                    <!-- Список студентов курса в виде таблицы -->
-                                                    <div class="bg-white p-3 rounded border shadow-sm">
-                                                        <span class="text-muted d-block mb-2 fw-semibold" style="font-size: 0.85rem;">📋 Список зарегистрированных слушателей (нажмите на строку для просмотра тестов):</span>
+                                                                    <!-- ТАБЛИЦА СЛУШАТЕЛЕЙ (Переход к Части 3) -->
+                                                                    <!-- Список студентов курса в виде таблицы -->
+                                                                    <div class="bg-white p-3 rounded border shadow-sm">
+                                                                        <span class="text-muted d-block mb-2 fw-semibold" style="font-size: 0.85rem;">📋
+                                                                            Список зарегистрированных слушателей (нажмите на строку для просмотра тестов):</span>
                                                         
-                                                        @{
-                                                            var courseStudents = allowedIds
-                                                                .Where(id => studentsMap.ContainsKey(id))
-                                                                .Select(id => studentsMap[id])
-                                                                .OrderBy(s => s.LastName)
-                                                                .ToList();
+                                                                            @{
+                                                                                var courseStudents = allowedIds
+                                                                                    .Where(id => studentsMap.ContainsKey(id))
+                                                                                    .Select(id => studentsMap[id])
+                                                                                    .OrderBy(s => s.LastName)
+                                                                                    .ToList();
                                                             
-                                                            int rowNumber = 1;
-                                                        }
+                                                                                int rowNumber = 1;
+                                                                            }
 
-                                                        @if (!courseStudents.Any())
-                                                        {
-                                                            <span class="text-danger d-block p-2" style="font-size: 0.9rem;">Нет допущенных студентов</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <div class="table-responsive">
-                                                                <table class="table table-hover table-bordered bg-white m-0 align-middle" style="cursor: pointer; font-size: 0.9rem;">
-                                                                    <thead class="table-light">
-                                                                        <tr>
-                                                                            <th style="width: 5%; text-align: center;">№</th>
-                                                                            <th style="width: 40%;">ФИО полностью</th>
-                                                                            <th style="width: 25%;">Должность</th>
-                                                                            <th style="width: 30%;">Организация (Компания)</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        @foreach (var student in courseStudents)
-                                                                        {
-                                                                            var fullName = $"{student.LastName} {student.FirstName} {student.MiddleName}".Trim();
-                                                                            var companyName = student.Company?.Name ?? "Не указана";
-                                                                            var position = string.IsNullOrEmpty(student.Position) ? "—" : student.Position;
+                                                                            @if (!courseStudents.Any())
+                                                                            {
+                                                                                <span class="text-danger d-block p-2" style="font-size: 0.9rem;">Нет допущенных студентов</span>
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <div class="table-responsive">
+                                                                                    <table class="table table-hover table-bordered bg-white m-0 align-middle"
+                                                                                           style="cursor: pointer; font-size: 0.9rem;">
+                                                                                        <thead class="table-light">
+                                                                                            <tr>
+                                                                                                <th style="width: 5%; text-align: center;">№</th>
+                                                                                                <th style="width: 40%;">ФИО полностью</th>
+                                                                                                <th style="width: 25%;">Должность</th>
+                                                                                                <th style="width: 30%;">Организация (Компания)</th>
+                                                                                            </tr>
+                                                                                        </thead>
+                                                                                        <tbody>
+                                                                                            @foreach (var student in courseStudents)
+                                                                                            {
+                                                                                                var fullName = $"{student.LastName} {student.FirstName}                                                {student.MiddleName}".Trim();
+                                                                                                var companyName = student.Company?.Name ?? "Не указана";
+                                                                                                var position = string.IsNullOrEmpty(student.Position) ? "—" :
+                                                                        student.Position;
 
-                                                                            <tr onclick="openStudentPushModal(@student.Id, @config.CourseId, '@fullName')">
-                                                                                <td style="text-align: center;" class="text-muted">@(rowNumber++)</td>
-                                                                                <td class="fw-bold text-dark">👤 @fullName</td>
-                                                                                <td><span class="text-muted">@position</span></td>
-                                                                                <td><span class="badge bg-outline-secondary border text-secondary">🏢 @companyName</span></td>
-                                                                            </tr>
-                                                                        }
-                                                                    </tbody>
-                                                                </table>
+                                                                                                <tr onclick="openStudentPushModal(@student.Id, @config.CourseId, '@fullName')">
+                                                                                                    <td style="text-align: center;" class="text-muted">@(rowNumber++)</td>
+                                                                                                    <td class="fw-bold text-dark">👤 @fullName</td>
+                                                                                                    <td><span class="text-muted">@position</span></td>
+                                                                                                    <td><span class="badge bg-outline-secondary border text-secondary">🏢 @companyName</span></td>
+                                                                                                </tr>
+                                                                                            }
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         }
                                                     </div>
-
-                                                </div>
+                                                }
                                             </div>
                                         </div>
-                                    }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <!-- МОДАЛЬНОЕ ОКНО 1: ПРОСМОТР РЕЗУЛЬТАТОВ ТЕСТИРОВАНИЯ СТУДЕНТА -->
+                    <div class="modal fade" id="studentReportModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+                         aria-labelledby="studentReportModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content shadow-lg">
+                                <div class="modal-header bg-dark text-white">
+                                    <h5 class="modal-title" id="studentReportModalLabel">📊 Результаты обучения</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
                                 </div>
-                            }
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <strong>Слушатель:</strong> <span id="modalStudentName" class="text-primary fs-5"></span>
+                                    </div>
+                                    <h6>Пройденные тесты по курсу:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-striped align-middle">
+                                            <thead class="table-secondary">
+                                                <tr>
+                                                    <th>Тест / Материал</th>
+                                                    <th>Статус</th>
+                                                    <th>Баллы (%)</th>
+                                                    <th>Верно</th>
+                                                    <th>Дата сдачи</th>
+                                                    <th>Действие</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="modalAttemptsTableBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
-    }
-</div>
-<!-- МОДАЛЬНОЕ ОКНО 1: ПРОСМОТР РЕЗУЛЬТАТОВ ТЕСТИРОВАНИЯ СТУДЕНТА -->
-<div class="modal fade" id="studentReportModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="studentReportModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content shadow-lg">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title" id="studentReportModalLabel">📊 Результаты обучения</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <strong>Слушатель:</strong> <span id="modalStudentName" class="text-primary fs-5"></span>
-                </div>
-                <h6>Пройденные тесты по курсу:</h6>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped align-middle">
-                        <thead class="table-secondary">
-                            <tr>
-                                <th>Тест / Материал</th>
-                                <th>Статус</th>
-                                <th>Баллы (%)</th>
-                                <th>Верно</th>
-                                <th>Дата сдачи</th>
-                                <th>Действие</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modalAttemptsTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- МОДАЛЬНОЕ ОКНО 2: УНИВЕРСАЛЬНАЯ НАСТРОЙКА ПАРАМЕТРОВ ГЕНЕРАЦИИ ОТЧЕТА -->
-<div class="modal fade" id="reportSetupModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="reportSetupModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-md modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0">
-            <form asp-action="GenerateCourseReport" method="post">
-                <input type="hidden" id="modalGroupConfigId" name="groupConfigId" value="" />
-                <input type="hidden" id="modalTemplateId" name="templateId" value="" />
+                    <!-- МОДАЛЬНОЕ ОКНО 2: УНИВЕРСАЛЬНАЯ НАСТРОЙКА ПАРАМЕТРОВ ГЕНЕРАЦИИ ОТЧЕТА -->
+                    <div class="modal fade" id="reportSetupModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+                         aria-labelledby="reportSetupModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-md modal-dialog-centered">
+                            <div class="modal-content shadow-lg border-0">
+                                <form asp-action="GenerateCourseReport" method="post">
+                                    <input type="hidden" id="modalGroupConfigId" name="groupConfigId" value="" />
+                                    <input type="hidden" id="modalTemplateId" name="templateId" value="" />
                 
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="reportSetupModalLabel">⚙️ Настройка формирования документа</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title" id="reportSetupModalLabel">⚙️ Настройка формирования документа</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
                     
-                    <!-- Переключатель распределения по компаниям -->
-                    <div class="p-3 bg-light border rounded mb-3">
-                        <div class="form-check form-switch m-0">
-                            <input class="form-check-input" type="checkbox" id="checkboxSplitByCompany" name="splitByCompany" value="true" style="cursor: pointer;">
-                            <label class="form-check-label fw-bold text-dark" for="checkboxSplitByCompany" style="cursor: pointer;">
-                                🏢 Разделить файлы по компаниям?
-                            </label>
+                                        <!-- Переключатель распределения по компаниям -->
+                                        <div class="p-3 bg-light border rounded mb-3">
+                                            <div class="form-check form-switch m-0">
+                                                <input class="form-check-input" type="checkbox" id="checkboxSplitByCompany"
+                                                       name="splitByCompany" value="true" style="cursor: pointer;">
+                                                <label class="form-check-label fw-bold text-dark" for="checkboxSplitByCompany"
+                                                       style="cursor: pointer;">
+                                                    🏢 Разделить файлы по компаниям?
+                                                </label>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">Если включено, система сформирует ZIP-архив с отдельными
+                                                файлами под каждую организацию.</small>
+                                            </div>
+
+                                            <!-- Динамический блок квалификационной комиссии -->
+                                            <div id="commissionFieldsBlock" class="d-none">
+                                                <!-- ДОБАВИТЬ В ЧАСТЬ 3 (внутри commissionFieldsBlock перед Председателем) -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-7">
+                                                        <label class="form-label small fw-bold">📜 Номер приказа комиссии:</label>
+                                                        <input type="text" id="inputCommissionOrderNumber" name="commissionOrderNumber"
+                                                               class="form-control form-control-sm" placeholder="Например: № 45-ОД">
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label small fw-bold">📅 Дата приказа:</label>
+                                                        <input type="date" id="inputCommissionOrderDate" name="commissionOrderDate"
+                                                               class="form-control form-control-sm">
+                                                    </div>
+                                                </div>
+                                                <h6 class="text-success fw-bold border-bottom pb-1 mb-3">💼 Члены квалификационной комиссии:
+                                                </h6>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">👨‍💼 Председатель комиссии:</label>
+                                                    <select id="selectChairman" name="chairmanInput" class="commission-select"
+                                                            placeholder="Выберите или введите ФИО..."></select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">👤 Член комиссии №1:</label>
+                                                    <select id="selectMember1" name="member1Input" class="commission-select"
+                                                            placeholder="Выберите или введите ФИО..."></select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">👤 Член комиссии №2:</label>
+                                                    <select id="selectMember2" name="member2Input" class="commission-select"
+                                                            placeholder="Выберите или введите ФИО..."></select>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                                            <button type="submit" class="btn btn-primary">📥 Сформировать</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <small class="text-muted d-block mt-1">Если включено, система сформирует ZIP-архив с отдельными файлами под каждую организацию.</small>
-                    </div>
+                        @section Scripts {
+                            <script>
+                                // Безопасное экранирование данных из БД для Tom Select
+                                const commissionData = [
+                                                                                                                        @foreach (var c in commission)
+                                    {
+                                                                                                                                            @: { value: '@c.Id', text: '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(c.DisplayName)' },
+                                    }
+                                                                                                                    ];
 
-                    <!-- Динамический блок квалификационной комиссии -->
-                    <div id="commissionFieldsBlock" class="d-none">
-                        <h6 class="text-success fw-bold border-bottom pb-1 mb-3">💼 Члены квалификационной комиссии:</h6>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">👨‍💼 Председатель комиссии:</label>
-                            <select id="selectChairman" name="chairmanInput" class="commission-select" placeholder="Выберите или введите ФИО..."></select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">👤 Член комиссии №1:</label>
-                            <select id="selectMember1" name="member1Input" class="commission-select" placeholder="Выберите или введите ФИО..."></select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">👤 Член комиссии №2:</label>
-                            <select id="selectMember2" name="member2Input" class="commission-select" placeholder="Выберите или введите ФИО..."></select>
-                        </div>
-                    </div>
+                                let tsChairman, tsMember1, tsMember2;
 
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">📥 Сформировать</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@section Scripts {
-<script>
-    // Безопасное экранирование данных из БД для Tom Select
-    const commissionData = [
-        @foreach (var c in commission) {
-            @: { value: '@c.Id', text: '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(c.DisplayName)' },
-        }
-    ];
+                                document.addEventListener("DOMContentLoaded", function () {
+                                    const selectConfig = {
+                                        options: commissionData,
+                                        valueField: 'value',
+                                        labelField: 'text',
+                                        searchField: ['text'],
+                                        create: true, // Включение возможности ручного ввода
+                                        createOnBlur: true,
+                                        persist: false,
+                                        plugins: ['dropdown_input']
+                                    };
 
-    let tsChairman, tsMember1, tsMember2;
+                                    tsChairman = new TomSelect('#selectChairman', selectConfig);
+                                    tsMember1 = new TomSelect('#selectMember1', selectConfig);
+                                    tsMember2 = new TomSelect('#selectMember2', selectConfig);
+                                });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const selectConfig = {
-            options: commissionData,
-            valueField: 'value',
-            labelField: 'text',
-            searchField: ['text'],
-            create: true, // Включение возможности ручного ввода
-            createOnBlur: true,
-            persist: false,
-            plugins: ['dropdown_input']
-        };
+                                // Функция динамического переключения видимости элементов в пуш-окне
+                                function openReportSetupModal(groupConfigId, templateId, requiresCommission, isPerStudent) {
+                                    document.getElementById('modalGroupConfigId').value = groupConfigId;
+                                    document.getElementById('modalTemplateId').value = templateId;
+                                    document.getElementById('checkboxSplitByCompany').checked = false;
 
-        tsChairman = new TomSelect('#selectChairman', selectConfig);
-        tsMember1 = new TomSelect('#selectMember1', selectConfig);
-        tsMember2 = new TomSelect('#selectMember2', selectConfig);
-    });
+                                    const commissionBlock = document.getElementById('commissionFieldsBlock');
+                                    const companyBlock = document.getElementById('checkboxSplitByCompany').closest('.p-3');
+                                    const selects = [document.getElementById('selectChairman'), document.getElementById('selectMember1'), document.getElementById('selectMember2')];
+                                    const orderNumInput = document.getElementById('inputCommissionOrderNumber');
+                                    const orderDateInput = document.getElementById('inputCommissionOrderDate');
 
-    // Функция динамического переключения видимости элементов в пуш-окне
-    function openReportSetupModal(groupConfigId, templateId, requiresCommission, isPerStudent) {
-        document.getElementById('modalGroupConfigId').value = groupConfigId;
-        document.getElementById('modalTemplateId').value = templateId;
-        document.getElementById('checkboxSplitByCompany').checked = false;
+                                    if (requiresCommission) {
+                                        commissionBlock.classList.remove('d-none');
+                                        selects.forEach(s => s.setAttribute('required', 'required'));
+                                        orderNumInput.setAttribute('required', 'required');
+                                        orderDateInput.setAttribute('required', 'required');
+                                        orderNumInput.value = "";
+                                        orderDateInput.value = "";
+                                        if (tsChairman) { tsChairman.clear(); tsMember1.clear(); tsMember2.clear(); }
+                                    } else {
+                                        commissionBlock.classList.add('d-none');
+                                        selects.forEach(s => s.removeAttribute('required'));
+                                        orderNumInput.removeAttribute('required');
+                                        orderDateInput.removeAttribute('required');
+                                    }
 
-        const commissionBlock = document.getElementById('commissionFieldsBlock');
-        const companyBlock = document.getElementById('checkboxSplitByCompany').closest('.p-3');
-        const selects = [document.getElementById('selectChairman'), document.getElementById('selectMember1'), document.getElementById('selectMember2')];
+                                    if (isPerStudent) {
+                                        companyBlock.classList.add('d-none');
+                                    } else {
+                                        companyBlock.classList.remove('d-none');
+                                    }
 
-        if (requiresCommission) {
-            commissionBlock.classList.remove('d-none');
-            selects.forEach(s => s.setAttribute('required', 'required'));
-            if (tsChairman) { tsChairman.clear(); tsMember1.clear(); tsMember2.clear(); }
-        } else {
-            commissionBlock.classList.add('d-none');
-            selects.forEach(s => s.removeAttribute('required'));
-        }
+                                    new bootstrap.Modal(document.getElementById('reportSetupModal')).show();
+                                }
 
-        if (isPerStudent) {
-            companyBlock.classList.add('d-none');
-        } else {
-            companyBlock.classList.remove('d-none');
-        }
-
-        new bootstrap.Modal(document.getElementById('reportSetupModal')).show();
-    }
-
-    // Асинхронное наполнение пуш-окна результатами тестов студента
-    function openStudentPushModal(studentId, courseId, fullName) {
-        document.getElementById('modalStudentName').innerText = fullName;
-        const tableBody = document.getElementById('modalAttemptsTableBody');
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Загрузка данных...</td></tr>';
+                                // Асинхронное наполнение пуш-окна результатами тестов студента
+                                function openStudentPushModal(studentId, courseId, fullName) {
+                                    document.getElementById('modalStudentName').innerText = fullName;
+                                    const tableBody = document.getElementById('modalAttemptsTableBody');
+                                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Загрузка данных...</td></tr>';
         
-        new bootstrap.Modal(document.getElementById('studentReportModal')).show();
+                                    new bootstrap.Modal(document.getElementById('studentReportModal')).show();
         
-        fetch(`/Report/GetStudentTestAttempts?studentId=${studentId}&courseId=${courseId}`)
-            .then(response => response.json())
-            .then(data => {
-                tableBody.innerHTML = '';
-                if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Попыток сдачи тестов не найдено.</td></tr>';
-                    return;
-                }
-                data.forEach(attempt => {
-                    let statusBadge = `<span class="badge bg-warning text-dark">В процессе</span>`;
-                    if (attempt.status === 'Passed' || attempt.status === 'Success' || attempt.status === 'Completed') {
-                        statusBadge = `<span class="badge bg-success">Сдано</span>`;
-                    } else if (attempt.status === 'Failed') {
-                        statusBadge = `<span class="badge bg-danger">Не сдано</span>`;
-                    } else if (attempt.status === 'Abandoned') {
-                        statusBadge = `<span class="badge bg-secondary">Аннулирован</span>`;
-                    }
+                                    fetch(`/Report/GetStudentTestAttempts?studentId=${studentId}&courseId=${courseId}`)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            tableBody.innerHTML = '';
+                                            if (data.length === 0) {
+                                                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Попыток сдачи тестов не найдено.</td></tr>';
+                                                return;
+                                            }
+                                            data.forEach(attempt => {
+                                                let statusBadge = `<span class="badge bg-warning text-dark">В процессе</span>`;
+                                                if (attempt.status === 'Passed' || attempt.status === 'Success' || attempt.status === 'Completed') {
+                                                    statusBadge = `<span class="badge bg-success">Сдано</span>`;
+                                                } else if (attempt.status === 'Failed') {
+                                                    statusBadge = `<span class="badge bg-danger">Не сдано</span>`;
+                                                } else if (attempt.status === 'Abandoned') {
+                                                    statusBadge = `<span class="badge bg-secondary">Аннулирован</span>`;
+                                                }
 
-                    tableBody.insertAdjacentHTML('beforeend', `
-                        <tr>
-                            <td><strong>${attempt.testName}</strong></td>
-                            <td>${statusBadge}</td>
-                            <td><span class="fw-bold">${attempt.scorePercentage}%</span></td>
-                            <td>${attempt.correctAnswersCount} / ${attempt.totalQuestionsCount}</td>
-                            <td><small>${attempt.finishedAt}</small></td>
-                            <td><a href="/Report/DownloadTestResult?attemptId=${attempt.id}" class="btn btn-sm btn-outline-primary">💾</a></td>
-                        </tr>
-                    `);
-                });
-            });
-    }
-</script>
-}
+                                                tableBody.insertAdjacentHTML('beforeend', `
+                                                                                                                                        <tr>
+                                                                                                                                            <td><strong>${attempt.testName}</strong></td>
+                                                                                                                                            <td>${statusBadge}</td>
+                                                                                                                                            <td><span class="fw-bold">${attempt.scorePercentage}%</span></td>
+                                                                                                                                            <td>${attempt.correctAnswersCount} / ${attempt.totalQuestionsCount}</td>
+                                                                                                                                            <td><small>${attempt.finishedAt}</small></td>
+                                                                                                                                            <td><a href="/Report/DownloadTestResult?attemptId=${attempt.id}" class="btn btn-sm btn-outline-primary">💾</a></td>
+                                                                                                                                        </tr>
+                                                                                                                                    `);
+                                            });
+                                        });
+                                }
+                            </script>
+                        }
