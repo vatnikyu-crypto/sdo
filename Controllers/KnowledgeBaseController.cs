@@ -73,29 +73,53 @@ public class KnowledgeBaseController : Controller
 
         // Достаем все конфигурации курсов для групп, в которых состоит этот студент
         var availableConfigs = await _context.GroupCourseConfigs
+            .Include(cc => cc.Group)
             .Where(cc => _context.GroupStudents.Any(gs => gs.GroupId == cc.GroupId && gs.StudentId == studentId))
             .ToListAsync();
 
-        // Проверяем, есть ли хотя бы один курс, проходящий ПРЯМО СЕЙЧАС, к которому допущен этот студент
+        // Проверяем, есть ли доступ хотя бы к одному курсу
         bool hasActiveAccess = availableConfigs.Any(cc =>
         {
-            // 1. Проверка индивидуальных дат курса (если они заданы)
-            if (cc.CourseStartDate.HasValue && today < cc.CourseStartDate.Value.Date) return false;
-            if (cc.CourseEndDate.HasValue && today > cc.CourseEndDate.Value.Date) return false;
-
-            // 2. Проверка общих дат самой группы (если индивидуальные даты курса не заданы)
-            if (!cc.CourseStartDate.HasValue && !cc.CourseEndDate.HasValue && cc.Group != null)
+            // 1. ГЛАВНОЕ: Если есть дата продления доступа и она еще не прошла — 
+            // даем доступ СРАЗУ, даже если сам курс или группа уже закончились.
+            if (cc.Group != null && cc.Group.MaterialAccessDate.HasValue)
             {
-                if (today < cc.Group.StartDate.Date || today > cc.Group.EndDate.Date) return false;
+                if (today <= cc.Group.MaterialAccessDate.Value.Date)
+                {
+                    return true;
+                }
             }
 
-            // 3. Проверка индивидуального допуска по ID
-            // Если строка пустая — значит параметры допусков еще не настраивались точечно, 
-            // и по умолчанию допущены ВСЕ студенты, зачисленные в эту группу.
+            // 2. Если продления нет, проверяем стандартные даты курса/группы
+            bool isWithinDates = true;
+
+            // Проверка даты НАЧАЛА
+            if (cc.CourseStartDate.HasValue)
+            {
+                if (today < cc.CourseStartDate.Value.Date) isWithinDates = false;
+            }
+            else if (cc.Group != null)
+            {
+                if (today < cc.Group.StartDate.Date) isWithinDates = false;
+            }
+
+            // Проверка даты ОКОНЧАНИЯ
+            if (cc.CourseEndDate.HasValue)
+            {
+                if (today > cc.CourseEndDate.Value.Date) isWithinDates = false;
+            }
+            else if (cc.Group != null)
+            {
+                if (today > cc.Group.EndDate.Date) isWithinDates = false;
+            }
+
+            if (!isWithinDates) return false;
+
+            // 3. Проверка индивидуального допуска (галочки в аккордеоне)
+            // Если строка пустая — значит, допущены все, кто в группе.
             if (string.IsNullOrWhiteSpace(cc.AllowedStudentIds))
                 return true;
 
-            // Если строка заполнена, проверяем наличие ID конкретного студента
             var allowedIds = cc.AllowedStudentIds
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(id => int.TryParse(id.Trim(), out var parsedId) ? parsedId : -1)
@@ -103,7 +127,6 @@ public class KnowledgeBaseController : Controller
 
             return allowedIds.Contains(studentId);
         });
-
 
         // Если активного обучения нет — блокируем доступ и показываем View-заглушку
         if (!hasActiveAccess)

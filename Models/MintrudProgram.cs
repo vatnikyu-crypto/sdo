@@ -10,6 +10,8 @@ public class MintrudProgram
     // Если кодов в списке не будет, можно оставить пустую строку или сделать nullable
     public string Code { get; set; } = string.Empty; 
     
+    public string NumberProgram {get; set;} = string.Empty;
+
     // Полное официальное название программы Минтруда
     public string Name { get; set; } = string.Empty;
 

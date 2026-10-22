@@ -1,16 +1,170 @@
-@{ Layout = null; }
+@{ 
+    Layout = null; 
+}
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <title>Доступ запрещен</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>403 | Доступ запрещен</title>
+    
+    <!-- Иконка вкладки -->
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+
+    <!-- Bootstrap 5 -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Локальные Иконки Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
+    <style>
+        :root {
+            --brand-primary: #4F589D;
+            --brand-dark: #3b4382;
+            --brand-accent: #F59E0B;
+            --brand-bg: #f4f7f6;
+        }
+
+        body {
+            background-color: var(--brand-bg);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Легкий декоративный фон в виде кругов */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(79, 88, 157, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+        }
+
+        .error-card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            padding: 3rem 2rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out forwards;
+        }
+
+        /* Красивая анимация появления */
+        @@keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Декоративная полоска сверху */
+        .error-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+        }
+
+        /* Иконка щита */
+        .icon-wrapper {
+            width: 90px;
+            height: 90px;
+            background: #fff0f0;
+            color: #dc3545; /* Красный для ошибки */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem auto;
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.15);
+        }
+
+        /* Цифра 403 */
+        .error-code {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            letter-spacing: -2px;
+        }
+
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .error-desc {
+            color: #777;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        /* Кнопки */
+        .btn-brand {
+            background-color: var(--brand-primary);
+            color: white;
+            border: none;
+            transition: all 0.3s;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .btn-brand:hover {
+            background-color: var(--brand-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+        }
+
+        .btn-outline-custom {
+            border: 2px solid #e2e8f0;
+            color: #6c757d;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s;
+            background: transparent;
+        }
+        .btn-outline-custom:hover {
+            background-color: #f8f9fa;
+            color: #333;
+            border-color: #ced4da;
+        }
+    </style>
 </head>
-<body class="d-flex align-items-center justify-content-center vh-100 bg-light">
-    <div class="text-center">
-        <h1 class="display-1 fw-bold text-danger">403</h1>
-        <p class="fs-3"> <span class="text-danger">Ой!</span> Доступ ограничен.</p>
-        <p class="lead">У вас нет прав для просмотра этой страницы.</p>
-        <a href="/Auth/Logout" class="btn btn-primary">Войти под другим аккаунтом</a>
+<body>
+
+    <div class="error-card">
+        <!-- Иконка -->
+        <div class="icon-wrapper">
+            <i class="bi bi-shield-lock-fill" style="font-size: 3rem;"></i>
+        </div>
+
+        <!-- Код и текст -->
+        <div class="error-code">403</div>
+        <h1 class="error-title">Доступ ограничен</h1>
+        <p class="error-desc">
+            К сожалению, у вас нет прав для просмотра этой страницы.<br>
+            Пожалуйста, проверьте свои учетные данные или обратитесь к администратору.
+        </p>
+
+        <!-- Кнопки -->
+        <div class="d-flex flex-column gap-2">
+            <a href="/Auth/Logout" class="btn btn-brand py-2.5">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Войти под другим аккаунтом
+            </a>
+            <a href="/" class="btn btn-outline-custom py-2.5">
+                <i class="bi bi-house-door me-2"></i> Вернуться на главную
+            </a>
+        </div>
     </div>
+
 </body>
 </html>

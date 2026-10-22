@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -19,7 +20,6 @@ public class CompaniesController : Controller
     }
 
     // GET: /Companies/Index
-    // Вывод списка всех компаний с подсчетом сотрудников
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -38,37 +38,45 @@ public class CompaniesController : Controller
     }
 
     // POST: /Companies/Create
-    // Добавление новой компании с проверкой уникальности ИНН
+    // AJAX-метод для создания компании
     [HttpPost]
-    public async Task<IActionResult> Create(string name, string inn)
+    public async Task<IActionResult> Create(string Name, string Inn)
     {
-        ViewBag.Name = name;
-        ViewBag.Inn = inn;
-
-        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(inn))
+        if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Inn))
         {
-            ModelState.AddModelError("", "Ошибка: Все поля обязательны для заполнения!");
-            return View();
+            return Json(new { success = false, message = "Все поля обязательны для заполнения!" });
         }
 
-        // Проверка уникальности ИНН
-        var isInnDuplicate = await _context.Companies.AnyAsync(c => c.Inn == inn.Trim());
-        if (isInnDuplicate)
+        // Проверка формата ИНН на сервере
+        if (Inn.Trim().Length != 10 && Inn.Trim().Length != 12)
         {
-            ModelState.AddModelError("", $"Ошибка: Организация с ИНН '{inn}' уже зарегистрирована в системе!");
-            return View();
+            return Json(new { success = false, message = "ИНН должен содержать 10 или 12 цифр." });
         }
 
-        var newCompany = new Company
+        try
         {
-            Name = name.Trim(),
-            Inn = inn.Trim()
-        };
+            // Проверка уникальности ИНН
+            var isInnDuplicate = await _context.Companies.AnyAsync(c => c.Inn == Inn.Trim());
+            if (isInnDuplicate)
+            {
+                return Json(new { success = false, message = $"Организация с ИНН '{Inn}' уже зарегистрирована в системе!" });
+            }
 
-        _context.Companies.Add(newCompany);
-        await _context.SaveChangesAsync();
+            var newCompany = new Company
+            {
+                Name = Name.Trim(),
+                Inn = Inn.Trim()
+            };
 
-        return RedirectToAction(nameof(Index));
+            _context.Companies.Add(newCompany);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Ошибка БД: {ex.Message}" });
+        }
     }
 
     // GET: /Companies/Edit/5
@@ -84,30 +92,47 @@ public class CompaniesController : Controller
     }
 
     // POST: /Companies/Edit/5
+    // AJAX-метод для редактирования компании
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, string name, string inn)
+    public async Task<IActionResult> Edit(int id, string Name, string Inn)
     {
-        ViewBag.Name = name;
-        ViewBag.Inn = inn;
-
-        var company = await _context.Companies.FindAsync(id);
-        if (company == null) return NotFound();
-
-        // Проверка уникальности ИНН среди ДРУГИХ компаний
-        var isInnDuplicate = await _context.Companies.AnyAsync(c => c.Inn == inn.Trim() && c.Id != id);
-        if (isInnDuplicate)
+        if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Inn))
         {
-            ModelState.AddModelError("", $"Ошибка: ИНН '{inn}' уже принадлежит другой организации!");
-            return View();
+            return Json(new { success = false, message = "Все поля обязательны для заполнения!" });
         }
 
-        company.Name = name.Trim();
-        company.Inn = inn.Trim();
+        if (Inn.Trim().Length != 10 && Inn.Trim().Length != 12)
+        {
+            return Json(new { success = false, message = "ИНН должен содержать 10 или 12 цифр." });
+        }
 
-        _context.Companies.Update(company);
-        await _context.SaveChangesAsync();
+        try
+        {
+            var company = await _context.Companies.FindAsync(id);
+            if (company == null) 
+            {
+                return Json(new { success = false, message = "Организация не найдена!" });
+            }
 
-        return RedirectToAction(nameof(Index));
+            // Проверка уникальности ИНН среди ДРУГИХ компаний
+            var isInnDuplicate = await _context.Companies.AnyAsync(c => c.Inn == Inn.Trim() && c.Id != id);
+            if (isInnDuplicate)
+            {
+                return Json(new { success = false, message = $"ИНН '{Inn}' уже принадлежит другой организации!" });
+            }
+
+            company.Name = Name.Trim();
+            company.Inn = Inn.Trim();
+
+            _context.Companies.Update(company);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Ошибка при обновлении: {ex.Message}" });
+        }
     }
 
     // POST: /Companies/Delete/5
@@ -127,9 +152,15 @@ public class CompaniesController : Controller
             return Json(new { success = false, message = $"Нельзя удалить компанию '{company.Name}', так как к ней привязано {company.Users.Count} слушателей! Сначала переведите или удалите сотрудников." });
         }
 
-        _context.Companies.Remove(company);
-        await _context.SaveChangesAsync();
-
-        return Json(new { success = true });
+        try
+        {
+            _context.Companies.Remove(company);
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Ошибка при удалении: {ex.Message}" });
+        }
     }
 }

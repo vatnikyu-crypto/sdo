@@ -23,4 +23,7 @@ public class CourseMaterial
     public int PassPercentage { get; set; } = 80;
     public TestStatus TestKind { get; set; } = TestStatus.Промежуточный; // Статус теста
     public int QuestionsCountToUse { get; set; } = 0; // 0 — использовать все вопросы
+
+    public int? ThemeId { get; set; } // Может быть null (если материал без темы)
+    public CourseTheme? Theme { get; set; }
 }

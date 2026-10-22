@@ -19,8 +19,20 @@ public class CourseProgress
     [ForeignKey("CourseId")]
     public Course? Course { get; set; }
 
+    // НОВОЕ: Привязка к конкретной группе (nullable для старых записей)
+    public int? GroupId { get; set; }
+    public Group? Group { get; set; }
+
     // Итоговый статус по курсу: true — Сдал, false — В процессе обучения
     public bool IsCompleted { get; set; } = false;
 
     public DateTime? CompletedAt { get; set; }
+    // НОВОЕ ПОЛЕ: Номер удостоверения (может быть пустым)
+    public string? CertificateNumber { get; set; }
+
+    // Номер, который система генерирует и отправляет в Минтруд
+    public string? MintrudNumber { get; set; }
+
+    // Официальный номер из ФИС ФРДО (загружается из файла Минтруда)
+    public string? MintrudOfficialNumber { get; set; }
 }

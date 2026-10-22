@@ -22,4 +22,5 @@ public class Course
     // Связь: в одном курсе может быть много материалов (лекций, тестов)
     public List<CourseMaterial> Materials { get; set; } = new();
     public List<CourseDocumentTemplate> DocumentTemplates { get; set; } = new();
+    public List<CourseTheme> Themes { get; set; } = new();
 }

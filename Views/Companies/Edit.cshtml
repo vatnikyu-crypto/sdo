@@ -1,53 +1,242 @@
 @{
-    Layout = "_AdminLayout"; // Подключаем боковое меню администратора
-    ViewData["Title"] = "Редактирование организации";
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Редактирование компании";
 }
 
+<!-- Стили (идентичны странице создания + уведомления) -->
+<style>
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-gray: #e2e8f0;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        padding: 12px 15px 12px 45px;
+        border: 1px solid var(--brand-gray);
+        background-color: #f8fafc;
+        transition: all 0.3s;
+        box-sizing: border-box;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-control:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 0.25rem rgba(79, 88, 157, 0.15);
+        background-color: #fff;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+    .input-icon-wrapper .bi {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #a0aabf;
+        font-size: 1.1rem;
+        z-index: 10;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+
+    .info-box {
+        background-color: #f0f4ff;
+        border-left: 4px solid var(--brand-primary);
+        color: #445;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+
+    /* ========================================= */
+    /* СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ (TOASTS) */
+    /* ========================================= */
+    .toast-container-custom {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .custom-toast {
+        min-width: 300px;
+        max-width: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        border-left: 6px solid #ccc;
+    }
+
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+
+    @@keyframes slideInRight {
+        from { transform: translateX(120%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @@keyframes fadeOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(120%); opacity: 0; }
+    }
+</style>
+
+<!-- Контейнер для уведомлений -->
+<div id="toastContainer" class="toast-container-custom"></div>
+
 <!-- НАВИГАЦИОННАЯ ШАПКА -->
-<div class="mb-3 mt-2">
-    <a href="/Companies/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1">
-        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
-        </svg>
-        Назад к списку
+<div class="mb-4 mt-2">
+    <a href="/Companies/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 hover-primary" style="transition: color 0.2s;">
+        <i class="bi bi-arrow-left"></i>
+        Назад к списку компаний
     </a>
-    <h2 class="fw-bold text-dark mt-2 m-0">Редактирование организации</h2>
-    <small class="text-muted">Изменение регистрационных данных предприятия</small>
+    <h3 class="fw-bold text-dark m-0">Редактирование компании</h3>
 </div>
 
 <!-- КАРТОЧКА С ФОРМОЙ -->
-<div class="card card-custom p-4 bg-white border-0 shadow-sm mb-4" style="max-width: 600px; border-radius: 12px;">
-    <form asp-action="Edit" asp-controller="Companies" method="post">
+<div class="card border-0 shadow-sm p-4 mb-5" style="max-width: 650px; border-radius: 12px;">
+    <form id="editCompanyForm" autocomplete="off">
         
-        <!-- Блок вывода серверных ошибок валидации ИНН -->
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-danger border-0 small py-2 mb-4" role="alert">
-                <div asp-validation-summary="All"></div>
-            </div>
-        }
+        <!-- Скрытое поле для ID -->
+        <input type="hidden" id="editCompanyId" value="@ViewBag.Id" />
 
-        <div class="mb-3">
-            <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ ОРГАНИЗАЦИИ <span class="text-danger">*</span></label>
-            <input name="Name" type="text" class="form-control" required 
-                   autocomplete="off" value="@ViewBag.Name" />
-        </div>
+        <!-- Поле: Название компании -->
         <div class="mb-4">
-            <label class="form-label text-muted small fw-bold">ИНН ОРГАНИЗАЦИИ <span class="text-danger">*</span></label>
-            <input name="Inn" type="text" class="form-control fw-mono" required 
-                   autocomplete="off" pattern="[0-9]{10,12}" 
-                   title="ИНН должен состоять только из 10 или 12 цифр" 
-                   value="@ViewBag.Inn" />
+            <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ КОМПАНИИ <span class="text-danger">*</span></label>
+            <div class="input-icon-wrapper">
+                <i class="bi bi-building"></i>
+                <input name="Name" id="editCompanyName" type="text" class="form-control" required 
+                       value="@ViewBag.Name" />
+            </div>
         </div>
 
-        <div class="alert alert-light border text-muted small mb-4 py-2" style="background-color: #fdfdfd; border-radius: 6px;">
-            ℹ️ При изменении ИНН система выполнит проверку по всей базе данных. Если новый ИНН совпадет с ИНН уже существующей компании, изменения не будут сохранены.
+        <!-- Поле: ИНН -->
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">ИНН КОМПАНИИ <span class="text-danger">*</span></label>
+            <div class="input-icon-wrapper">
+                <i class="bi bi-hash"></i>
+                <input name="Inn" id="editCompanyInn" type="text" class="form-control" required 
+                       pattern="[0-9]{10,12}" title="ИНН должен состоять только из 10 или 12 цифр" 
+                       value="@ViewBag.Inn" style="letter-spacing: 1px;" />
+            </div>
+            <div class="form-text small text-muted mt-1" style="font-size: 0.75rem;">
+                Только цифры. Длина: 10 (для юр. лиц) или 12 (для ИП).
+            </div>
+        </div>
+
+        <!-- Информационный блок -->
+        <div class="info-box p-3 mb-4 d-flex gap-2 align-items-start">
+            <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+            <div>
+                <strong>Проверка системы:</strong> При изменении ИНН система выполнит проверку по всей базе данных. Если новый ИНН совпадет с ИНН уже существующей компании, изменения не будут сохранены.
+            </div>
         </div>
 
         <!-- КНОПКИ УПРАВЛЕНИЯ -->
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">Сохранить изменения</button>
-            <a href="/Companies/Index" class="btn btn-light px-4 py-2 fw-bold border text-secondary">Отмена</a>
+        <div class="d-flex gap-2 pt-2 border-top">
+            <button type="button" id="submitEditBtn" class="btn btn-brand px-4 py-2 fw-bold d-flex align-items-center gap-2 rounded-3 mt-3">
+                <i class="bi bi-check-lg fs-5"></i> Сохранить изменения
+            </button>
+            <a href="/Companies/Index" class="btn btn-light px-4 py-2 fw-bold border text-secondary rounded-3 mt-3">
+                Отмена
+            </a>
         </div>
     </form>
 </div>
+
+<script>
+    // Функция для показа красивых уведомлений
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        
+        toast.className = `custom-toast ${type}`;
+        const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+        
+        toast.innerHTML = `
+            <i class="bi ${iconClass} fs-4 me-3"></i>
+            <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // Получаем ID компании из URL (например, /Companies/Edit/5)
+    const pathParts = window.location.pathname.split('/');
+    const companyId = pathParts[pathParts.length - 1];
+
+    // Обработка нажатия на кнопку "Сохранить изменения"
+    document.getElementById('submitEditBtn').addEventListener('click', async function () {
+        const form = document.getElementById('editCompanyForm');
+        
+        // Встроенная HTML-валидация
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const nameInput = document.getElementById('editCompanyName');
+        const innInput = document.getElementById('editCompanyInn');
+
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+
+        const params = new URLSearchParams();
+        params.append('Name', nameInput.value.trim());
+        params.append('Inn', innInput.value.trim());
+
+        try {
+            // Отправляем запрос на /Companies/Edit/{id}
+            const response = await fetch(`/Companies/Edit/${companyId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            });
+            
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Данные компании успешно обновлены!', 'success');
+                // Ждем 1 секунду и переходим к списку
+                setTimeout(() => {
+                    window.location.href = '/Companies/Index';
+                }, 1000);
+            } else {
+                // Если сервер вернул ошибку (например, ИНН занят)
+                showToast(result.message, 'danger');
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-lg fs-5"></i> Сохранить изменения';
+            }
+        } catch (err) {
+            showToast('Ошибка сети при сохранении.', 'danger');
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-check-lg fs-5"></i> Сохранить изменения';
+        }
+    });
+</script>

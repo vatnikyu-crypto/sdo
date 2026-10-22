@@ -4,66 +4,184 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - СДО</title>
-    <!-- Подключаем Bootstrap из wwwroot -->
+    <title>@ViewData["Title"] - СДО Энергетик</title>
+    
+    <!-- Иконка вкладки -->
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+
+    <!-- Локальный Bootstrap -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Локальные Иконки Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="/lib/plyr/plyr.css" />
+
+    <style>
+        :root {
+            --brand-primary: #4F589D;
+            --brand-dark: #3b4382;
+            --brand-accent: #F59E0B;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Стили для навигационной панели */
+        .navbar-custom {
+            background-color: var(--brand-dark);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Белый круг для логотипа в шапке */
+        .nav-logo-circle {
+            width: 42px;
+            height: 42px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .nav-logo-circle img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .brand-title {
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-subtitle {
+            color: var(--brand-accent);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Стили для ссылок меню */
+        .navbar-custom .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .navbar-custom .nav-link:hover,
+        .navbar-custom .nav-link.active {
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .navbar-custom .nav-link i {
+            font-size: 1.1rem;
+        }
+
+        /* Бейдж уведомлений в меню */
+        .navbar-custom .badge {
+            background-color: var(--brand-accent) !important;
+            color: #fff;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Блок пользователя */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        .btn-logout {
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            transition: all 0.2s;
+        }
+        
+        .btn-logout:hover {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
 
     <!-- НАВИГАЦИОННАЯ ПАНЕЛЬ СТУДЕНТА -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom mb-4">
         <div class="container">
-            <!-- ЛОГОТИП И НАЗВАНИЕ СДО "АЗИМУТ" -->
-            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/Dashboard/Student"
-               style="text-decoration: none;">
-                <!-- Иконка: Компас знаний со стрелкой на Северо-Восток -->
-                <svg xmlns="http://w3.org" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1cc88a"
-                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" stroke="#eaecf4" stroke-width="1.5" />
-                    <line x1="12" y1="2" x2="12" y2="4" />
-                    <line x1="12" y1="20" x2="12" y2="22" />
-                    <line x1="2" y1="12" x2="4" y2="12" />
-                    <line x1="20" y1="12" x2="22" y2="12" />
-                    <polygon points="16,8 11,11 8,16 13,13" fill="rgba(28, 200, 138, 0.2)" />
-                    <line x1="12" y1="12" x2="15.5" y2="8.5" stroke-width="2.5" />
-                </svg>
-                <span class="text-white fw-bold tracking-wide"
-                      style="font-family: 'Segoe UI', sans-serif; letter-spacing: 0.8px; font-size: 1.15rem;">
-                    АЗИМУТ <span style="color: #1cc88a; font-weight: 300; font-size: 0.85rem; letter-spacing: 1px; display: block; margin-top: -5px;">СДО</span>
-                </span>
+            
+            <!-- ЛОГОТИП И НАЗВАНИЕ -->
+            <a class="navbar-brand" href="/Dashboard/Student">
+                <div class="nav-logo-circle">
+                    <img src="~/logo.png" alt="Логотип" onerror="this.style.display='none'">
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">СДО</span>
+                    <span class="brand-subtitle">"ЭНЕРГЕТИК"</span>
+                </div>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="studentNavbar">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-2">
                     <li class="nav-item">
-                        <a class="nav-link fw-bold" href="/Dashboard/Student">🏠 Мои курсы</a>
+                        <a class="nav-link" href="/Dashboard/Student">
+                            <i class="bi bi-house-door"></i> Мои курсы
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-bold text-white" href="/KnowledgeBase/Index" target="_self" style="opacity: 0.85;">📚 База знаний</a>
+                        <a class="nav-link" href="/KnowledgeBase/Index" target="_self">
+                            <i class="bi bi-book"></i> База знаний
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-bold text-white d-flex align-items-center gap-1.5" href="/Support/StudentIndex" target="_self" style="opacity: 0.85;">
-                            <span>🛠️ Тех. поддержка</span>
-                            <!-- Счётчик непрочитанных ответов техподдержки -->
-                            <span id="studentSupportMenuBadge" class="badge bg-danger rounded-pill d-none"
-                                  style="font-size: 0.7rem; padding: 4px 7px; line-height: 1;">0</span>
+                        <a class="nav-link d-flex align-items-center gap-1" href="/Support/StudentIndex" target="_self">
+                            <i class="bi bi-tools"></i> Тех. поддержка
+                            <!-- Счётчик непрочитанных ответов -->
+                            <span id="studentSupportMenuBadge" class="badge rounded-pill d-none" style="font-size: 0.7rem; padding: 4px 7px; line-height: 1;">0</span>
                         </a>
                     </li>
                 </ul>
                 
-                <!-- Блок пользователя и кнопка безопасного выхода -->
-                <div class="d-flex align-items-center gap-3">
-                    <span class="text-white-50 small d-none d-sm-inline">
-                        👤 @User.FindFirst("FullName")?.Value
-                    </span>
-                    <a href="/Auth/Logout" class="btn btn-sm btn-outline-danger fw-bold px-3">
-                        Выйти 🚪
+                <!-- Блок пользователя и выход -->
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
+                    <div class="user-profile">
+                        <i class="bi bi-person-circle fs-5"></i>
+                        <span>@User.FindFirst("FullName")?.Value</span>
+                    </div>
+                    <a href="/Auth/Logout" class="btn btn-sm btn-outline-light btn-logout fw-bold px-3 rounded-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-box-arrow-right"></i> Выйти
                     </a>
                 </div>
             </div>
@@ -77,12 +195,12 @@
         </main>
     </div>
 
-    <!-- СКРИПТЫ (ПРАВИЛЬНЫЙ ПОРЯДОК ПОДКЛЮЧЕНИЯ) -->
+    <!-- СКРИПТЫ -->
     <script src="/lib/jquery/dist/jquery.min.js"></script>
     <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/site.js" asp-append-version="true"></script>
 
-    <!-- ТВОЙ ОПРОС СЧЁТЧИКА (СТРОГО ПОСЛЕ БИБЛИОТЕК) -->
+    <!-- ОПРОС СЧЁТЧИКА ТЕХПОДДЕРЖКИ -->
     <script>
         async function updateStudentSupportMenuBadge() {
             try {
@@ -92,16 +210,15 @@
 
                 if (badge && data.count > 0) {
                     badge.textContent = data.count;
-                    badge.classList.remove('d-none'); // Включаем красный кружок
+                    badge.classList.remove('d-none'); 
                 } else if (badge) {
-                    badge.classList.add('d-none'); // Отключаем кружок
+                    badge.classList.add('d-none'); 
                 }
             } catch (err) {
                 console.error('Ошибка обновления счетчика поддержки в меню:', err);
             }
         }
 
-        // Выносим в глобальное окно, чтобы StudentIndex.cshtml мог сбросить счётчик при чтении
         window.updateStudentSupportBadge = updateStudentSupportMenuBadge;
 
         document.addEventListener("DOMContentLoaded", updateStudentSupportMenuBadge);

@@ -59,27 +59,47 @@ public class DashboardController : Controller
             .Select(gs => gs.GroupId)
             .ToListAsync();
 
-        // 3. Вытаскиваем конфигурации курсов для этих групп
+        var today = DateTime.Today;
+
+        // 3. Вытаскиваем конфигурации курсов с проверкой дат
         var groupCourses = await _context.GroupCourseConfigs
             .Include(gcc => gcc.Course)
+            .Include(gcc => gcc.Group)
             .Where(gcc => myGroupIds.Contains(gcc.GroupId))
+            .Where(gcc =>
+                (gcc.Group!.MaterialAccessDate != null && gcc.Group.MaterialAccessDate.Value.Date >= today) ||
+                (gcc.Group.MaterialAccessDate == null && gcc.Group.EndDate.Date >= today)
+            )
             .ToListAsync();
 
-        // Трюк: убираем дубликаты курсов, если студент случайно оказался в двух группах с одним курсом
+        // Убираем дубликаты
         var uniqueCourses = groupCourses
             .GroupBy(gc => gc.CourseId)
             .Select(g => g.First())
             .ToList();
 
-        // 4. Загружаем все зачеты этого студента из журнала успеваемости
-        var myProgresses = await _context.CourseProgresses
+        // 4. Загружаем успеваемость
+         var myProgresses = await _context.CourseProgresses
             .Where(p => p.StudentId == studentId)
+            .GroupBy(p => p.CourseId)
+            .Select(g => g.OrderByDescending(p => p.CompletedAt ?? DateTime.MinValue).First())
             .ToDictionaryAsync(p => p.CourseId);
 
-        // Передаем журнал успеваемости во ViewBag, чтобы во View сопоставить статус с карточкой курса
         ViewBag.StudentProgress = myProgresses;
 
-        // Отправляем список привязанных конфигураций курсов во View
-        return View(uniqueCourses);
+        // 5. СОРТИРОВКА ПРЯМО ЗДЕСЬ (В КОНТРОЛЛЕРЕ):
+        // Сначала те, у которых IsCompleted == false (0), затем те, у которых true (1).
+        // Внутри этих групп сортируем по алфавиту названия курса.
+        var sortedCourses = uniqueCourses
+            .OrderBy(c =>
+            {
+                bool isPassed = myProgresses.TryGetValue(c.CourseId, out var p) && p.IsCompleted;
+                return isPassed; // false (0) встанет в начало, true (1) в конец
+            })
+            .ThenBy(c => c.Course?.Title)
+            .ToList();
+
+        // Отдаем в View УЖЕ отсортированный список
+        return View(sortedCourses);
     }
 }

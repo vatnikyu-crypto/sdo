@@ -10,7 +10,9 @@ public class Group
     public string Title { get; set; } = string.Empty;       // Наименование группы
     public DateTime StartDate { get; set; }                 // Дата начала обучения (без времени)
     public DateTime EndDate { get; set; }                   // Дата окончания обучения (без времени)
+    public DateTime? MaterialAccessDate { get; set; }     // НОВОЕ ПОЛЕ: Дата окончания доступа к материалам (необязательное)
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<GroupCompany> GroupCompanies { get; set; } = new List<GroupCompany>();
+    public ICollection<GroupStudent> GroupStudents { get; set; } = new List<GroupStudent>();
 }

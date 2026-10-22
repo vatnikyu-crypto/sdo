@@ -5,156 +5,320 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] | Панель Администратора</title>
-    <!-- Локальный Bootstrap без внешних ссылок -->
+    
+    <!-- Иконка вкладки -->
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+
+    <!-- Локальный Bootstrap -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <!-- ПОДКЛЮЧЕНИЕ ЛОКАЛЬНЫХ ФАЙЛОВ PLUG-IN'А -->
+    
+    <!-- Локальные Иконки Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
+    <!-- Плагин TomSelect -->
     <link href="/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <script src="/js/tom-select.complete.js"></script>
+    
     <style>
-            body {
-                background-color: #f8f9fc;
-                font-family: system-ui, -apple-system, sans-serif;
-            }
+        /* Фирменная палитра сайта dpo-energo.ru */
+        :root {
+            --brand-primary: #4F589D;   /* Основной синий */
+            --brand-dark: #3b4382;      /* Темно-синий */
+            --brand-accent: #F59E0B;    /* Оранжевый акцент */
+            --brand-bg: #f4f7f6;        /* Светлый фон рабочей зоны */
+        }
 
+        body {
+            background-color: var(--brand-bg);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            background: var(--brand-dark);
+            color: white;
+            
+            /* ИЗМЕНЕНИЕ 1: Строгая высота на весь экран */
+            height: 100vh; 
+            
+            /* ИЗМЕНЕНИЕ 2: Включаем вертикальный скролл, если контент не влезает */
+            overflow-y: auto; 
+            
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+            position: fixed;
+            width: 260px;
+            z-index: 1040;
+            transition: all 0.3s;
+        }
+
+        /* Скроллбар для меню (чтобы был тонкий и красивый) */
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        .sidebar-brand {
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-brand img {
+            width: 35px;
+            height: 35px;
+            background: white;
+            border-radius: 50%;
+            padding: 4px;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            margin: 4px 15px;
+            padding: 12px 15px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link i {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s;
+        }
+
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(3px);
+        }
+
+        .sidebar .nav-link:hover i {
+            color: var(--brand-accent);
+        }
+
+        /* Активный пункт меню */
+        .sidebar .nav-link.active {
+            color: white;
+            background: var(--brand-primary);
+            box-shadow: inset 4px 0 0 var(--brand-accent); /* Оранжевая полоска */
+            font-weight: 600;
+        }
+        
+        .sidebar .nav-link.active i {
+            color: white;
+        }
+
+        /* Разделитель */
+        .sidebar hr {
+            border-color: rgba(255,255,255,0.1);
+            margin: 15px 20px;
+        }
+
+        /* --- РАБОЧАЯ ОБЛАСТЬ --- */
+        .main-content {
+            margin-left: 260px; /* Отступ под фиксированное меню */
+            padding: 30px;
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+
+        /* Красивые карточки */
+        .card-custom {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            background: white;
+            margin-bottom: 20px;
+        }
+
+        /* Бейджики уведомлений */
+        .sidebar .badge {
+            background-color: var(--brand-accent) !important; /* Оранжевый вместо красного */
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 50rem;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Мобильная адаптация */
+        @@media (max-width: 768px) {
             .sidebar {
-                background: #2c3e50;
-                min-height: 100vh;
-                color: white;
+                margin-left: -260px; /* Прячем меню за экран */
             }
+            .sidebar.show {
+                margin-left: 0;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+            .mobile-toggle {
+                display: block !important;
+            }
+        }
 
-            .sidebar .nav-link {
-                color: rgba(255, 255, 255, 0.75);
-                border-radius: 6px;
-                margin: 4px 12px;
-                padding: 10px 15px;
-                font-weight: 500;
-                transition: all 0.2s;
-            }
-
-            .sidebar .nav-link:hover {
-                color: white;
-                background: rgba(255, 255, 255, 0.1);
-            }
-
-            .sidebar .nav-link.active {
-                color: white;
-                background: #1a252f;
-                box-shadow: inset 3px 0 0 #3498db;
-            }
-
-            .card-custom {
-                border: none;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            }
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(79, 88, 157, 0.4);
+        }
     </style>
 </head>
 
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Боковое меню Администратора -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-0 shadow">
-                <div class="position-sticky pt-3">
-                    <div class="text-center py-3 m-0">
-                        <h5 class="fw-bold mb-1 text-white">Панель АДМИНА</h5>
-                        <small class="text-muted text-uppercase tracking-wider" style="font-size: 0.75rem;">Управление
-                            СДО</small>
-                        </div>
-                        <hr class="mx-3 bg-secondary">
 
-                        <ul class="nav flex-column mt-2">
-                            <li class="nav-item">
-                                <a class="nav-link" href="/Companies/Index">Компании</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/Groups/Index">👥 Группы</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/Courses/Index">Курсы</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/Users/Index">Пользователи</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/Report/Index">Отчетность</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/KnowledgeBase/Index">📚 База знаний</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center justify-content-between"
-                                   href="/AssignmentReview/Index">
-                                    <span>📥 Проверка заданий</span>
-                                    <!-- Красный кружок-счетчик, изначально скрыт (d-none) -->
-                                    <span id="sidebarAssignmentBadge" class="badge bg-danger rounded-pill d-none"
-                                          style="font-size: 0.75rem; padding: 4px 8px;">0</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center justify-content-between"
-                                   href="/Support/AdminIndex">
-                                    <span>🛠️ Тех. поддержка</span>
-                                    <!-- Красный кружок-счетчик незакрытых тикетов (изначально скрыт) -->
-                                    <span id="sidebarSupportBadge" class="badge bg-danger rounded-pill d-none"
-                                          style="font-size: 0.75rem; padding: 4px 8px;">0</span>
-                                </a>
-                            </ul>
-
-                            <hr class="mx-3 bg-secondary mt-4">
-                            <ul class="nav flex-column">
-                                <li class="nav-item">
-                                    <a class="nav-link text-danger" href="/Auth/Logout">Выйти из системы</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </nav>
-
-                    <!-- Основное рабочее пространство -->
-                    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4">
-                        @RenderBody()
-                    </main>
-                </div>
+    <!-- Боковое меню -->
+    <nav class="sidebar" id="sidebarMenu">
+        <div class="sidebar-brand">
+            <!-- Логотип в шапке меню -->
+            <img src="~/logo.png" alt="Logo" onerror="this.style.display='none'">
+            <div>
+                <h6 class="m-0 fw-bold text-white">Панель Админа</h6>
+                <small class="text-white-50" style="font-size: 0.75rem;">Управление СДО</small>
             </div>
-            <script src="~/lib/jquery/dist/jquery.min.js"></script>
-            <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-            <script>
-                    // Автоматический опрос бэкенда для вывода количества заданий и тикетов в меню
-                    async function updateSidebarBadges() {
-                        try {
-                            // 1. Опрос счетчика домашних заданий (Твой оригинал)
-                            const responseAssign = await fetch('/AssignmentReview/GetPendingCount');
-                            const dataAssign = await responseAssign.json();
-                            const badgeAssign = document.getElementById('sidebarAssignmentBadge');
+        </div>
 
-                            if (badgeAssign && dataAssign.count > 0) {
-                                badgeAssign.textContent = dataAssign.count;
-                                badgeAssign.classList.remove('d-none');
-                            } else if (badgeAssign) {
-                                badgeAssign.classList.add('d-none');
-                            }
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link" href="/Companies/Index">
+                    <i class="bi bi-buildings"></i> Компании
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/Groups/Index">
+                    <i class="bi bi-people"></i> Группы
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/Courses/Index">
+                    <i class="bi bi-journal-bookmark"></i> Курсы
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/Users/Index">
+                    <i class="bi bi-person-badge"></i> Пользователи
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/Report/Index">
+                    <i class="bi bi-graph-up-arrow"></i> Отчетность
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/KnowledgeBase/Index">
+                    <i class="bi bi-book"></i> База знаний
+                </a>
+            </li>
 
-                            // 2. НОВОЕ: Опрос счетчика незакрытых обращений техподдержки
-                            const responseSupport = await fetch('/Support/GetActiveTicketsCount');
-                            const dataSupport = await responseSupport.json();
-                            const badgeSupport = document.getElementById('sidebarSupportBadge');
+            <hr>
 
-                            if (badgeSupport && dataSupport.count > 0) {
-                                badgeSupport.textContent = dataSupport.count;
-                                badgeSupport.classList.remove('d-none'); // Показываем кружок, если есть открытые тикеты
-                            } else if (badgeSupport) {
-                                badgeSupport.classList.add('d-none'); // Прячем, если всё решено и закрыто
-                            }
+            <li class="nav-item">
+                <a class="nav-link d-flex justify-content-between align-items-center" href="/AssignmentReview/Index">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-inbox"></i> Проверка заданий
+                    </div>
+                    <!-- Бейдж заданий -->
+                    <span id="sidebarAssignmentBadge" class="badge d-none">0</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link d-flex justify-content-between align-items-center" href="/Support/AdminIndex">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-tools"></i> Тех. поддержка
+                    </div>
+                    <!-- Бейдж техподдержки -->
+                    <span id="sidebarSupportBadge" class="badge d-none">0</span>
+                </a>
+            </li>
+        </ul>
 
-                        } catch (err) {
-                            console.error('Ошибка обновления счетчиков меню:', err);
-                        }
-                    }
+        <hr>
+        <ul class="nav flex-column mb-4">
+            <li class="nav-item">
+                <a class="nav-link text-danger" href="/Auth/Logout" style="color: #ff7b7b !important;">
+                    <i class="bi bi-box-arrow-right text-danger"></i> Выйти из системы
+                </a>
+            </li>
+        </ul>
+    </nav>
 
-                    // Вызываем комплексную проверку счетчиков при каждой загрузке любой страницы админки
-                    document.addEventListener("DOMContentLoaded", updateSidebarBadges);
-            </script>
-            @await RenderSectionAsync("Scripts", required: false)
-        </body>
+    <!-- Кнопка меню для телефонов -->
+    <button class="mobile-toggle" onclick="document.getElementById('sidebarMenu').classList.toggle('show')">
+        <i class="bi bi-list fs-4"></i>
+    </button>
 
-    </html>
+    <!-- Основное рабочее пространство -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- Скрипт для автоматического выделения активного пункта меню ---
+        document.addEventListener("DOMContentLoaded", function() {
+            const currentPath = window.location.pathname.toLowerCase();
+            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href').toLowerCase();
+                if (currentPath.includes(linkPath) && linkPath !== '/') {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // --- Твоя логика обновления счетчиков бейджей ---
+        async function updateSidebarBadges() {
+            try {
+                // 1. Опрос счетчика домашних заданий
+                const responseAssign = await fetch('/AssignmentReview/GetPendingCount');
+                const dataAssign = await responseAssign.json();
+                const badgeAssign = document.getElementById('sidebarAssignmentBadge');
+
+                if (badgeAssign && dataAssign.count > 0) {
+                    badgeAssign.textContent = dataAssign.count;
+                    badgeAssign.classList.remove('d-none');
+                } else if (badgeAssign) {
+                    badgeAssign.classList.add('d-none');
+                }
+
+                // 2. Опрос счетчика незакрытых обращений техподдержки
+                const responseSupport = await fetch('/Support/GetActiveTicketsCount');
+                const dataSupport = await responseSupport.json();
+                const badgeSupport = document.getElementById('sidebarSupportBadge');
+
+                if (badgeSupport && dataSupport.count > 0) {
+                    badgeSupport.textContent = dataSupport.count;
+                    badgeSupport.classList.remove('d-none');
+                } else if (badgeSupport) {
+                    badgeSupport.classList.add('d-none');
+                }
+
+            } catch (err) {
+                console.error('Ошибка обновления счетчиков меню:', err);
+            }
+        }
+
+        // Вызываем проверку при загрузке
+        document.addEventListener("DOMContentLoaded", updateSidebarBadges);
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

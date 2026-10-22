@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using ClosedXML.Excel;
 using SdoApp.Models;
-using System.IO.Compression; // Обязательно добавь для работы с ZIP
+using System.IO.Compression;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace SdoApp.Controllers;
 
-[Authorize(Roles = "Админ")] // Доступ только для Администратора
+[Authorize(Roles = "Админ")]
 public class GroupsController : Controller
 {
     private readonly AppDbContext _context;
@@ -35,9 +35,8 @@ public class GroupsController : Controller
     }
 
     // POST: /Groups/Create
-    // Асинхронное создание группы из модального окна
     [HttpPost]
-    public async Task<IActionResult> Create(string groupNumber, string title, DateTime startDate, DateTime endDate)
+    public async Task<IActionResult> Create(string groupNumber, string title, DateTime startDate, DateTime endDate, DateTime? materialAccessDate)
     {
         if (string.IsNullOrWhiteSpace(groupNumber) || string.IsNullOrWhiteSpace(title))
         {
@@ -49,14 +48,20 @@ public class GroupsController : Controller
             return Json(new { success = false, message = "Дата окончания не может быть раньше даты начала обучения!" });
         }
 
+        if (materialAccessDate.HasValue && materialAccessDate.Value.Date < endDate.Date)
+        {
+            return Json(new { success = false, message = "Дата доступа к материалам не может быть раньше даты окончания обучения!" });
+        }
+
         try
         {
             var newGroup = new Group
             {
                 GroupNumber = groupNumber.Trim(),
                 Title = title.Trim(),
-                StartDate = startDate.Date, // Сохраняем строго чистую дату без времени
-                EndDate = endDate.Date
+                StartDate = startDate.Date,
+                EndDate = endDate.Date,
+                MaterialAccessDate = endDate.Date // Сохраняем новую дату
             };
 
             _context.Groups.Add(newGroup);
@@ -70,16 +75,80 @@ public class GroupsController : Controller
         }
     }
 
+    // POST: /Groups/UpdateGroupSettings
+    // Обновление верхней карточки на странице редактирования
+    [HttpPost]
+    public async Task<IActionResult> UpdateGroupSettings(int groupId, string groupNumber, string title, DateTime startDate, DateTime endDate, DateTime? materialAccessDate)
+    {
+        if (string.IsNullOrWhiteSpace(groupNumber) || string.IsNullOrWhiteSpace(title))
+        {
+            return Json(new { success = false, message = "Номер и наименование группы обязательны!" });
+        }
+
+        if (endDate < startDate)
+        {
+            return Json(new { success = false, message = "Дата окончания не может быть раньше даты начала обучения!" });
+        }
+
+        if (materialAccessDate.HasValue && materialAccessDate.Value.Date < endDate.Date)
+        {
+            return Json(new { success = false, message = "Дата доступа к материалам не может быть раньше даты окончания обучения!" });
+        }
+
+        try
+        {
+            var group = await _context.Groups.FindAsync(groupId);
+            if (group == null) return Json(new { success = false, message = "Группа не найдена!" });
+
+            group.GroupNumber = groupNumber.Trim();
+            group.Title = title.Trim();
+            group.StartDate = startDate.Date;
+            group.EndDate = endDate.Date;
+            group.MaterialAccessDate = materialAccessDate?.Date;
+
+            _context.Groups.Update(group);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Ошибка при обновлении: {ex.Message}" });
+        }
+    }
+
     // POST: /Groups/Delete/5
-    // Одиночное асинхронное AJAX-удаление
     [HttpPost]
     public async Task<IActionResult> Delete(int id)
     {
-        var group = await _context.Groups.FindAsync(id);
+        var group = await _context.Groups
+            .Include(g => g.GroupStudents)
+            .FirstOrDefaultAsync(g => g.Id == id);
+
         if (group == null) return Json(new { success = false, message = "Группа не найдена!" });
 
         try
         {
+            // НОВОЕ: Получаем список студентов и курсов, привязанных к этой группе
+            var studentIds = group.GroupStudents?.Select(gs => gs.StudentId).ToList() ?? new List<int>();
+            var courseIds = await _context.GroupCourseConfigs
+                .Where(gc => gc.GroupId == id)
+                .Select(gc => gc.CourseId)
+                .ToListAsync();
+
+            // НОВОЕ: Удаляем прогресс (вместе с номерами удостоверений) для этих студентов и курсов
+            if (studentIds.Any() && courseIds.Any())
+            {
+                var progressToRemove = await _context.CourseProgresses
+                    .Where(p => studentIds.Contains(p.StudentId) &&
+                                courseIds.Contains(p.CourseId) &&
+                                p.GroupId == id)  // ВАЖНО: только для этой группы
+                    .ToListAsync();
+
+                _context.CourseProgresses.RemoveRange(progressToRemove);
+            }
+
+            // Удаляем саму группу (связи удалятся каскадно)
             _context.Groups.Remove(group);
             await _context.SaveChangesAsync();
             return Json(new { success = true });
@@ -90,8 +159,6 @@ public class GroupsController : Controller
         }
     }
 
-    // POST: /Groups/DeleteSelected
-    // МАССОВОЕ асинхронное AJAX-удаление по списку выбранных ID
     [HttpPost]
     public async Task<IActionResult> DeleteSelected([FromBody] List<int> ids)
     {
@@ -100,7 +167,32 @@ public class GroupsController : Controller
 
         try
         {
-            var groupsToDelete = await _context.Groups.Where(g => ids.Contains(g.Id)).ToListAsync();
+            var groupsToDelete = await _context.Groups
+                .Include(g => g.GroupStudents)
+                .Where(g => ids.Contains(g.Id))
+                .ToListAsync();
+
+            // Удаляем прогресс ТОЛЬКО для этих групп
+            foreach (var grp in groupsToDelete)
+            {
+                var grpStudentIds = grp.GroupStudents?.Select(gs => gs.StudentId).ToList() ?? new List<int>();
+                var grpCourseIds = await _context.GroupCourseConfigs
+                    .Where(gc => gc.GroupId == grp.Id)
+                    .Select(gc => gc.CourseId)
+                    .ToListAsync();
+
+                if (grpStudentIds.Any() && grpCourseIds.Any())
+                {
+                    var progressToRemove = await _context.CourseProgresses
+                        .Where(p => grpStudentIds.Contains(p.StudentId) &&
+                                    grpCourseIds.Contains(p.CourseId) &&
+                                    p.GroupId == grp.Id)
+                        .ToListAsync();
+
+                    _context.CourseProgresses.RemoveRange(progressToRemove);
+                }
+            }
+
             _context.Groups.RemoveRange(groupsToDelete);
             await _context.SaveChangesAsync();
 
@@ -121,6 +213,11 @@ public class GroupsController : Controller
         ViewBag.GroupId = group.Id;
         ViewBag.GroupNumber = group.GroupNumber;
         ViewBag.GroupTitle = group.Title;
+
+        // НОВОЕ: Передаем даты для верхней карточки настроек
+        ViewBag.StartDate = group.StartDate.ToString("yyyy-MM-dd");
+        ViewBag.EndDate = group.EndDate.ToString("yyyy-MM-dd");
+        ViewBag.MaterialAccessDate = group.MaterialAccessDate?.ToString("yyyy-MM-dd");
 
         // Передаем список всех существующих курсов для выпадающего меню селекта
         ViewBag.AllAvailableCourses = await _context.Courses.OrderBy(c => c.Title).ToListAsync();
@@ -147,33 +244,23 @@ public class GroupsController : Controller
 
         string lowerTerm = term.ToLower().Trim();
 
-        // 1. Получаем ID компаний, которые уже сохранены в этой группе
         var allowedCompanyIds = await _context.GroupCompanies
             .Where(gc => gc.GroupId == groupId)
             .Select(gc => gc.CompanyId)
             .ToListAsync();
 
-        // 2. Вытаскиваем всех студентов в память (как в твоем изначальном коде)
         var allStudents = await _context.Users
             .Include(u => u.Company)
             .Where(u => u.Role == UserRole.Обучающийся)
             .ToListAsync();
 
-        // 3. Фильтруем в памяти
         var filteredStudents = allStudents
-            // Ищем по фамилии или имени
             .Where(u => (u.LastName != null && u.LastName.ToLower().Contains(lowerTerm)) ||
                         (u.FirstName != null && u.FirstName.ToLower().Contains(lowerTerm)))
-            // Фильтруем по компаниям
             .Where(u =>
             {
-                // УСЛОВИЕ 1: Если у пользователя вообще нет компании (CompanyId == null) — это частное лицо, показываем.
                 if (u.CompanyId == null) return true;
-
-                // УСЛОВИЕ 2: Если к группе еще не привязана ни одна компания, скрываем корпоративных сотрудников
                 if (!allowedCompanyIds.Any()) return false;
-
-                // УСЛОВИЕ 3: Показываем, только если компания пользователя есть в списке группы
                 return allowedCompanyIds.Contains(u.CompanyId.Value);
             })
             .Take(10)
@@ -193,7 +280,6 @@ public class GroupsController : Controller
     [HttpGet]
     public async Task<IActionResult> GetGroupData(int id)
     {
-        // 1. Текущие студенты этой группы (Твой оригинал)
         var studentsInGroup = await _context.GroupStudents
             .Include(s => s.Student)
             .ThenInclude(st => st!.Company)
@@ -207,7 +293,6 @@ public class GroupsController : Controller
             })
             .ToListAsync();
 
-        // 2. Текущие курсы этой группы (Твой оригинал)
         var coursesInGroup = await _context.GroupCourseConfigs
             .Include(c => c.Course)
             .Where(c => c.GroupId == id)
@@ -223,7 +308,6 @@ public class GroupsController : Controller
             })
             .ToListAsync();
 
-        // 3. Текущие привязанные компании этой группы (Твой оригинал)
         var companiesInGroup = await _context.GroupCompanies
             .Include(gc => gc.Company)
             .Where(gc => gc.GroupId == id)
@@ -235,7 +319,6 @@ public class GroupsController : Controller
             })
             .ToListAsync();
 
-        // 4. Твой оригинальный склад ВСЕХ студентов для сверхбыстрого поиска на клиенте
         var allSystemStudents = await _context.Users
             .Include(u => u.Company)
             .Where(u => u.Role == UserRole.Обучающийся)
@@ -249,9 +332,6 @@ public class GroupsController : Controller
             position = u.Position ?? "—"
         }).ToList();
 
-        // =================================================================
-        // 5. ИСПРАВЛЕНИЕ: Выгружаем ВСЕ компании системы для живого поиска на клиенте
-        // =================================================================
         var allSystemCompanies = await _context.Companies
             .OrderBy(c => c.Name)
             .ToListAsync();
@@ -263,14 +343,13 @@ public class GroupsController : Controller
             inn = c.Inn ?? ""
         }).ToList();
 
-        // Возвращаем объект со ВСЕМИ нужными складами данных
         return Json(new
         {
             students = studentsInGroup,
             courses = coursesInGroup,
             companies = companiesInGroup,
             allStudentsStore = safeStudentsStore,
-            allCompaniesStore = safeCompaniesStore // <-- ТЕПЕРЬ ДАННЫЕ СЮДА КЛАДУТСЯ!
+            allCompaniesStore = safeCompaniesStore
         });
     }
 
@@ -280,6 +359,9 @@ public class GroupsController : Controller
     {
         try
         {
+            var group = await _context.Groups.FindAsync(groupId);
+            if (group == null) return Json(new { success = false, message = "Группа не найдена!" });
+
             // 1. Обновляем список студентов в группе
             var oldStudents = await _context.GroupStudents.Where(s => s.GroupId == groupId).ToListAsync();
             _context.GroupStudents.RemoveRange(oldStudents);
@@ -295,18 +377,27 @@ public class GroupsController : Controller
             var currentConfigs = await _context.GroupCourseConfigs.Where(c => c.GroupId == groupId).ToListAsync();
             var configsToRemove = currentConfigs.Where(cc => courseIds == null || !courseIds.Contains(cc.CourseId)).ToList();
             _context.GroupCourseConfigs.RemoveRange(configsToRemove);
+
             if (courseIds != null)
             {
                 foreach (var cId in courseIds)
                 {
                     if (!currentConfigs.Any(cc => cc.CourseId == cId))
                     {
-                        _context.GroupCourseConfigs.Add(new GroupCourseConfig { GroupId = groupId, CourseId = cId, AllowedStudentIds = "" });
+                        _context.GroupCourseConfigs.Add(new GroupCourseConfig
+                        {
+                            GroupId = groupId,
+                            CourseId = cId,
+                            AllowedStudentIds = "",
+                            ProtocolNumber = group.GroupNumber,
+                            CourseStartDate = group.StartDate,
+                            CourseEndDate = group.EndDate
+                        });
                     }
                 }
             }
 
-            // 3. НОВОЕ: Обновляем привязанные компании группы
+            // 3. Обновляем привязанные компании группы
             var oldCompanies = await _context.GroupCompanies.Where(gc => gc.GroupId == groupId).ToListAsync();
             _context.GroupCompanies.RemoveRange(oldCompanies);
             if (companyIds != null)
@@ -318,6 +409,77 @@ public class GroupsController : Controller
             }
 
             await _context.SaveChangesAsync();
+
+            // 4. АВТОМАТИЧЕСКОЕ ПРИСВОЕНИЕ НОМЕРОВ МИНТРУДА (просто числа: 1, 2, 3...)
+            var actualStudentIds = await _context.GroupStudents
+                .Where(gs => gs.GroupId == groupId)
+                .Select(gs => gs.StudentId)
+                .ToListAsync();
+
+            var mintrudConfigs = await _context.GroupCourseConfigs
+                .Where(gc => gc.GroupId == groupId)
+                .Join(_context.Courses.Where(c => c.MintrudProgramId != null),
+                      gc => gc.CourseId,
+                      c => c.Id,
+                      (gc, c) => gc)
+                .ToListAsync();
+
+            if (mintrudConfigs.Any() && actualStudentIds.Any())
+            {
+                // Ищем максимальный существующий номер Минтруда (просто число)
+                var existingMtNumbers = await _context.CourseProgresses
+                    .Where(p => p.MintrudNumber != null)
+                    .Select(p => p.MintrudNumber)
+                    .ToListAsync();
+
+                int maxMt = 0;
+                foreach (var mt in existingMtNumbers)
+                {
+                    if (int.TryParse(mt, out int n) && n > maxMt)
+                    {
+                        maxMt = n;
+                    }
+                }
+
+                int nextMt = maxMt + 1;
+                bool anyChanged = false;
+
+                foreach (var cfg in mintrudConfigs)
+                {
+                    foreach (var sId in actualStudentIds)
+                    {
+                        var progress = await _context.CourseProgresses
+                            .FirstOrDefaultAsync(p => p.StudentId == sId &&
+                                                      p.CourseId == cfg.CourseId &&
+                                                      p.GroupId == groupId);
+
+                        if (progress == null)
+                        {
+                            progress = new CourseProgress
+                            {
+                                StudentId = sId,
+                                CourseId = cfg.CourseId,
+                                GroupId = groupId
+                            };
+                            _context.CourseProgresses.Add(progress);
+                        }
+
+                        // Присваиваем ТОЛЬКО если номера еще нет
+                        if (string.IsNullOrEmpty(progress.MintrudNumber))
+                        {
+                            progress.MintrudNumber = nextMt.ToString(); // Просто "1", "2", "3"
+                            nextMt++;
+                            anyChanged = true;
+                        }
+                    }
+                }
+
+                if (anyChanged)
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             return Json(new { success = true });
         }
         catch (Exception ex)
@@ -326,9 +488,7 @@ public class GroupsController : Controller
         }
     }
 
-
     // POST: /Groups/SaveCourseConfig
-    // Тонкая настройка конкретного курса: сохранение протокола, дат и строки с ID студентов
     [HttpPost]
     public async Task<IActionResult> SaveCourseConfig(int configId, string protocolNumber, DateTime? startDate, DateTime? endDate, List<int> allowedStudentIds)
     {
@@ -341,7 +501,6 @@ public class GroupsController : Controller
             config.CourseStartDate = startDate;
             config.CourseEndDate = endDate;
 
-            // Пакуем массив ID студентов в строку через запятую (например: "1,4,15")
             config.AllowedStudentIds = allowedStudentIds != null && allowedStudentIds.Any()
                 ? string.Join(",", allowedStudentIds)
                 : string.Empty;
@@ -365,11 +524,8 @@ public class GroupsController : Controller
 
         string lowerTerm = term.ToLower();
 
-        // 1. Вытаскиваем все компании в память (как и студентов), чтобы защитить кириллицу от капризов SQLite
-        var companies = await _context.Companies
-            .ToListAsync();
+        var companies = await _context.Companies.ToListAsync();
 
-        // 2. Мягко фильтруем в памяти, проверяя совпадение по названию или ИНН
         var filteredCompanies = companies
             .Where(c => (c.Name != null && c.Name.ToLower().Contains(lowerTerm)) ||
                         (c.Inn != null && c.Inn.Contains(lowerTerm)))
@@ -392,7 +548,6 @@ public class GroupsController : Controller
         var group = await _context.Groups.FindAsync(id);
         if (group == null) return NotFound("Группа не найдена");
 
-        // 2. Вытаскиваем всех студентов этой группы
         var students = await _context.GroupStudents
             .Where(gs => gs.GroupId == id)
             .Include(gs => gs.Student)
@@ -404,15 +559,12 @@ public class GroupsController : Controller
         if (students == null || !students.Any())
             return NotFound("В группе нет слушателей для выгрузки.");
 
-        // 3. Группируем студентов по названию компании
         var studentsByCompany = students
-            .GroupBy(s => s.Company != null ? s.Company.Name : "Частное лицо")
+            .GroupBy(s => s?.Company != null ? s.Company.Name : "Частное лицо")
             .ToList();
 
-        // Функция для безопасного имени файла (убирает \, /, :, *, ?, ", <, >, |)
         string SanitizeFileName(string name) => System.Text.RegularExpressions.Regex.Replace(name, @"[\\/:*?""<>|]", "").Trim();
 
-        // 4. Если компания только одна (или все физлица) — отдаем один Excel
         if (studentsByCompany.Count == 1)
         {
             var singleGroup = studentsByCompany.First();
@@ -424,7 +576,6 @@ public class GroupsController : Controller
             return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
-        // 5. Если компаний несколько — создаем ZIP-архив
         using (var memoryStream = new MemoryStream())
         {
             using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
@@ -432,14 +583,9 @@ public class GroupsController : Controller
                 foreach (var companyGroup in studentsByCompany)
                 {
                     string companyName = SanitizeFileName(companyGroup.Key);
-
-                    // Генерируем Excel для конкретной компании
                     byte[] excelBytes = GenerateExcelForCompany(companyGroup.Key, companyGroup.ToList());
-
-                    // Имя файла внутри архива
                     string entryName = $"Доступы для группы № {group.GroupNumber} - {companyName}.xlsx";
 
-                    // Создаем файл в архиве и записываем туда байты
                     var zipEntry = zipArchive.CreateEntry(entryName, CompressionLevel.Optimal);
                     using (var entryStream = zipEntry.Open())
                     {
@@ -453,27 +599,23 @@ public class GroupsController : Controller
         }
     }
 
-    private byte[] GenerateExcelForCompany(string companyName, List<User> students)
+    private byte[] GenerateExcelForCompany(string companyName, List<User?> students)
     {
         using (var workbook = new XLWorkbook())
         {
             var worksheet = workbook.Worksheets.Add("Доступы");
 
-            // --- ФОРМИРУЕМ ШАПКУ ---
-            // Строка 1
             worksheet.Cell(1, 1).Value = "Данные для входа в систему https://sdo.dpo-energo.ru для слушателей организации";
             worksheet.Range(1, 1, 1, 8).Merge();
             worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             worksheet.Cell(1, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             worksheet.Cell(1, 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
 
-            // Строка 2 (Подставляем правильное название компании)
             worksheet.Cell(2, 1).Value = companyName;
             worksheet.Range(2, 1, 2, 8).Merge();
             worksheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             worksheet.Cell(2, 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
 
-            // Строка 3 (Заголовки)
             string[] headers = { "Фамилия", "Имя", "Отчество", "Логин", "Пароль", "Отдел", "Должность", "Ссылка для авторизации" };
             for (int i = 0; i < headers.Length; i++)
             {
@@ -486,7 +628,6 @@ public class GroupsController : Controller
                 cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#F2F2F2");
             }
 
-            // --- ЗАПОЛНЯЕМ ДАННЫЕ ---
             int row = 4;
             foreach (var user in students)
             {
@@ -495,7 +636,6 @@ public class GroupsController : Controller
                 string escapedLogin = Uri.EscapeDataString(user.Login ?? "");
                 string escapedPassword = Uri.EscapeDataString(user.Password ?? "");
 
-                // Ссылка авторизации
                 string authUrl = $"http://localhost:5018/Auth/Login?login={escapedLogin}&password={escapedPassword}";
 
                 worksheet.Cell(row, 1).Value = user.LastName ?? "";
@@ -512,7 +652,6 @@ public class GroupsController : Controller
                 linkCell.Style.Font.FontColor = XLColor.Blue;
                 linkCell.Style.Font.Underline = XLFontUnderlineValues.Single;
 
-                // Рамки
                 worksheet.Range(row, 1, row, 8).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
                 worksheet.Range(row, 1, row, 8).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
 

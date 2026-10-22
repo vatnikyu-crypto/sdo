@@ -1,119 +1,369 @@
 @{
-    Layout = null; // Отключаем стандартный шаблон, чтобы сделать чистую страницу входа
+    Layout = null; 
 }
 
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Авторизация | СДО</title>
-    <!-- Подключаем Bootstrap 5 -->
+    <title>Вход в систему | АНО ДПО "Энергетик"</title>
+    
+    <!-- Иконка вкладки (favicon) -->
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+
+    <!-- Bootstrap 5 (Локальный) -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Локальные Иконки Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
     <style>
-            body {
-                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                height: 100vh;
-            }
+        /* Фирменная палитра сайта dpo-energo.ru */
+        :root {
+            --brand-primary: #4F589D;   /* Основной синий */
+            --brand-dark: #3b4382;      /* Темно-синий для градиента */
+            --brand-accent: #F59E0B;    /* Оранжевый акцент */
+            --brand-gray: #e2e8f0;      /* Светло-серый для рамок */
+            --brand-light-bg: #f8fafc;  /* Фон инпутов */
+        }
 
-            .login-card {
-                border: none;
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Контейнер на весь экран */
+        .login-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Левая часть с брендингом */
+        .login-left {
+            flex: 1;
+            /* Градиент из фирменных цветов */
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-dark) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Декоративные круги на фоне */
+        .login-left::before, .login-left::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .login-left::before { width: 400px; height: 400px; top: -100px; left: -100px; }
+        .login-left::after { width: 600px; height: 600px; bottom: -200px; right: -200px; }
+
+        /* Белый круг для логотипа */
+        .logo-circle {
+            width: 140px; 
+            height: 140px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); 
+            z-index: 1;
+            padding: 15px; 
+            box-sizing: border-box;
+        }
+
+        /* Стиль самого логотипа внутри круга */
+        .brand-logo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Сохраняет пропорции */
+        }
+
+        .login-left h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            z-index: 1;
+            text-align: center;
+        }
+        .login-left p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            z-index: 1;
+            text-align: center;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        /* Правая часть с формой */
+        .login-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            padding: 2rem;
+        }
+
+        .login-form-box {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-form-box h3 {
+            font-weight: 700;
+            color: var(--brand-dark);
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Оранжевая полоска под заголовком */
+        .login-form-box h3::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background-color: var(--brand-accent);
+            border-radius: 3px;
+        }
+
+        .login-form-box .subtitle {
+            color: #888;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+            margin-top: 10px;
+        }
+
+        /* Стилизация полей ввода */
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 15px 12px 45px; 
+            border: 1px solid var(--brand-gray);
+            background-color: var(--brand-light-bg);
+            transition: all 0.3s;
+            box-sizing: border-box;
+            color: #333;
+        }
+        
+        .form-control.has-eye {
+            padding-right: 45px;
+        }
+
+        /* При клике на поле - синяя рамка */
+        .form-control:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 0.25rem rgba(79, 88, 157, 0.15);
+            background-color: #fff;
+        }
+
+        /* Иконки слева внутри полей */
+        .input-icon-wrapper {
+            position: relative;
+        }
+        .input-icon-wrapper .bi {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aabf;
+            font-size: 1.1rem;
+            z-index: 10;
+        }
+
+        /* Кнопка "Показать пароль" (Глаз) */
+        .btn-toggle-password {
+            position: absolute;
+            right: 15px; 
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aabf;
+            cursor: pointer;
+            z-index: 10;
+            padding: 0; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%; 
+        }
+        .btn-toggle-password:hover { color: var(--brand-primary); }
+
+        /* Кнопка Войти */
+        .btn-login {
+            background-color: var(--brand-primary);
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(79, 88, 157, 0.3);
+            color: white;
+        }
+        .btn-login:hover {
+            background-color: var(--brand-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 67, 130, 0.4);
+            color: white;
+        }
+
+        /* Адаптация под мобильные устройства */
+        @@media (max-width: 768px) {
+            .login-left { display: none; }
+            .login-right { background-color: #f4f7f6; }
+            .login-form-box {
+                background: white;
+                padding: 2rem;
                 border-radius: 15px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             }
-
-            .btn-primary {
-                background-color: #4e73df;
-                border: none;
-                border-radius: 8px;
-                padding: 10px;
-                transition: all 0.3s;
-            }
-
-            .btn-primary:hover {
-                background-color: #2e59d9;
-                transform: translateY(-1px);
-            }
-
-            .form-control {
-                border-radius: 8px;
-                padding: 12px;
-            }
+        }
     </style>
 </head>
+<body>
 
-<body class="d-flex align-items-center justify-content-center">
+    <div class="login-container">
+        
+        <!-- ЛЕВАЯ ПАНЕЛЬ (Брендинг) -->
+        <div class="login-left">
+            
+            <!-- Белый круг с логотипом -->
+            <div class="logo-circle">
+                <!-- Не забудь положить логотип в wwwroot/images/ -->
+                <img src="~/logo.png" alt="Логотип" class="brand-logo" onerror="this.style.display='none'">
+            </div>
+            
+            <h1>СДО "Энергетик"</h1>
+            <p>Автономная некоммерческая организация дополнительного профессионального образования "Энергетик"</p>
+        </div>
 
-    <div class="container" style="max-width: 450px;">
-        <div class="card login-card p-4 bg-white">
-            <div class="card-body">
-                <h3 class="text-center mb-4 fw-bold text-secondary">Вход в СДО</h3>
-                
-                <!-- Блок для вывода сообщений -->
-                <div id="alertMessage" class="alert d-none" role="alert"></div>
+        <!-- ПРАВАЯ ПАНЕЛЬ (Форма) -->
+        <div class="login-right">
+            <div class="login-form-box">
+                <h3>Добро пожаловать!</h3>
+                <p class="subtitle">Пожалуйста, авторизуйтесь для продолжения.</p>
+
+                <!-- Блок сообщений -->
+                <div id="alertMessage" class="alert d-none rounded-3" role="alert"></div>
 
                 <form id="loginForm">
-                    <div class="mb-3">
+                    <!-- Поле Логин -->
+                    <div class="mb-4">
                         <label for="username" class="form-label text-muted small fw-bold">ЛОГИН</label>
-                        <!-- Добавили value="@ViewBag.AutoLogin" -->
-                        <input type="text" class="form-control" id="username" value="@ViewBag.AutoLogin"
-                               placeholder="Введите логин" required>
+                        <div class="input-icon-wrapper">
+                            <i class="bi bi-person"></i>
+                            <input type="text" class="form-control" id="username" value="@ViewBag.AutoLogin" placeholder="Введите ваш логин" required>
+                        </div>
                     </div>
+
+                    <!-- Поле Пароль -->
                     <div class="mb-4">
                         <label for="password" class="form-label text-muted small fw-bold">ПАРОЛЬ</label>
-                        <!-- Добавили value="@ViewBag.AutoPassword" -->
-                        <input type="password" class="form-control" id="password" value="@ViewBag.AutoPassword"
-                               placeholder="Введите пароль" required>
+                        <div class="input-icon-wrapper">
+                            <i class="bi bi-lock"></i>
+                            <input type="password" class="form-control has-eye" id="password" value="@ViewBag.AutoPassword" placeholder="Введите ваш пароль" required>
+                            <button type="button" class="btn-toggle-password" id="togglePassword" tabindex="-1">
+                                <i class="bi bi-eye-slash" id="eyeIcon" style="position: static; transform: none;"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 fw-bold">Войти</button>
+
+                    <!-- Кнопка Войти -->
+                    <button type="submit" class="btn btn-login w-100" id="submitBtn">
+                        <span id="btnText">Войти в систему</span>
+                        <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Логика отправки данных без перезагрузки -->
     <script>
-            document.getElementById('loginForm').addEventListener('submit', async function (e) {
-                e.preventDefault();
+        // 1. Логика переключения видимости пароля
+        document.getElementById('togglePassword').addEventListener('click', function (e) {
+            e.preventDefault();
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('bi-eye-slash');
+                eyeIcon.classList.add('bi-eye');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('bi-eye');
+                eyeIcon.classList.add('bi-eye-slash');
+            }
+        });
 
-                const usernameInput = document.getElementById('username').value;
-                const passwordInput = document.getElementById('password').value;
-                const alertBox = document.getElementById('alertMessage');
+        // 2. Логика отправки формы (AJAX)
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-                // Скрываем старое сообщение
-                alertBox.classList.add('d-none');
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const alertBox = document.getElementById('alertMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
 
-                try {
-                    const response = await fetch('/Auth/Login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ username: usernameInput, password: passwordInput })
-                    });
+            alertBox.classList.add('d-none');
+            submitBtn.disabled = true;
+            btnText.textContent = "Авторизация...";
+            btnSpinner.classList.remove('d-none');
 
-                    const result = await response.json();
+            try {
+                const response = await fetch('/Auth/Login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                });
 
-                    alertBox.textContent = result.message;
-                    alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+                const result = await response.json();
 
-                    if (result.success) {
-                        alertBox.classList.add('alert-success');
-                        setTimeout(() => {
-                            window.location.href = result.redirectUrl; // Перенаправляем туда, куда сказал сервер
-                        }, 1000);
-                    } else {
-                        alertBox.classList.add('alert-danger');
-                    }
+                alertBox.textContent = result.message;
+                alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
 
-                } catch (error) {
-                    alertBox.textContent = "Произошла ошибка при отправке запроса.";
-                    alertBox.classList.remove('d-none');
+                if (result.success) {
+                    alertBox.classList.add('alert-success');
+                    setTimeout(() => {
+                        window.location.href = result.redirectUrl;
+                    }, 800);
+                } else {
                     alertBox.classList.add('alert-danger');
+                    submitBtn.disabled = false;
+                    btnText.textContent = "Войти в систему";
+                    btnSpinner.classList.add('d-none');
                 }
-            });
+
+            } catch (error) {
+                alertBox.textContent = "Ошибка соединения с сервером. Попробуйте позже.";
+                alertBox.classList.remove('d-none');
+                alertBox.classList.add('alert-danger');
+                
+                submitBtn.disabled = false;
+                btnText.textContent = "Войти в систему";
+                btnSpinner.classList.add('d-none');
+            }
+        });
     </script>
 </body>
-
 </html>

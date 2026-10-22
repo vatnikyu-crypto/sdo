@@ -1,30 +1,104 @@
 @model IEnumerable<SdoApp.Models.Company>
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Справочник организаций";
+    ViewData["Title"] = "Компании";
 }
 
-<!-- 1. CSS СТИЛИ ДЛЯ ИНТЕРАКТИВА, АНИМАЦИЙ, ПАГИНАЦИИ И КОПИРОВАНИЯ -->
+<!-- 1. CSS СТИЛИ (Фирменный стиль) -->
 <style>
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-accent: #F59E0B;
+        --brand-gray: #e2e8f0;
+        --brand-bg: #f8f9fc;
+    }
+
+    /* Стили для таблицы */
+    .table-custom th {
+        font-weight: 600;
+        color: #6c757d;
+        border-bottom: 2px solid var(--brand-gray);
+        padding: 15px 12px;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-custom td {
+        padding: 15px 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .table-custom tbody tr {
+        transition: all 0.2s;
+    }
+    
+    .table-custom tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Стили кнопок действий */
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    
+    .btn-action-edit {
+        background-color: #f0f4ff;
+        color: var(--brand-primary);
+        border: 1px solid #dce4ff;
+    }
+    .btn-action-edit:hover {
+        background-color: var(--brand-primary);
+        color: white;
+        border-color: var(--brand-primary);
+    }
+
+    .btn-action-delete {
+        background-color: #fff0f0;
+        color: #dc3545;
+        border: 1px solid #ffd6d6;
+    }
+    .btn-action-delete:hover {
+        background-color: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+
+    /* Копирование ИНН */
     .copy-clickable { 
         cursor: pointer; 
         position: relative; 
-        transition: background-color 0.2s; 
-        padding: 2px 6px; 
-        border-radius: 4px; 
+        transition: all 0.2s; 
+        padding: 4px 10px; 
+        border-radius: 6px; 
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
     .copy-clickable:hover { 
-        background-color: rgba(78, 115, 223, 0.1); 
+        background-color: #e9ecef; 
+        border-color: #ced4da;
     }
     .copy-toast { 
         position: absolute; 
         bottom: 110%; 
         left: 50%; 
         transform: translateX(-50%); 
-        background-color: #333; 
+        background-color: var(--brand-dark); 
         color: #fff; 
         padding: 4px 8px; 
-        font-size: 0.75rem; 
+        font-size: 0.7rem; 
         border-radius: 4px; 
         white-space: nowrap; 
         opacity: 0; 
@@ -32,68 +106,132 @@
         transition: opacity 0.2s; 
         z-index: 10; 
     }
-    .copy-toast.show { 
-        opacity: 1; 
+    .copy-toast.show { opacity: 1; }
+
+    /* Пагинация */
+    .pagination .page-item.active .page-link {
+        background-color: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: white;
     }
-    .fade-out { 
-        opacity: 0; 
-        transition: opacity 0.3s ease; 
+    .pagination .page-link {
+        color: var(--brand-primary);
+        border-radius: 6px;
+        margin: 0 2px;
+        border: 1px solid #dee2e6;
     }
-    .page-link { 
-        cursor: pointer; 
+    .pagination .page-link:hover {
+        background-color: #f0f4ff;
+        color: var(--brand-primary);
+    }
+
+    /* Кнопка добавления */
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+
+    /* ========================================= */
+    /* СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ (TOASTS) */
+    /* ========================================= */
+    .toast-container-custom {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .custom-toast {
+        min-width: 300px;
+        max-width: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        border-left: 6px solid #ccc;
+    }
+
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+
+    @@keyframes slideInRight {
+        from { transform: translateX(120%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @@keyframes fadeOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(120%); opacity: 0; }
     }
 </style>
 
-<!-- 2. ВЕРХНЯЯ ПАНЕЛЬ С КНОПКОЙ ДОБАВЛЕНИЯ -->
+<!-- Контейнер для уведомлений -->
+<div id="toastContainer" class="toast-container-custom"></div>
+
+<!-- 2. ВЕРХНЯЯ ПАНЕЛЬ -->
 <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
     <div>
-        <h2 class="fw-bold text-dark m-0">Организации</h2>
-        <small class="text-muted">Справочник компаний-контрагентов и предприятий</small>
+        <h3 class="fw-bold text-dark m-0">Справочник компаний</h3>
     </div>
-    <a href="/Companies/Create" class="btn btn-primary px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
-        <svg xmlns="http://w3.org" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
-        </svg>
+    <a href="/Companies/Create" class="btn btn-brand px-4 py-2 fw-bold d-flex align-items-center gap-2 rounded-3">
+        <i class="bi bi-plus-lg"></i>
         Добавить компанию
     </a>
 </div>
 
-<!-- 3. ИНСТРУМЕНТЫ ФИЛЬТРАЦИИ И ЖИВОГО ПОИСКА -->
+<!-- 3. ИНСТРУМЕНТЫ ФИЛЬТРАЦИИ И ПОИСКА -->
 <div class="row g-3 align-items-center mb-3">
     <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
         <span>Показать по:</span>
-        <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 75px;">
+        <select id="pageSizeSelect" class="form-select form-select-sm rounded-3 shadow-none" style="width: 80px;">
             <option value="10" selected>10</option>
             <option value="25">25</option>
             <option value="50">50</option>
         </select>
     </div>
     <div class="col-sm ms-auto" style="max-width: 400px;">
-        <div class="input-group input-group-sm">
-            <span class="input-group-text bg-light text-muted">🔍</span>
-            <input type="text" id="companyTableSearchInput" class="form-control" 
-                   placeholder="Поиск по Наименованию или ИНН..." autocomplete="off" />
+        <div class="input-group input-group-sm rounded-3 overflow-hidden border">
+            <span class="input-group-text bg-white text-muted border-0"><i class="bi bi-search"></i></span>
+            <input type="text" id="companyTableSearchInput" class="form-control border-0 shadow-none" 
+                   placeholder="Поиск по наименованию или ИНН..." autocomplete="off" />
         </div>
     </div>
 </div>
 
 <!-- 4. ТАБЛИЦА ОРГАНИЗАЦИЙ -->
-<div class="card card-custom p-3 bg-white border-0 shadow-sm mb-4" style="border-radius: 12px;">
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
     <div class="table-responsive">
-        <table class="table table-hover align-middle m-0">
-            <thead class="table-light text-muted small text-uppercase">
+        <table class="table table-custom table-hover m-0">
+            <thead class="bg-light">
                 <tr>
-                    <th>Наименование организации</th>
+                    <th>Наименование компании</th>
                     <th>ИНН</th>
-                    <th class="text-center">Слушателей в СДО</th>
-                    <th class="text-end" style="width: 150px;">Действия</th>
+                    <th class="text-center">Кол-во слушателей</th>
+                    <th class="text-end" style="width: 120px;">Действия</th>
                 </tr>
             </thead>
             <tbody id="companiesTableBody">
                 @if (!Model.Any())
                 {
                     <tr id="emptyRow">
-                        <td colspan="4" class="text-center py-4 text-muted">В справочнике пока нет ни одной организации.</td>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-building fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            В справочнике пока нет ни одной организации.
+                        </td>
                     </tr>
                 }
                 else
@@ -102,36 +240,41 @@
                     {
                         <tr id="company-row-@company.Id" class="company-data-row" data-id="@company.Id">
                             <td>
-                                <div class="fw-bold text-dark company-name">@company.Name</div>
-                                <span class="text-muted small">Системный ID: #@company.Id</span>
+                                <div class="fw-bold text-dark company-name mb-1">@company.Name</div>
+                                <span class="text-muted small">ID: #@company.Id</span>
                             </td>
                             <td>
                                 <!-- ИНН с интерактивным клик-копированием -->
-                                <span class="badge bg-light text-secondary border fw-mono copy-clickable company-inn" 
+                                <div class="badge copy-clickable company-inn" 
                                       onclick="copyText(this, '@company.Inn')" title="Кликните, чтобы скопировать">
-                                    @company.Inn
+                                    <i class="bi bi-files text-muted"></i>
+                                    <span class="fw-bold text-secondary">@company.Inn</span>
                                     <span class="copy-toast">Скопировано!</span>
-                                </span>
+                                </div>
                             </td>
                             <td class="text-center">
-                                <span class="badge @(company.Users.Count > 0 ? "bg-light text-success border border-success" : "bg-light text-muted border") px-3 py-1.5 fw-bold" style="font-size: 0.85rem;">
-                                    @company.Users.Count чел.
-                                </span>
+                                @if(company.Users.Count > 0)
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill fw-bold">
+                                        <i class="bi bi-people me-1"></i> @company.Users.Count
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill fw-bold">
+                                        0
+                                    </span>
+                                }
                             </td>
                             <td class="text-end">
-                                <div class="d-flex justify-content-end gap-1">
-                                    <a href="/Companies/Edit/@company.Id" class="btn btn-sm btn-light border text-secondary px-2.5 py-1.5" title="Редактировать">
-                                        <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.5.5 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11z"/>
-                                        </svg>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="/Companies/Edit/@company.Id" class="btn btn-action btn-action-edit" title="Редактировать">
+                                        <i class="bi bi-pencil-square"></i>
                                     </a>
-                                    <button class="btn btn-sm btn-outline-danger px-2.5 py-1.5" title="Удалить" 
+                                    <button class="btn btn-action btn-action-delete" title="Удалить" 
                                             data-bs-toggle="modal" data-bs-target="#deleteCompanyModal"
                                             onclick="prepareDeleteCompany(@company.Id, '@company.Name')">
-                                        <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                                        </svg>
+                                        <i class="bi bi-trash3"></i>
                                     </button>
                                 </div>
                             </td>
@@ -144,37 +287,63 @@
 </div>
 
 <!-- 5. СТРОКА НАВИГАЦИИ ПО СТРАНИЦАМ -->
-<div class="d-flex justify-content-between align-items-center px-1">
-    <div id="paginationInfo" class="small text-muted">Показано 0-0 из 0 записей</div>
+<div class="d-flex justify-content-between align-items-center px-1 mb-5">
+    <div id="paginationInfo" class="small text-muted fw-bold">Показано 0-0 из 0 записей</div>
     <nav>
         <ul id="paginationButtons" class="pagination pagination-sm m-0">
             <!-- Сгенерируется автоматически -->
         </ul>
     </nav>
 </div>
-<!-- 6. КРАСИВОЕ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ Bootstrap 5 -->
+
+<!-- 6. МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ -->
 <div class="modal fade" id="deleteCompanyModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-body p-4 text-center">
-                <div class="text-danger mb-3">
-                    <span style="font-size: 3rem; line-height: 1;">⚠️</span>
+                <div class="text-danger mb-3 d-flex justify-content-center">
+                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                        <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                    </div>
                 </div>
                 <h5 class="fw-bold text-dark mb-2">Удаление организации</h5>
-                <p class="text-muted small mb-0">Вы действительно хотите удалить компанию</p>
-                <p id="deleteCompanyNameText" class="fw-bold text-danger mb-4"></p>
+                <p class="text-muted small mb-2">Вы действительно хотите удалить компанию</p>
+                <p id="deleteCompanyNameText" class="fw-bold text-dark mb-4 fs-5"></p>
                 
                 <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50" data-bs-dismiss="modal">Отмена</button>
-                    <button id="confirmDeleteCompanyBtn" type="button" class="btn btn-danger px-4 fw-bold w-50">Удалить</button>
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmDeleteCompanyBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 7. АВТОНОМНЫЙ JAVASCRIPT ДЛЯ ПОИСКА, ПАГИНАЦИИ, КОПИРОВАНИЯ И УДАЛЕНИЯ -->
+<!-- 7. JAVASCRIPT -->
 <script>
+    // ==========================================
+    // ФУНКЦИЯ УВЕДОМЛЕНИЙ (TOASTS)
+    // ==========================================
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        
+        toast.className = `custom-toast ${type}`;
+        const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+        
+        toast.innerHTML = `
+            <i class="bi ${iconClass} fs-4 me-3"></i>
+            <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
     // Функция копирования ИНН в буфер обмена
     function copyText(element, textToCopy) {
         navigator.clipboard.writeText(textToCopy).then(() => {
@@ -231,7 +400,7 @@
             }
         });
 
-        document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} записей (справочник)`;
+        document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} записей`;
 
         const paginationContainer = document.getElementById('paginationButtons');
         paginationContainer.innerHTML = '';
@@ -239,7 +408,7 @@
         // Стрелка назад
         const prevLi = document.createElement('li');
         prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<span class="page-link">&laquo;</span>`;
+        prevLi.innerHTML = `<span class="page-link"><i class="bi bi-chevron-left"></i></span>`;
         if (currentPage > 1) {
             prevLi.addEventListener('click', () => { currentPage--; updatePagination(); });
         }
@@ -257,7 +426,7 @@
         // Стрелка вперед
         const nextLi = document.createElement('li');
         nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<span class="page-link">&raquo;</span>`;
+        nextLi.innerHTML = `<span class="page-link"><i class="bi bi-chevron-right"></i></span>`;
         if (currentPage < totalPages) {
             nextLi.addEventListener('click', () => { currentPage++; updatePagination(); });
         }
@@ -285,6 +454,9 @@
 
     document.getElementById('confirmDeleteCompanyBtn').addEventListener('click', async function() {
         if (!companyIdToDelete) return;
+        
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
         try {
             const response = await fetch(`/Companies/Delete/${companyIdToDelete}`, {
@@ -296,6 +468,7 @@
 
             if (result.success) {
                 document.querySelector('#deleteCompanyModal [data-bs-dismiss="modal"]').click();
+                showToast('Организация успешно удалена!', 'success');
 
                 const row = document.getElementById(`company-row-${companyIdToDelete}`);
                 if (row) {
@@ -304,18 +477,22 @@
                         row.remove();
                         const rows = tableBody.querySelectorAll('.company-data-row');
                         if (rows.length === 0) {
-                            tableBody.innerHTML = `<tr id="emptyRow"><td colspan="4" class="text-center py-4 text-muted">В справочнике пока нет ни одной организации.</td></tr>`;
+                            tableBody.innerHTML = `<tr id="emptyRow"><td colspan="4" class="text-center py-5 text-muted"><i class="bi bi-building fs-1 d-block mb-2 text-secondary opacity-50"></i>В справочнике пока нет ни одной организации.</td></tr>`;
                         }
                         updatePagination();
                     }, 300);
                 }
             } else {
-                alert('Внимание: ' + result.message);
+                // Показываем красную плашку с ошибкой (например, если есть привязанные студенты)
                 document.querySelector('#deleteCompanyModal [data-bs-dismiss="modal"]').click();
+                showToast(result.message, 'danger');
             }
         } catch (error) {
             console.error('Ошибка удаления:', error);
-            alert('Не удалось связаться с сервером для удаления компании.');
+            showToast('Не удалось связаться с сервером для удаления компании.', 'danger');
+        } finally {
+            this.disabled = false;
+            this.textContent = 'Удалить';
         }
     });
 

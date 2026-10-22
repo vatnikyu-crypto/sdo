@@ -58,7 +58,7 @@ public class AuthController : Controller
             string redirectUrl = user.Role switch
             {
                 UserRole.Главный_Админ => "/Dashboard/SuperAdmin",
-                UserRole.Админ => "/Users/Index",
+                UserRole.Админ => "/Dashboard/Admin",
                 _ => "/Dashboard/Student"
             };
 

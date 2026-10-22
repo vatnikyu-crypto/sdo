@@ -51,6 +51,8 @@ app.UseRouting();
 app.UseAuthentication(); // Кто ты?
 app.UseAuthorization();  // Что тебе разрешено?
 
+app.UseStatusCodePagesWithReExecute("/Home/NotFound");
+
 // Настройка стандартного маршрута (открывает HomeController -> Index)
 app.MapControllerRoute(
     name: "default",
