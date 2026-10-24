@@ -68,7 +68,7 @@ public class StudentCourseController : Controller
     // POST: /StudentCourse/SubmitAssignment
     // Принимает файлы и комментарии ответов (или исправлений после доработки) от студента
     [HttpPost]
-    public async Task<IActionResult> SubmitAssignment(int materialId, string? studentComment, IFormFile? submissionFile)
+    public async Task<IActionResult> SubmitAssignment(int materialId, string? studentComment, IFormFile? submissionFile, int groupId)
     {
         // Извлекаем реальный ID текущего студента из контекста авторизации
         int currentStudentId = GetCurrentUserId();
@@ -120,6 +120,7 @@ public class StudentCourseController : Controller
             {
                 CourseMaterialId = materialId,
                 StudentId = currentStudentId,
+                GroupId = groupId,
                 Status = SubmissionStatus.OnReview,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

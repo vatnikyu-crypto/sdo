@@ -4,7 +4,10 @@ using SdoApp.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Подключаем работу с контроллерами и HTML-представлениями (MVC)
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<SdoApp.Filters.RequirePrivacyConsentAttribute>();
+});
 
 // СНИМАЕМ ЛИМИТЫ ЗАГРУЗКИ ФАЙЛОВ ДЛЯ ВСЕГО ПРИЛОЖЕНИЯ (Выставляем 500 МБ)
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
@@ -46,12 +49,14 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseStatusCodePagesWithReExecute("/Home/NotFound");
+
 app.UseRouting();
 
 app.UseAuthentication(); // Кто ты?
 app.UseAuthorization();  // Что тебе разрешено?
 
-app.UseStatusCodePagesWithReExecute("/Home/NotFound");
+
 
 // Настройка стандартного маршрута (открывает HomeController -> Index)
 app.MapControllerRoute(

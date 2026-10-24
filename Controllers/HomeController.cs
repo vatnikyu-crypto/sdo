@@ -16,11 +16,11 @@ public class HomeController : Controller
         return View();
     }
 
-    // ИСПРАВЛЕНО: Убрали [Route("NotFound")], чтобы работал путь /Home/NotFound
-    public IActionResult newNotFound()
+    // Имя метода должно совпадать с путём в Program.cs: /Home/NotFound
+    public IActionResult NotFound()
     {
-        Response.StatusCode = 404; // Возвращаем правильный код для браузера
-        return View("NotFound");   // Ищем Views/Shared/NotFound.cshtml
+        Response.StatusCode = 404;
+        return View("NotFound");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

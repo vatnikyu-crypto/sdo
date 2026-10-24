@@ -318,23 +318,67 @@ public class UsersController : Controller
     }
 
     // GET: /Users/DownloadTemplate
-    // Обновленный CSV шаблон с учетом новых полей Должность и Номер группы
     [HttpGet]
     public IActionResult DownloadTemplate()
     {
-        var csvContent = "Фамилия;Имя;Отчество;Пол;Дата рождения;СНИЛС;ИНН Организации;Отделение;Должность;ID группы\n" +
-                         "Петров;Петр;Петрович;Муж;20.10.1995;123-456-789 01;7700000000;Отдел сборки;Сварщик 5 разряда;";
+        using (var workbook = new XLWorkbook())
+        {
+            var worksheet = workbook.Worksheets.Add("Слушатели");
 
-        var bom = new byte[] { 0xEF, 0xBB, 0xBF };
-        var textBytes = Encoding.UTF8.GetBytes(csvContent);
-        var fileBytes = new byte[bom.Length + textBytes.Length];
-        Buffer.BlockCopy(bom, 0, fileBytes, 0, bom.Length);
-        Buffer.BlockCopy(textBytes, 0, fileBytes, bom.Length, textBytes.Length);
+            // Заголовки
+            string[] headers = {
+                "Фамилия", "Имя", "Отчество", "Пол", "Дата рождения",
+                "СНИЛС", "ИНН Организации", "Отделение", "Должность", "ID группы"
+            };
 
-        return File(fileBytes, "text/csv", "Шаблон_Импорта_Слушателей.csv");
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(1, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC"); // Желтоватый фон как в шапке доступов
+                cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            }
+
+            // Пример заполнения (строка 2)
+            worksheet.Cell(2, 1).Value = "Петров";
+            worksheet.Cell(2, 2).Value = "Петр";
+            worksheet.Cell(2, 3).Value = "Петрович";
+            worksheet.Cell(2, 4).Value = "Муж";
+            worksheet.Cell(2, 5).Value = "20.10.1995";
+            worksheet.Cell(2, 6).Value = "123-456-789 01";
+            worksheet.Cell(2, 7).Value = "7700000000"; // ИНН компании (если есть)
+            worksheet.Cell(2, 8).Value = "Отдел сборки";
+            worksheet.Cell(2, 9).Value = "Сварщик 5 разряда";
+            worksheet.Cell(2, 10).Value = ""; // ID группы (оставьте пустым, если не нужно зачислять)
+
+            // Стилизуем строку с примером (серый текст)
+            var exampleRow = worksheet.Row(2);
+            exampleRow.Style.Font.FontColor = XLColor.Gray;
+
+            // Автоширина
+            worksheet.Columns().AdjustToContents();
+
+            using (var stream = new MemoryStream())
+            {
+                workbook.SaveAs(stream);
+                var content = stream.ToArray();
+
+                // Формируем русское имя файла через ContentDisposition
+                var contentDisposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+                {
+                    FileNameStar = "Шаблон_Импорта_Слушателей.xlsx"
+                };
+                Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = contentDisposition.ToString();
+
+                return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            }
+        }
     }
 
-    // POST: /Groups/Import или /Users/Import
+    // POST: /Users/Import
     [HttpPost]
     public async Task<IActionResult> Import(IFormFile excelFile)
     {
@@ -348,214 +392,255 @@ public class UsersController : Controller
         var errorMessages = new List<string>();
         var random = new Random();
 
+        var existingMtNumbers = await _context.CourseProgresses
+            .Where(p => p.MintrudNumber != null)
+            .Select(p => p.MintrudNumber)
+            .ToListAsync();
+
+        int globalMaxMt = 0;
+        foreach (var mt in existingMtNumbers)
+        {
+            if (int.TryParse(mt, out int n) && n > globalMaxMt) globalMaxMt = n;
+        }
+
         try
         {
-            using (var reader = new StreamReader(excelFile.OpenReadStream(), Encoding.UTF8))
+            using (var stream = new MemoryStream())
             {
-                string? line;
-                bool isHeader = true;
-                int lineNumber = 0;
-
-                while ((line = await reader.ReadLineAsync()) != null)
+                await excelFile.CopyToAsync(stream);
+                using (var workbook = new XLWorkbook(stream))
                 {
-                    lineNumber++;
-                    if (isHeader) { isHeader = false; continue; }
-                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    var worksheet = workbook.Worksheet(1);
+                    var rows = worksheet.RowsUsed().Skip(1);
 
-                    try
+                    foreach (var row in rows)
                     {
-                        var cells = line.Split(';');
-
-                        if (cells.Length < 10)
+                        try
                         {
-                            errorCount++;
-                            errorMessages.Add($"Строка {lineNumber}: Ошибка структуры (требуется 10 колонок).");
-                            continue;
-                        }
+                            string lastName = row.Cell(1).GetString().Trim();
+                            string firstName = row.Cell(2).GetString().Trim();
+                            string middleName = row.Cell(3).GetString().Trim();
+                            string genderStr = row.Cell(4).GetString().Trim().ToLower();
+                            string birthDateStr = row.Cell(5).GetString().Trim();
+                            string snils = row.Cell(6).GetString().Trim();
+                            string inn = row.Cell(7).GetString().Trim();
+                            string department = row.Cell(8).GetString().Trim();
+                            string position = row.Cell(9).GetString().Trim();
+                            string groupNumberStr = row.Cell(10).GetString().Trim();
 
-                        string lastName = (cells[0] ?? "").Trim();
-                        string firstName = (cells[1] ?? "").Trim();
-                        string middleName = (cells[2] ?? "").Trim();
-                        string genderStr = (cells[3] ?? "").Trim().ToLower();
-                        string birthDateStr = (cells[4] ?? "").Trim();
-                        string snils = (cells[5] ?? "").Trim();
-                        string inn = (cells[6] ?? "").Trim();
-                        string department = (cells[7] ?? "").Trim();
-                        string position = (cells[8] ?? "").Trim();
-                        string groupNumberStr = (cells[9] ?? "").Trim();
+                            if (string.IsNullOrEmpty(lastName) && string.IsNullOrEmpty(firstName)) continue;
 
-                        if (string.IsNullOrEmpty(lastName) && string.IsNullOrEmpty(firstName)) continue;
-
-                        if (string.IsNullOrEmpty(lastName) || string.IsNullOrEmpty(firstName))
-                        {
-                            errorCount++;
-                            errorMessages.Add($"Строка {lineNumber}: Не заполнено обязательное поле Фамилия или Имя.");
-                            continue;
-                        }
-
-                        // 1. УМНАЯ ВАЛИДАЦИЯ ОРГАНИЗАЦИИ ПО ИНН (CompanyId теперь int?)
-                        Company? company = null;
-                        if (!string.IsNullOrEmpty(inn))
-                        {
-                            company = await _context.Companies.FirstOrDefaultAsync(c => c.Inn == inn);
-                            if (company == null)
+                            if (string.IsNullOrEmpty(lastName) || string.IsNullOrEmpty(firstName))
                             {
                                 errorCount++;
-                                errorMessages.Add($"Строка {lineNumber} ({lastName}): Организация с ИНН '{inn}' отсутствует в системе.");
+                                errorMessages.Add($"Строка {row.RowNumber()}: Не заполнено обязательное поле Фамилия или Имя.");
                                 continue;
                             }
-                        }
 
-                        // 2. Валидация группы по ID
-                        Group? targetGroup = null;
-                        if (!string.IsNullOrEmpty(groupNumberStr))
-                        {
-                            if (int.TryParse(groupNumberStr.Trim(), out int groupId))
+                            Company? company = null;
+                            if (!string.IsNullOrEmpty(inn))
                             {
-                                targetGroup = await _context.Groups.FindAsync(groupId);
-                                if (targetGroup == null)
+                                company = await _context.Companies.FirstOrDefaultAsync(c => c.Inn == inn);
+                                if (company == null)
                                 {
                                     errorCount++;
-                                    errorMessages.Add($"Строка {lineNumber} ({lastName}): Учебная группа с ID № {groupId} не найдена в системе! Импорт заблокирован.");
+                                    errorMessages.Add($"Строка {row.RowNumber()} ({lastName}): Организация с ИНН '{inn}' отсутствует в системе.");
                                     continue;
                                 }
                             }
-                            else
+
+                            Group? targetGroup = null;
+                            if (!string.IsNullOrEmpty(groupNumberStr))
                             {
-                                errorCount++;
-                                errorMessages.Add($"Строка {lineNumber} ({lastName}): В колонке группы указано не число. Требуется ID группы.");
-                                continue;
-                            }
-                        }
-
-                        Gender gender = (genderStr == "жен" || genderStr == "женский") ? Gender.Жен : Gender.Муж;
-                        DateTime? birthDate = null;
-                        if (DateTime.TryParse(birthDateStr, out DateTime parsedDate)) birthDate = parsedDate;
-
-                        User? studentToProcess = null;
-
-                        // 3. УМНЫЙ АПДЕЙТ ПО СНИЛС
-                        if (!string.IsNullOrEmpty(snils))
-                        {
-                            studentToProcess = await _context.Users.FirstOrDefaultAsync(u => u.Snils == snils.Trim());
-                        }
-
-                        if (studentToProcess != null)
-                        {
-                            studentToProcess.LastName = lastName;
-                            studentToProcess.FirstName = firstName;
-                            studentToProcess.MiddleName = string.IsNullOrEmpty(middleName) ? null : middleName;
-                            studentToProcess.Gender = gender;
-                            studentToProcess.BirthDate = birthDate;
-                            studentToProcess.Department = string.IsNullOrEmpty(department) ? null : department;
-                            studentToProcess.CompanyId = company?.Id; // Запишет ID или null для физлиц
-                            studentToProcess.Position = string.IsNullOrEmpty(position) ? null : position;
-
-                            _context.Users.Update(studentToProcess);
-                        }
-                        else
-                        {
-                            string baseTranslit = Transliterate(lastName.ToLower());
-                            string generatedLogin = "";
-                            bool isLoginUnique = false;
-
-                            while (!isLoginUnique)
-                            {
-                                generatedLogin = $"{baseTranslit}{random.Next(1000, 9999)}";
-                                isLoginUnique = !await _context.Users.AnyAsync(u => u.Login == generatedLogin);
-                            }
-
-                            string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                            var passwordBuilder = new StringBuilder();
-                            for (int i = 0; i < 10; i++)
-                            {
-                                passwordBuilder.Append(chars[random.Next(chars.Length)]);
-                            }
-
-                            studentToProcess = new User
-                            {
-                                Login = generatedLogin,
-                                Password = passwordBuilder.ToString(),
-                                LastName = lastName,
-                                FirstName = firstName,
-                                MiddleName = string.IsNullOrEmpty(middleName) ? null : middleName,
-                                Gender = gender,
-                                BirthDate = birthDate,
-                                Snils = string.IsNullOrEmpty(snils) ? null : snils,
-                                Department = string.IsNullOrEmpty(department) ? null : department,
-                                Role = UserRole.Обучающийся,
-                                CompanyId = company?.Id, // Запишет ID или null для физлиц
-                                Position = string.IsNullOrEmpty(position) ? null : position
-                            };
-
-                            _context.Users.Add(studentToProcess);
-                        }
-
-                        await _context.SaveChangesAsync();
-
-                        // 4. МАГИЯ АВТОМАТИЧЕСКОГО ЗАЧИСЛЕНИЯ В ГРУППУ И НА КУРСЫ
-                        if (targetGroup != null)
-                        {
-                            // Разрешаем зачисление, если это физлицо (company == null)
-                            // ИЛИ если компания этого юзера привязана к данной группе потока обучения
-                            bool isAllowedToGroup = company == null || await _context.GroupCompanies
-                                .AnyAsync(gc => gc.GroupId == targetGroup.Id && gc.CompanyId == company.Id);
-
-                            if (isAllowedToGroup)
-                            {
-                                bool alreadyInGroup = await _context.GroupStudents
-                                    .AnyAsync(gs => gs.GroupId == targetGroup.Id && gs.StudentId == studentToProcess.Id);
-
-                                if (!alreadyInGroup)
+                                if (int.TryParse(groupNumberStr, out int groupId))
                                 {
-                                    _context.GroupStudents.Add(new GroupStudent
+                                    targetGroup = await _context.Groups.FindAsync(groupId);
+                                    if (targetGroup == null)
                                     {
-                                        GroupId = targetGroup.Id,
-                                        StudentId = studentToProcess.Id
-                                    });
-                                    await _context.SaveChangesAsync();
-                                }
-
-                                var courseConfigs = await _context.GroupCourseConfigs
-                                    .Where(cc => cc.GroupId == targetGroup.Id)
-                                    .ToListAsync();
-
-                                foreach (var config in courseConfigs)
-                                {
-                                    var allowedIds = string.IsNullOrEmpty(config.AllowedStudentIds)
-                                        ? new List<int>()
-                                        : config.AllowedStudentIds.Split(',').Select(int.Parse).ToList();
-
-                                    if (!allowedIds.Contains(studentToProcess.Id))
-                                    {
-                                        allowedIds.Add(studentToProcess.Id);
-                                        config.AllowedStudentIds = string.Join(",", allowedIds);
-                                        _context.GroupCourseConfigs.Update(config);
+                                        errorCount++;
+                                        errorMessages.Add($"Строка {row.RowNumber()} ({lastName}): Учебная группа с ID № {groupId} не найдена.");
+                                        continue;
                                     }
                                 }
-
-                                await _context.SaveChangesAsync();
+                                else
+                                {
+                                    errorCount++;
+                                    errorMessages.Add($"Строка {row.RowNumber()} ({lastName}): В колонке группы указано не число. Требуется ID группы.");
+                                    continue;
+                                }
                             }
-                        }
 
-                        successCount++;
-                    }
-                    catch (Exception innerEx)
-                    {
-                        errorCount++;
-                        errorMessages.Add($"Строка {lineNumber}: Сбой разбора ячеек ({innerEx.Message}).");
+                            Gender gender = (genderStr == "жен" || genderStr == "женский" || genderStr == "ж") ? Gender.Жен : Gender.Муж;
+                            DateTime? birthDate = null;
+                            if (DateTime.TryParse(birthDateStr, out DateTime parsedDate)) birthDate = parsedDate;
+
+                            User? studentToProcess = null;
+
+                            if (!string.IsNullOrEmpty(snils))
+                            {
+                                studentToProcess = await _context.Users.FirstOrDefaultAsync(u => u.Snils == snils.Trim());
+                            }
+
+                            if (studentToProcess != null)
+                            {
+                                studentToProcess.LastName = lastName;
+                                studentToProcess.FirstName = firstName;
+                                studentToProcess.MiddleName = string.IsNullOrEmpty(middleName) ? null : middleName;
+                                studentToProcess.Gender = gender;
+                                studentToProcess.BirthDate = birthDate;
+                                studentToProcess.Department = string.IsNullOrEmpty(department) ? null : department;
+                                studentToProcess.CompanyId = company?.Id;
+                                studentToProcess.Position = string.IsNullOrEmpty(position) ? null : position;
+                                // ВАЖНО: гарантируем, что роль — Обучающийся
+                                studentToProcess.Role = UserRole.Обучающийся;
+
+                                _context.Users.Update(studentToProcess);
+                            }
+                            else
+                            {
+                                string baseTranslit = Transliterate(lastName.ToLower());
+                                string generatedLogin = "";
+                                bool isLoginUnique = false;
+
+                                while (!isLoginUnique)
+                                {
+                                    generatedLogin = $"{baseTranslit}{random.Next(1000, 9999)}";
+                                    isLoginUnique = !await _context.Users.AnyAsync(u => u.Login == generatedLogin);
+                                }
+
+                                string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                                var passwordBuilder = new StringBuilder();
+                                for (int i = 0; i < 10; i++)
+                                {
+                                    passwordBuilder.Append(chars[random.Next(chars.Length)]);
+                                }
+
+                                studentToProcess = new User
+                                {
+                                    Login = generatedLogin,
+                                    Password = passwordBuilder.ToString(),
+                                    LastName = lastName,
+                                    FirstName = firstName,
+                                    MiddleName = string.IsNullOrEmpty(middleName) ? null : middleName,
+                                    Gender = gender,
+                                    BirthDate = birthDate,
+                                    Snils = string.IsNullOrEmpty(snils) ? null : snils,
+                                    Department = string.IsNullOrEmpty(department) ? null : department,
+                                    Role = UserRole.Обучающийся, // ← гарантируем роль
+                                    CompanyId = company?.Id,
+                                    Position = string.IsNullOrEmpty(position) ? null : position
+                                };
+
+                                _context.Users.Add(studentToProcess);
+                            }
+
+                            await _context.SaveChangesAsync();
+
+                            // 4. МАГИЯ АВТОМАТИЧЕСКОГО ЗАЧИСЛЕНИЯ В ГРУППУ И НА КУРСЫ
+                            if (targetGroup != null)
+                            {
+                                // Разрешаем зачисление, если это физлицо (company == null)
+                                // ИЛИ если компания этого юзера привязана к данной группе потока обучения
+                                bool isAllowedToGroup = company == null || await _context.GroupCompanies
+                                    .AnyAsync(gc => gc.GroupId == targetGroup.Id && gc.CompanyId == company.Id);
+
+                                if (isAllowedToGroup)
+                                {
+                                    // Добавляем в группу, если его там еще нет
+                                    bool alreadyInGroup = await _context.GroupStudents
+                                        .AnyAsync(gs => gs.GroupId == targetGroup.Id && gs.StudentId == studentToProcess.Id);
+
+                                    if (!alreadyInGroup)
+                                    {
+                                        _context.GroupStudents.Add(new GroupStudent
+                                        {
+                                            GroupId = targetGroup.Id,
+                                            StudentId = studentToProcess.Id
+                                        });
+                                        await _context.SaveChangesAsync();
+                                    }
+
+                                    // ВАЖНО: Получаем актуальный список ВСЕХ студентов группы (включая нового)
+                                    var allGroupStudentIds = await _context.GroupStudents
+                                        .Where(gs => gs.GroupId == targetGroup.Id)
+                                        .Select(gs => gs.StudentId)
+                                        .ToListAsync();
+
+                                    var courseConfigs = await _context.GroupCourseConfigs
+                                        .Include(cc => cc.Course)
+                                        .Where(cc => cc.GroupId == targetGroup.Id)
+                                        .ToListAsync();
+
+                                    foreach (var config in courseConfigs)
+                                    {
+                                        // Получаем текущий список допущенных ID
+                                        var allowedIds = string.IsNullOrEmpty(config.AllowedStudentIds)
+                                            ? new List<int>()
+                                            : config.AllowedStudentIds.Split(',').Select(int.Parse).ToList();
+
+                                        // ГЛАВНОЕ ИСПРАВЛЕНИЕ:
+                                        // Если список пустой (значит, по умолчанию были допущены ВСЕ),
+                                        // то заполняем его всеми текущими студентами группы.
+                                        if (!allowedIds.Any())
+                                        {
+                                            allowedIds = new List<int>(allGroupStudentIds);
+                                            config.AllowedStudentIds = string.Join(",", allowedIds);
+                                            _context.GroupCourseConfigs.Update(config);
+                                        }
+                                        // Если список не пустой, но нового студента там нет — просто добавляем его
+                                        else if (!allowedIds.Contains(studentToProcess.Id))
+                                        {
+                                            allowedIds.Add(studentToProcess.Id);
+                                            config.AllowedStudentIds = string.Join(",", allowedIds);
+                                            _context.GroupCourseConfigs.Update(config);
+                                        }
+
+                                        // 4.2. Создаем запись в прогрессе для этого курса
+                                        var progress = await _context.CourseProgresses
+                                            .FirstOrDefaultAsync(p => p.StudentId == studentToProcess.Id && p.CourseId == config.CourseId && p.GroupId == targetGroup.Id);
+
+                                        if (progress == null)
+                                        {
+                                            progress = new CourseProgress
+                                            {
+                                                StudentId = studentToProcess.Id,
+                                                CourseId = config.CourseId,
+                                                GroupId = targetGroup.Id
+                                            };
+                                            _context.CourseProgresses.Add(progress);
+                                        }
+
+                                        // 4.3. Если курс Минтруда — присваиваем номер
+                                        if (config.Course != null && config.Course.MintrudProgramId != null)
+                                        {
+                                            if (string.IsNullOrEmpty(progress.MintrudNumber))
+                                            {
+                                                globalMaxMt++;
+                                                progress.MintrudNumber = globalMaxMt.ToString();
+                                            }
+                                        }
+                                    }
+                                    await _context.SaveChangesAsync();
+                                }
+                            }
+                            successCount++;
+                        }
+                        catch (Exception innerEx)
+                        {
+                            errorCount++;
+                            errorMessages.Add($"Строка {row.RowNumber()}: Сбой разбора данных ({innerEx.Message}).");
+                        }
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = "Критическая ошибка чтения: " + ex.Message });
+            return Json(new { success = false, message = "Критическая ошибка чтения файла: " + ex.Message });
         }
 
         return Json(new { success = true, successCount, errorCount, errors = errorMessages });
     }
-
 
 
     private string Transliterate(string text)
@@ -579,8 +664,8 @@ public class UsersController : Controller
         return sb.ToString();
     }
 
-    // GET: /Users/DownloadAccessCard/5
-    // Генерация и скачивание Excel-карточки доступа для одного студента
+        // GET: /Users/DownloadAccessCard/5
+    // Генерация и скачивание Excel-карточки доступа для одного студента (в стиле групповых доступов)
     [HttpGet]
     public async Task<IActionResult> DownloadAccessCard(int id)
     {
@@ -595,60 +680,83 @@ public class UsersController : Controller
 
         using (var workbook = new XLWorkbook())
         {
-            // 1. Создаем лист в книге
-            var worksheet = workbook.Worksheets.Add("Доступ к СДО");
+            var worksheet = workbook.Worksheets.Add("Доступы");
 
-            // 2. Заполняем первую строку (Шапка - Жирный шрифт)
-            worksheet.Cell(1, 1).Value = "Фамилия";
-            worksheet.Cell(1, 2).Value = "Имя";
-            worksheet.Cell(1, 3).Value = "Отчество";
-            worksheet.Cell(1, 4).Value = "Компания";
-            worksheet.Cell(1, 5).Value = "Должность";
-            worksheet.Cell(1, 6).Value = "Логин";
-            worksheet.Cell(1, 7).Value = "Пароль";
+            // --- ФОРМИРУЕМ ШАПКУ (Точь-в-точь как в групповом файле) ---
+            
+            // Строка 1
+            worksheet.Cell(1, 1).Value = "Данные для входа в систему https://sdo.dpo-energo.ru для слушателя организации";
+            worksheet.Range(1, 1, 1, 8).Merge();
+            worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Cell(1, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            worksheet.Cell(1, 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
 
-            // Стилизуем шапку: жирный шрифт и светло-серый фон для солидности
-            var headerRow = worksheet.Row(1);
-            headerRow.Style.Font.Bold = true;
-            headerRow.Style.Fill.BackgroundColor = XLColor.FromHtml("#F1F5F9");
+            // Строка 2 (Название компании или "Частное лицо")
+            string companyName = student.Company?.Name ?? "Частное лицо";
+            worksheet.Cell(2, 1).Value = companyName;
+            worksheet.Range(2, 1, 2, 8).Merge();
+            worksheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Cell(2, 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
 
-            // 3. Заполняем вторую строку (Данные пользователя)
-            worksheet.Cell(2, 1).Value = student.LastName;
-            worksheet.Cell(2, 2).Value = student.FirstName;
-            worksheet.Cell(2, 3).Value = student.MiddleName ?? "—";
-            worksheet.Cell(2, 4).Value = student.Company?.Name ?? "Частное лицо";
-            worksheet.Cell(2, 5).Value = student.Position ?? "—";
-            worksheet.Cell(2, 6).Value = student.Login;
-            worksheet.Cell(2, 7).Value = student.Password;
+            // Строка 3 (Заголовки)
+            string[] headers = { "Фамилия", "Имя", "Отчество", "Логин", "Пароль", "Отдел", "Должность", "Ссылка для авторизации" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(3, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#F2F2F2");
+            }
 
-            // 4. Наводим полную красоту (Границы и Автоширина)
-            // Выделяем наш диапазон ячеек (2 строки на 7 колонок)
-            var tableRange = worksheet.Range(1, 1, 2, 7);
+            // --- ЗАПОЛНЯЕМ ДАННЫЕ СТУДЕНТА (Строка 4) ---
+            
+            string escapedLogin = Uri.EscapeDataString(student.Login ?? "");
+            string escapedPassword = Uri.EscapeDataString(student.Password ?? "");
 
-            // Проставляем тонкие черные классические границы вокруг каждой ячейки
-            tableRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
-            tableRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
-            tableRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
-            tableRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
-            tableRange.Style.Border.TopBorderColor = XLColor.Black;
-            tableRange.Style.Border.BottomBorderColor = XLColor.Black;
-            tableRange.Style.Border.LeftBorderColor = XLColor.Black;
-            tableRange.Style.Border.RightBorderColor = XLColor.Black;
+            // Ссылка авторизации
+            string authUrl = $"http://localhost:5018/Auth/Login?login={escapedLogin}&password={escapedPassword}";
 
-            // Выравниваем текст по левому краю, а логин/пароль можно по центру
-            tableRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+            int row = 4;
+            worksheet.Cell(row, 1).Value = student.LastName ?? "";
+            worksheet.Cell(row, 2).Value = student.FirstName ?? "";
+            worksheet.Cell(row, 3).Value = student.MiddleName ?? "";
+            worksheet.Cell(row, 4).Value = student.Login ?? "";
+            worksheet.Cell(row, 5).Value = student.Password ?? "";
+            worksheet.Cell(row, 6).Value = student.Department ?? "—";
+            worksheet.Cell(row, 7).Value = student.Position ?? "—";
 
-            // МЕГА-ФИЧА: Честная автоматическая ширина всех колонок под размер текста!
-            worksheet.Columns(1, 7).AdjustToContents();
+            // Ячейка со ссылкой
+            var linkCell = worksheet.Cell(row, 8);
+            linkCell.Value = authUrl;
+            linkCell.SetHyperlink(new XLHyperlink(authUrl));
+            linkCell.Style.Font.FontColor = XLColor.Blue;
+            linkCell.Style.Font.Underline = XLFontUnderlineValues.Single;
+
+            // Рамки
+            worksheet.Range(row, 1, row, 8).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            worksheet.Range(row, 1, row, 8).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+            // Автоподбор ширины колонок
+            worksheet.Columns().AdjustToContents();
 
             // 5. Отдаем готовый файл в браузер
             using (var memoryStream = new MemoryStream())
             {
                 workbook.SaveAs(memoryStream);
-                memoryStream.Seek(0, SeekOrigin.Begin);
+                
+                string fileName = $"Доступ_{student.LastName}_{student.FirstName}__{student.MiddleName}.xlsx";
 
-                string fileName = $"Доступ_{student.LastName}_{student.FirstName}.xlsx";
-                return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                // Правильное кодирование русского имени файла (RFC 5987)
+                var contentDisposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+                {
+                    FileNameStar = fileName
+                };
+                Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = contentDisposition.ToString();
+
+                return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             }
         }
     }

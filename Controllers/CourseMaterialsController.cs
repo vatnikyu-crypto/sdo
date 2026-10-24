@@ -410,27 +410,26 @@ public class CourseMaterialsController : Controller
         return Json(new { success = true });
     }
 
-        // GET: /CourseMaterials/StudentView?courseId=5
     [HttpGet]
-    [Authorize] 
-    public async Task<IActionResult> StudentView(int courseId, int? activeId)
+    [Authorize(Roles = "Обучающийся")] 
+    public async Task<IActionResult> StudentView(int courseId, int groupId, int? activeId) // ДОБАВЛЕН groupId
     {
-        // Загружаем курс, его темы (по порядку) и материалы внутри тем
         var course = await _context.Courses
             .Include(c => c.Themes.OrderBy(t => t.Order))
                 .ThenInclude(t => t.Materials.OrderBy(m => m.Order))
-            .Include(c => c.Materials) // Подгружаем материалы БЕЗ темы
+            .Include(c => c.Materials)
             .FirstOrDefaultAsync(c => c.Id == courseId);
 
         if (course == null) return NotFound();
 
-        // (Проверка доступа hasAccess, которую мы писали ранее, остается тут...)
         var userIdClaim = User.FindFirst("UserId")?.Value;
         if (int.TryParse(userIdClaim, out int studentId) && studentId > 0)
         {
             var today = DateTime.Today;
+            // ПРОВЕРКА ДОСТУПА СТРОГО ДЛЯ КОНКРЕТНОЙ ГРУППЫ
             var hasAccess = await _context.GroupCourseConfigs
                 .AnyAsync(gcc => gcc.CourseId == courseId &&
+                                 gcc.GroupId == groupId && // ПРОВЕРКА ГРУППЫ
                                  gcc.Group.GroupStudents.Any(gs => gs.StudentId == studentId) &&
                                  (gcc.Group.MaterialAccessDate >= today || 
                                  (gcc.Group.MaterialAccessDate == null && gcc.Group.EndDate >= today)));
@@ -444,9 +443,9 @@ public class CourseMaterialsController : Controller
 
         ViewBag.CourseId = course.Id;
         ViewBag.CourseTitle = course.Title;
+        ViewBag.GroupId = groupId; // ПРОКИДЫВАЕМ В VIEW
         ViewBag.ActiveId = activeId;
 
-        // Передаем ВЕСЬ КУРС (модель Course), а не просто список материалов
         return View(course); 
     }
 }

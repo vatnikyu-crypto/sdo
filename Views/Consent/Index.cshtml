@@ -1,0 +1,165 @@
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Согласие на обработку персональных данных";
+}
+
+<style>
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-accent: #F59E0B;
+    }
+
+    .consent-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 3rem;
+        max-width: 700px;
+        margin: 3rem auto;
+        border-top: 6px solid var(--brand-primary);
+    }
+
+    .consent-icon {
+        width: 80px;
+        height: 80px;
+        background: #f0f4ff;
+        color: var(--brand-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem auto;
+    }
+
+    .consent-card h2 {
+        font-weight: 800;
+        color: var(--brand-dark);
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .consent-card .subtitle {
+        text-align: center;
+        color: #777;
+        margin-bottom: 2rem;
+    }
+
+    .consent-text {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: #555;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        max-height: 250px;
+        overflow-y: auto;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .legal-checkbox-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        line-height: 1.5;
+        cursor: pointer;
+        margin-bottom: 0;
+    }
+
+    .legal-checkbox-label a {
+        color: var(--brand-primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .legal-checkbox-label a:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--brand-primary);
+        border-color: var(--brand-primary);
+    }
+
+    .btn-consent {
+        background: var(--brand-primary);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 14px;
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(79, 88, 157, 0.3);
+    }
+
+    .btn-consent:hover {
+        background: var(--brand-dark);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 67, 130, 0.4);
+    }
+</style>
+
+<div class="container">
+    <div class="consent-card">
+        <div class="consent-icon">
+            <i class="bi bi-shield-lock-fill" style="font-size: 2.5rem;"></i>
+        </div>
+
+        <h2>Согласие на обработку данных</h2>
+        <p class="subtitle">Для продолжения работы в системе необходимо ознакомиться с политиками</p>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger border-0 rounded-3 small">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> @ViewBag.Error
+            </div>
+        }
+
+        <div class="consent-text">
+            <strong>Уважаемый слушатель!</strong><br><br>
+            Прежде чем начать обучение, мы просим вас ознакомиться с документами, регулирующими обработку ваших
+            персональных данных:
+            <br><br>
+            <strong>Политика в отношении обработки персональных данных</strong> — документ, описывающий, какие данные мы
+            собираем, как храним и защищаем.
+            <br><br>
+            <strong>Политика использования файлов cookie</strong> — описывает, как мы используем технические файлы для
+            корректной работы системы.
+            <br><br>
+            <strong>Согласие на обработку персональных данных</strong> — ваше явное разрешение на обработку данных в
+            целях обучения.
+        </div>
+
+        <form method="post" asp-action="Index" asp-controller="Consent">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="agreePolicy" name="agreePolicy" value="true"
+                       required>
+                <label class="form-check-label legal-checkbox-label" for="agreePolicy">
+                    Я ознакомлен с <a href="/politica/privacy-policy.pdf" target="_blank">Политикой в отношении
+                    обработки персональных данных</a> и <a href="/Consent/CookiePolicy">Политикой
+                    использования файлов cookie</a>
+                </label>
+            </div>
+
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="agreeConsent" name="agreeConsent" value="true"
+                       required>
+                <label class="form-check-label legal-checkbox-label" for="agreeConsent">
+                    Я даю <a href="/politica/consent.pdf" target="_blank">Согласие на обработку моих персональных
+                    данных</a>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-consent w-100">
+                <i class="bi bi-check-lg me-2"></i> Принимаю и продолжаю
+            </button>
+        </form>
+    </div>
+</div>

@@ -7,6 +7,7 @@
     var studentsMap = ViewBag.Students as Dictionary<int, SdoApp.Models.User> ?? new();
     var commission = ViewBag.Commission as List<SdoApp.Models.CommissionMember> ?? new();
     var progressMap = ViewBag.ProgressMap as Dictionary<string, string> ?? new Dictionary<string, string>();
+    var passedTests = ViewBag.PassedFinalTests as HashSet<string> ?? new HashSet<string>();
 }
 
 <style>
@@ -57,24 +58,43 @@
         box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
     }
 
-    /* Стили для кнопки Минтруда */
-    .btn-mintrud {
-        background-color: #198754;
-        color: white;
-        border: none;
-        transition: all 0.3s;
+    /* === ПАГИНАЦИЯ === */
+    #groupPaginationButtons {
+        gap: 4px;
     }
 
-    .btn-mintrud:hover {
-        background-color: #146c43;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+    #groupPaginationButtons .page-link {
+        color: #4F589D !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        font-weight: 700;
+        min-width: 38px;
+        text-align: center;
+        border-radius: 6px !important;
+        margin: 0 2px;
+        transition: all 0.2s;
     }
 
-    /* ========================================= */
-    /* СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ (TOASTS) */
-    /* ========================================= */
+    #groupPaginationButtons .page-link:hover {
+        background-color: #f0f4ff !important;
+        color: #3b4382 !important;
+        border-color: #4F589D !important;
+    }
+
+    #groupPaginationButtons .page-item.active .page-link {
+        background-color: #4F589D !important;
+        border-color: #4F589D !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(79, 88, 157, 0.35);
+    }
+
+    #groupPaginationButtons .page-item.disabled .page-link {
+        color: #cbd5e1 !important;
+        background-color: #f8f9fa !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    /* === TOASTS === */
     .toast-container-custom {
         position: fixed;
         top: 20px;
@@ -133,15 +153,300 @@
             opacity: 0;
         }
     }
+
+    /* === КНОПКА МИНТРУД (оранжевая с dropdown) === */
+    .btn-import-mintrud {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 18px 8px 8px;
+        border: none;
+        border-radius: 50px;
+        background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #D97706 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        font-family: inherit;
+    }
+
+    .btn-import-mintrud::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-import-mintrud:hover::before {
+        left: 100%;
+    }
+
+    .btn-import-mintrud:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 22px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-import-mintrud:active {
+        transform: translateY(-1px);
+    }
+
+    .import-logo-circle {
+        width: 36px;
+        height: 36px;
+        background: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        animation: pulseLogo 2.5s infinite ease-in-out;
+    }
+
+    .import-logo-circle img {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+    }
+
+    @@keyframes pulseLogo {
+
+        0%,
+        100% {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        50% {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 5px rgba(255, 255, 255, 0.3);
+        }
+    }
+
+    .import-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        line-height: 1.1;
+    }
+
+    .import-label {
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 0.3px;
+    }
+
+    .import-sublabel {
+        font-size: 0.65rem;
+        opacity: 0.85;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    .import-icon {
+        font-size: 1.4rem;
+        opacity: 0.9;
+        transition: transform 0.3s;
+    }
+
+    .btn-import-mintrud:hover .import-icon {
+        transform: translateY(3px);
+    }
+
+    /* === КНОПКА ФИС ФРДО (фиолетовая) === */
+    .btn-import-frdo {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 18px 8px 8px;
+        border: none;
+        border-radius: 50px;
+        background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #6366F1 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        font-family: inherit;
+    }
+
+    .btn-import-frdo::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-import-frdo:hover::before {
+        left: 100%;
+    }
+
+    .btn-import-frdo:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 22px rgba(139, 92, 246, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-import-frdo:active {
+        transform: translateY(-1px);
+    }
+
+    .btn-import-frdo .import-logo-circle {
+        animation: pulseLogo 2.5s infinite ease-in-out;
+    }
+
+    /* Состояние загрузки кнопки */
+    .btn-import-frdo.loading {
+        opacity: 0.75;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .btn-import-frdo.loading .import-logo-circle {
+        animation: pulseLogo 1s infinite ease-in-out;
+    }
+
+    .btn-import-frdo .spinner-border-sm {
+        width: 1.2rem;
+        height: 1.2rem;
+        border-width: 0.15em;
+    }
+
+    /* === КНОПКА СТАТИСТИКИ (изумрудная) === */
+    .btn-import-stats {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 18px 8px 8px;
+        border: none;
+        border-radius: 50px;
+        background: linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        font-family: inherit;
+    }
+
+    .btn-import-stats::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-import-stats:hover::before {
+        left: 100%;
+    }
+
+    .btn-import-stats:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 22px rgba(16, 185, 129, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-import-stats:active {
+        transform: translateY(-1px);
+    }
+
+    .btn-import-stats .import-logo-circle {
+        animation: pulseLogo 2.5s infinite ease-in-out;
+        color: #10B981;
+        /* Иконка внутри белого круга будет зеленой */
+        font-size: 1.2rem;
+    }
+
+    /* Состояние загрузки для кнопки статистики */
+    .btn-import-stats.loading {
+        opacity: 0.75;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .btn-import-stats.loading .import-logo-circle {
+        animation: pulseLogo 1s infinite ease-in-out;
+    }
 </style>
 
 <!-- Контейнер для уведомлений -->
 <div id="toastContainer" class="toast-container-custom"></div>
 
 <div class="container mt-4">
-    <h3 class="mb-4 fw-bold text-dark d-flex align-items-center gap-2">
-        <i class="bi bi-file-earmark-bar-graph text-primary fs-3"></i> Отчетность по группам
-    </h3>
+    <!-- Шапка с кнопками -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-dark d-flex align-items-center gap-2 mb-0">
+            <i class="bi bi-file-earmark-bar-graph text-primary fs-3"></i> Отчетность по группам
+        </h3>
+        
+        <div class="d-flex gap-2">
+            <!-- Кнопка выгрузки статистики -->
+            <button class="btn-import-stats" id="btnExportStats" onclick="exportStatistics()"
+                    title="Скачать детальную статистику по группам">
+                <div class="import-logo-circle">
+                    <!-- Иконка внутри белого кружка -->
+                    <i class="bi bi-bar-chart-fill"></i>
+                </div>
+                <div class="import-text">
+                    <span class="import-label" id="statsBtnLabel">СТАТИСТИКА</span>
+                    <span class="import-sublabel" id="statsBtnSublabel">Экспорт (Excel)</span>
+                </div>
+                <i class="bi bi-file-earmark-arrow-down-fill import-icon" id="statsBtnIcon"></i>
+            </button>
+            <!-- Выпадающая кнопка Минтруд -->
+            <div class="dropdown">
+                <button class="btn-import-mintrud dropdown-toggle" type="button" id="mintrudDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false" style="border: none;">
+                    <div class="import-logo-circle">
+                        <img src="~/mintrud.png" alt="Минтруд" onerror="this.style.display='none'" />
+                    </div>
+                    <div class="import-text">
+                        <span class="import-label">МИНТРУД</span>
+                        <span class="import-sublabel">Экспорт / Импорт</span>
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2"
+                    aria-labelledby="mintrudDropdown">
+                    <li>
+                        <button class="dropdown-item py-2 fw-bold" onclick="generateMintrudXml()">
+                            <i class="bi bi-file-earmark-code me-2 text-primary"></i> Экспорт (XML)
+                        </button>
+                    </li>
+                    <li>
+                        <button class="dropdown-item py-2 fw-bold" onclick="openImportModal()">
+                            <i class="bi bi-cloud-arrow-down me-2 text-warning"></i> Импорт (Excel)
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Кнопка ФИС ФРДО -->
+            <button class="btn-import-frdo" id="btnExportFrdo" onclick="exportFrdo()"
+                    title="Выгрузить реестр для ФИС ФРДО">
+                <div class="import-logo-circle">
+                    <img src="~/fis-frdo.png" alt="ФИС ФРДО" onerror="this.style.display='none'" />
+                </div>
+                <div class="import-text">
+                    <span class="import-label" id="frdoBtnLabel">ФИС ФРДО</span>
+                    <span class="import-sublabel" id="frdoBtnSublabel">Экспорт (Excel)</span>
+                </div>
+                <i class="bi bi-file-earmark-arrow-down-fill import-icon" id="frdoBtnIcon"></i>
+            </button>
+        </div>
+    </div>
 
     @if (!Model.Any())
     {
@@ -151,591 +456,970 @@
     }
     else
     {
-        <div class="accordion" id="groupsAccordion">
-            @foreach (var group in Model)
-            {
-                <div class="accordion-item mb-3 border shadow-sm rounded-3 overflow-hidden">
-                    <h2 class="accordion-header" id="headingGroup-@group.Id">
-                        <button class="accordion-button collapsed bg-white text-dark shadow-none p-3" type="button"
-                                data-bs-toggle="collapse" data-bs-target="#collapseGroup-@group.Id">
-                            <span class="fs-5">
-                                <span class="text-muted me-2">#@group.Id</span> |
-                                <i class="bi bi-collection text-primary mx-1"></i> <strong>Группа № @group.GroupNumber</strong>
-                                &nbsp;—&nbsp; @group.Title
-                            </span>
-                            <span class="badge bg-light text-dark border ms-3">
-                                <i class="bi bi-calendar3 me-1"></i> @group.StartDate.ToString("dd.MM.yyyy") -
-                                @group.EndDate.ToString("dd.MM.yyyy")
-                            </span>
-                        </button>
-                    </h2>
-                    
-                    <div id="collapseGroup-@group.Id" class="accordion-collapse collapse" data-bs-parent="#groupsAccordion">
-                        <div class="accordion-body bg-white p-4">
-                            
-                            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                                <h6 class="text-muted fw-bold m-0">
-                                    <i class="bi bi-journal-bookmark me-2"></i> Курсы, закрепленные за группой:
-                                </h6>
-                                <div class="d-flex gap-2">
-                                    <!-- КНОПКА: ШАБЛОН МИНТРУДА -->
-                                    <button class="btn btn-sm btn-mintrud fw-bold rounded-3 d-flex align-items-center gap-2"
-                                            onclick="exportMintrudXml(@group.Id)" title="Сформировать общий XML для Минтруда">
-                                        <!-- Белый кружок с логотипом -->
-                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center"
-                                             style="width: 24px; height: 24px; flex-shrink: 0;">
-                                            <img src="~/mintrud.png" alt="Минтруд"
-                                                 style="height: 16px; width: 16px; object-fit: contain;"
-                                                 onerror="this.style.display='none'" />
-                                        </div>
-                                        Шаблон Минтруда
-                                    </button>
+        <!-- Поиск и выбор размера страницы -->
+        <div class="row g-3 align-items-center mb-3">
+            <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
+                <span>Показать по:</span>
+                <select id="groupPageSizeSelect" class="form-select form-select-sm rounded-3 shadow-none"
+                        style="width: 80px;">
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+            <div class="col-sm ms-auto" style="max-width: 450px;">
+                <div class="input-group input-group-sm rounded-3 overflow-hidden border">
+                    <span class="input-group-text bg-white text-muted border-0"><i class="bi bi-search"></i></span>
+                    <input type="text" id="groupSearchInput" class="form-control border-0 shadow-none"
+                           placeholder="Поиск по номеру, названию, студенту или компании..." autocomplete="off" />
+                </div>
+            </div>
+        </div>
 
-                                    <!-- КНОПКА: ПРИСВОИТЬ НОМЕРА -->
-                                    <button class="btn btn-sm btn-outline-primary fw-bold rounded-3"
-                                            onclick="openAssignModal(@group.Id)">
-                                        <i class="bi bi-award me-1"></i> Присвоить номера
-                                    </button>
+        <!-- Чекбокс "Выбрать все" -->
+        <div class="d-flex align-items-center mb-3 ps-1">
+            <input type="checkbox" id="selectAllGroups" class="form-check-input me-2"
+                   style="width: 1.2rem; height: 1.2rem; cursor: pointer;" onchange="toggleSelectAll(this)" />
+            <label for="selectAllGroups" class="fw-bold text-muted small mb-0" style="cursor: pointer;">Выбрать все группы
+                на странице</label>
+                <span id="selectedCountBadge" class="badge bg-primary ms-2 d-none">0</span>
+            </div>
+
+            <div class="accordion" id="groupsAccordion">
+                @foreach (var group in Model)
+                {
+                    var currentGroupConfigs = groupConfigs.Where(c => c.GroupId == group.Id).ToList();
+
+                    <div class="accordion-item mb-3 border shadow-sm rounded-3 overflow-hidden group-item"
+                         data-group-id="@group.Id">
+                        <h2 class="accordion-header" id="headingGroup-@group.Id">
+                            <div class="d-flex align-items-center bg-white">
+                                <div class="ps-3 pe-1">
+                                    <input type="checkbox" class="form-check-input group-checkbox" value="@group.Id"
+                                           onchange="updateSelectedCount()" onclick="event.stopPropagation();"
+                                           style="width: 1.2rem; height: 1.2rem; cursor: pointer;" />
                                 </div>
+                                <button class="accordion-button collapsed bg-white text-dark shadow-none p-3 flex-grow-1" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#collapseGroup-@group.Id">
+                                    <span class="fs-5">
+                                        <span class="text-muted me-2">#@group.Id</span> |
+                                        <i class="bi bi-collection text-primary mx-1"></i> <strong>Группа №
+                                        @group.GroupNumber</strong>
+                                        &nbsp;—&nbsp; @group.Title
+                                    </span>
+                                    <span class="badge bg-light text-dark border ms-3">
+                                        <i class="bi bi-calendar3 me-1"></i> @group.StartDate.ToString("dd.MM.yyyy") -
+                                        @group.EndDate.ToString("dd.MM.yyyy")
+                                    </span>
+                                </button>
                             </div>
+                        </h2>
+                    
+                        <div id="collapseGroup-@group.Id" class="accordion-collapse collapse" data-bs-parent="#groupsAccordion">
+                            <div class="accordion-body bg-white p-4">
                             
-                            @{
-                                var currentGroupConfigs = groupConfigs.Where(c => c.GroupId == group.Id).ToList();
-                            }
-
-                            @if (!currentGroupConfigs.Any())
-                            {
-                                <p class="text-muted fst-italic">За данной группой еще не закреплены курсы.</p>
-                            }
-                            else
-                            {
-                                <div class="accordion" id="coursesAccordion-@group.Id">
-                                    @foreach (var config in currentGroupConfigs)
-                                    {
-                                        var allowedIds = config.AllowedStudentIds?
-                                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                            .Select(int.Parse).ToList() ?? new List<int>();
-                                        
-                                        if (!allowedIds.Any() && group.GroupStudents != null)
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                    <h6 class="text-muted fw-bold m-0">
+                                        <i class="bi bi-journal-bookmark me-2"></i> Курсы, закрепленные за группой:
+                                    </h6>
+                                    <div class="d-flex gap-2">
+                                        <!-- Кнопка "Присвоить номера" (осталась внутри группы) -->
+                                        <button class="btn btn-sm btn-outline-primary fw-bold rounded-3"
+                                                onclick="openAssignModal(@group.Id)">
+                                            <i class="bi bi-award me-1"></i> Присвоить номера
+                                        </button>
+                                    </div>
+                                </div>
+                            
+                                @if (!currentGroupConfigs.Any())
+                                {
+                                    <p class="text-muted fst-italic">За данной группой еще не закреплены курсы.</p>
+                                }
+                                else
+                                {
+                                    <div class="accordion" id="coursesAccordion-@group.Id">
+                                        @foreach (var config in currentGroupConfigs)
                                         {
-                                            allowedIds = group.GroupStudents.Select(gs => gs.StudentId).ToList();
-                                        }
+                                            var allowedIds = config.AllowedStudentIds?
+                                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                .Select(int.Parse).ToList() ?? new List<int>();
                                         
-                                        var totalStudentsCount = allowedIds.Count(id => studentsMap.ContainsKey(id));
+                                            if (!allowedIds.Any() && group.GroupStudents != null)
+                                            {
+                                                allowedIds = group.GroupStudents.Select(gs => gs.StudentId).ToList();
+                                            }
+                                        
+                                            var totalStudentsCount = allowedIds.Count(id => studentsMap.ContainsKey(id));
 
-                                        <div class="accordion-item mb-2 border rounded-3 overflow-hidden">
-                                            <h2 class="accordion-header" id="headingConfig-@config.Id">
-                                                <button class="accordion-button collapsed bg-light text-dark shadow-none p-3"
-                                                        type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig-@config.Id">
-                                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center w-100 me-3">
-                                                        <div class="mb-2 mb-sm-0">
-                                                            <span class="text-primary fw-bold fs-6"><i class="bi bi-book me-1"></i>
-                                                                @config.Course?.Title</span>
-                                                                <span class="badge bg-primary rounded-pill ms-2">Слушателей:
-                                                                    @totalStudentsCount</span>
-                                                                    @if (config.Course?.MintrudProgramId != null)
-                                                                    {
-                                                                        <span class="badge bg-success rounded-pill ms-1"
-                                                                              title="Программа Минтруда"><i class="bi bi-shield-check"></i> Минтруд</span>
-                                                                    }
-                                                                    <div class="text-muted mt-1" style="font-size: 0.85rem;">
-                                                                        Протокол/Приказ: <strong>@config.ProtocolNumber</strong>
+                                            <div class="accordion-item mb-2 border rounded-3 overflow-hidden">
+                                                <h2 class="accordion-header" id="headingConfig-@config.Id">
+                                                    <button class="accordion-button collapsed bg-light text-dark shadow-none p-3"
+                                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfig-@config.Id">
+                                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center w-100 me-3">
+                                                            <div class="mb-2 mb-sm-0">
+                                                                <span class="text-primary fw-bold fs-6"><i class="bi bi-book me-1"></i>
+                                                                    @config.Course?.Title</span>
+                                                                    <span class="badge bg-primary rounded-pill ms-2">Слушателей:
+                                                                        @totalStudentsCount</span>
+                                                                        @if (config.Course?.MintrudProgramId != null)
+                                                                        {
+                                                                            <span class="badge bg-success rounded-pill ms-1" title="Программа Минтруда">
+                                                                                <i class="bi bi-shield-check"></i> Минтруд
+                                                                            </span>
+                                                                        }
+                                                                        <div class="text-muted mt-1" style="font-size: 0.85rem;">
+                                                                            Протокол/Приказ: <strong>@config.ProtocolNumber</strong>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        </button>
-                                                    </h2>
+                                                            </button>
+                                                        </h2>
                             
-                                                    <div id="collapseConfig-@config.Id" class="accordion-collapse collapse"
-                                                         data-bs-parent="#coursesAccordion-@group.Id">
-                                                        <div class="accordion-body bg-white border-top p-3">
+                                                        <div id="collapseConfig-@config.Id" class="accordion-collapse collapse"
+                                                             data-bs-parent="#coursesAccordion-@group.Id">
+                                                            <div class="accordion-body bg-white border-top p-3">
                                 
-                                                            <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 border rounded shadow-sm">
-                                                                <span class="text-muted fw-semibold ps-2" style="font-size: 0.9rem;">
-                                                                    <i class="bi bi-gear me-1"></i> Генерация документов по курсу:
-                                                                </span>
-                                                                <div>
-                                                                    @if (config.Course?.DocumentTemplates != null &&
-                                                    config.Course.DocumentTemplates.Any())
-                                                                    {
-                                                                        <div class="dropdown">
-                                                                            <button class="btn btn-success btn-sm dropdown-toggle fw-bold"
-                                                                                    type="button" data-bs-toggle="dropdown">
-                                                                                <i class="bi bi-download me-1"></i> Сделать отчет
-                                                                            </button>
-                                                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                                                                @foreach (var template in config.Course.DocumentTemplates.OrderBy(t => t.SortOrder))
-                                                                                {
-                                                                                    <li>
-                                                                                        <button type="button" class="dropdown-item"
-                                                                                                onclick="openReportSetupModal(@config.Id, @template.Id, @(template.RequiresCommission ? "true" : "false"), @(template.IsPerStudent ? "true" : "false"))">
-                                                                                            <i class="bi bi-file-earmark-text me-1"></i> @template.Name
-                                                                                            @if (template.RequiresCommission)
-                                                                                            {
-                                                                                                <i
-                                                                                                class="bi bi-briefcase ms-1 text-warning"
-                                                                                                title="Требует комиссию"></i>
-                                                                                            }
-                                                                                            @if (template.IsPerStudent)
-                                                                                            {
-                                                                                                <i class="bi bi-mortarboard ms-1 text-primary" title="На каждого студента"></i>
-                                                                                            }
-                                                                                        </button>
-                                                                                    </li>
-                                                                                }
-                                                                            </ul>
-                                                                        </div>
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        <button class="btn btn-secondary btn-sm fw-bold" disabled>Сделать отчет (Нет шаблонов)</button>
-                                                                    }
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="bg-white p-3 rounded border shadow-sm mt-4">
-                                                                <span class="text-muted d-block mb-2 fw-semibold" style="font-size: 0.85rem;">
-                                                                    <i class="bi bi-people me-1"></i> Список слушателей (нажмите на строку для просмотра результатов):
-                                                                </span>
-                                        
-
-                                                                @{
-                                                                    var courseStudents = allowedIds
-                                                                        .Where(id => studentsMap.ContainsKey(id))
-                                                                        .Select(id => studentsMap[id])
-                                                                        .OrderBy(s => s.LastName)
-                                                                        .ToList();
-                                            
-                                                                    int rowNumber = 1;
-                                                                }
-
-                                                                @if (!courseStudents.Any())
-                                                                {
-                                                                    <span class="text-danger d-block p-2" style="font-size: 0.9rem;">Нет допущенных студентов</span>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <div class="table-responsive">
-                                                                        <table class="table table-custom table-hover table-bordered bg-white m-0 align-middle" style="cursor: pointer;">
-                                                                            <thead>
-                                                                                <tr>
-                                                                                    <th style="width: 5%; text-align: center;">№</th>
-                                                                                    <th style="width: 35%;">ФИО полностью</th>
-                                                                                    <th style="width: 20%;">Должность</th>
-                                                                                    <th style="width: 25%;">Организация</th>
-                                                                                    <th style="width: 15%;">№ Удостоверения</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                @foreach (var student in courseStudents)
-                                                                                {
-                                                                                    var fullName = $"{student.LastName} {student.FirstName}               {student.MiddleName}".Trim();
-                                                                                    var companyName = student.Company?.Name ?? "Не указана";
-                                                                                    var position = string.IsNullOrEmpty(student.Position) ? "—" : student.Position;
-                                                                            
-                                                                                    var certKey = $"{student.Id}_{config.CourseId}_{config.GroupId}";
-                                                                                    string certNumber = progressMap.ContainsKey(certKey) ?
-                                                            progressMap[certKey] : null;
-
-                                                                                    <tr onclick="openStudentPushModal(@student.Id, @config.CourseId, '@fullName')">
-                                                                                        <td style="text-align: center;" class="text-muted">@(rowNumber++)</td>
-                                                                                        <td class="fw-bold text-dark"><i
-                                                                                            class="bi bi-person me-1 text-muted"></i> @fullName</td>
-                                                                                            <td><span class="text-muted">@position</span></td>
-                                                                                            <td><span class="badge bg-light text-dark border"><i
-                                                                                                class="bi bi-building me-1"></i> @companyName</span></td>
-                                                                                                <td>
-                                                                                                    @if (!string.IsNullOrEmpty(certNumber))
-                                                                                                    {
-                                                                                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 fw-bold">
-                                                                                                            <i class="bi bi-check-circle me-1"></i> @certNumber
-                                                                                                        </span>
-                                                                                                    }
-                                                                                                    else
-                                                                                                    {
-                                                                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">
-                                                                                                            Не присвоен
-                                                                                                        </span>
-                                                                                                    }
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                        }
-                                                                                    </tbody>
-                                                                                </table>
+                                                                <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 border rounded shadow-sm">
+                                                                    <span class="text-muted fw-semibold ps-2" style="font-size: 0.9rem;">
+                                                                        <i class="bi bi-gear me-1"></i> Генерация документов по курсу:
+                                                                    </span>
+                                                                    <div>
+                                                                        @if (config.Course?.DocumentTemplates != null &&
+                                                        config.Course.DocumentTemplates.Any())
+                                                                        {
+                                                                            <div class="dropdown">
+                                                                                <button class="btn btn-success btn-sm dropdown-toggle fw-bold"
+                                                                                        type="button" data-bs-toggle="dropdown">
+                                                                                    <i class="bi bi-download me-1"></i> Сделать отчет
+                                                                                </button>
+                                                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                                                    @foreach (var template in config.Course.DocumentTemplates.OrderBy(t => t.SortOrder))
+                                                                                    {
+                                                                                        <li>
+                                                                                            <button type="button" class="dropdown-item"
+                                                                                                    onclick="openReportSetupModal(@config.Id, @template.Id, @(template.RequiresCommission ? "true" : "false"), @(template.IsPerStudent ? "true" : "false"))">
+                                                                                                <i class="bi bi-file-earmark-text me-1"></i> @template.Name
+                                                                                                @if (template.RequiresCommission)
+                                                                                                {
+                                                                                                    <i class="bi bi-briefcase ms-1 text-warning"
+                                                                                                       title="Требует комиссию"></i>
+                                                                                                }
+                                                                                                @if (template.IsPerStudent)
+                                                                                                {
+                                                                                                    <i class="bi bi-mortarboard ms-1 text-primary" title="На каждого студента"></i>
+                                                                                                }
+                                                                                            </button>
+                                                                                        </li>
+                                                                                    }
+                                                                                </ul>
                                                                             </div>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <button class="btn btn-secondary btn-sm fw-bold" disabled>Сделать отчет (Нет шаблонов)</button>
                                                                         }
                                                                     </div>
                                                                 </div>
+
+                                                                <div class="bg-white p-3 rounded border shadow-sm mt-4">
+                                                                    <span class="text-muted d-block mb-2 fw-semibold" style="font-size: 0.85rem;">
+                                                                        <i class="bi bi-people me-1"></i> Список слушателей (нажмите на строку для просмотра результатов):
+                                                                    </span>
+                                        
+
+
+                                                                    @{
+                                                                        var courseStudents = allowedIds
+                                                                            .Where(id => studentsMap.ContainsKey(id))
+                                                                            .Select(id => studentsMap[id])
+                                                                            .OrderBy(s => s.LastName)
+                                                                            .ToList();
+                                                                        int rowNumber = 1;
+                                                                    }
+
+                                                                    @if (!courseStudents.Any())
+                                                                    {
+                                                                        <span class="text-danger d-block p-2" style="font-size: 0.9rem;">Нет допущенных студентов</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <div class="table-responsive">
+                                                                            <table class="table table-custom table-hover table-bordered bg-white m-0 align-middle" style="cursor: pointer;">
+                                                                                <thead>
+                                                                                    <tr>
+                                                                                        <th style="width: 5%; text-align: center;">№</th>
+                                                                                        <th style="width: 35%;">ФИО полностью</th>
+                                                                                        <th style="width: 20%;">Должность</th>
+                                                                                        <th style="width: 25%;">Организация</th>
+                                                                                        <th style="width: 10%;" class="text-center">Результат</th>
+                                                                                        <th style="width: 15%;">№ Удостоверения</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                    @foreach (var student in courseStudents)
+                                                                                    {
+                                                                                        var fullName = $"{student.LastName} {student.FirstName}                                                   {student.MiddleName}".Trim();
+                                                                                        var companyName = student.Company?.Name ?? "Не указана";
+                                                                                        var position = string.IsNullOrEmpty(student.Position) ? "—" : student.Position;
+                                                                            
+                                                                                        var certKey = $"{student.Id}_{config.CourseId}_{config.GroupId}";
+                                                                                        string certNumber = progressMap.ContainsKey(certKey) ?
+                                                                progressMap[certKey] : null;
+                                                                                        var testKey = $"{student.Id}_{config.CourseId}_{config.GroupId}";
+                                                                                        bool isPassed = passedTests.Contains(testKey);
+
+                                                                                        <tr onclick="openStudentPushModal(@student.Id, @config.CourseId, @config.GroupId, '@fullName')">
+                                                                                            <td style="text-align: center;" class="text-muted">@(rowNumber++)</td>
+                                                                                            <td class="fw-bold text-dark"><i
+                                                                                                class="bi bi-person me-1 text-muted"></i> @fullName</td>
+                                                                                                <td><span class="text-muted">@position</span></td>
+                                                                                                <td><span class="badge bg-light text-dark border"><i
+                                                                                                    class="bi bi-building me-1"></i> @companyName</span></td>
+                                                                                                    <td class="text-center">
+    @if (isPassed)
+    {
+        <span class="badge bg-success text-white px-3 py-2 rounded-pill" style="font-size: 0.75rem; font-weight: 600;">Сдал</span>
+    }
+    else
+    {
+        <span class="badge bg-danger text-white px-3 py-2 rounded-pill" style="font-size: 0.75rem; font-weight: 600;">Не сдал</span>
+    }
+</td>
+                                                                                                    <td>
+                                                                                                        @if (!string.IsNullOrEmpty(certNumber))
+                                                                                                        {
+                                                                                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 fw-bold">
+                                                                                                                <i class="bi bi-check-circle me-1"></i> @certNumber
+                                                                                                            </span>
+                                                                                                        }
+                                                                                                        else
+                                                                                                        {
+                                                                                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">
+                                                                                                                Не присвоен
+                                                                                                            </span>
+                                                                                                        }
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            }
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
+                                }
+                            </div>
 
-                <!-- ЕДИНАЯ МОДАЛКА ПРИСВОЕНИЯ НОМЕРОВ -->
-                <div class="modal fade" id="assignCertificatesModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
-                        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                                 style="width: 70px; height: 70px;">
-                                <i class="bi bi-award fs-2 text-primary"></i>
+                            <!-- Пагинация -->
+                            <div class="d-flex justify-content-between align-items-center px-1 mb-5 mt-3">
+                                <div id="groupPaginationInfo" class="small text-muted fw-bold">Показано 0-0 из 0 групп</div>
+                                <nav>
+                                    <ul id="groupPaginationButtons" class="pagination pagination-sm m-0">
+                                        <!-- Генерируется через JS -->
+                                    </ul>
+                                </nav>
                             </div>
-                            <h5 class="fw-bold text-dark mb-2">Присвоение номеров</h5>
-                            <p class="text-muted small mb-4">
-                                Вы уверены, что хотите присвоить номера удостоверений <strong>сразу для всех курсов</strong> этой
-                                группы?<br><br>
-                                <span class="text-success fw-bold"><i class="bi bi-info-circle me-1"></i> Студентам, у которых уже есть
-                                    номера, они не будут изменены.</span>
-                                </p>
-            
-                                <div class="d-flex gap-2 justify-content-center">
-                                    <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
-                                            data-bs-dismiss="modal">Отмена</button>
-                                    <button type="button" id="confirmAssignBtn" class="btn btn-brand fw-bold w-50 rounded-3">
-                                        <i class="bi bi-check-lg me-1"></i> Присвоить
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        }
                     </div>
 
-                    <!-- МОДАЛЬНОЕ ОКНО 1: ПРОСМОТР РЕЗУЛЬТАТОВ ТЕСТИРОВАНИЯ СТУДЕНТА -->
-                    <div class="modal fade" id="studentReportModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-                         aria-labelledby="studentReportModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                            <div class="modal-content shadow-lg border-0 rounded-4">
-                                <div class="modal-header bg-dark text-white rounded-top-4">
-                                    <h5 class="modal-title d-flex align-items-center gap-2" id="studentReportModalLabel">
-                                        <i class="bi bi-bar-chart-line"></i> Результаты обучения
-                                    </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
+                    <!-- МОДАЛКА ПРИСВОЕНИЯ НОМЕРОВ -->
+                    <div class="modal fade" id="assignCertificatesModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+                            <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                     style="width: 70px; height: 70px;">
+                                    <i class="bi bi-award fs-2 text-primary"></i>
                                 </div>
-                                <div class="modal-body p-4">
-                                    <div class="mb-4 bg-light p-3 rounded border">
-                                        <strong class="text-muted small fw-bold text-uppercase">Слушатель:</strong>
-                                        <span id="modalStudentName" class="text-primary fs-5 fw-bold ms-2"></span>
+                                <h5 class="fw-bold text-dark mb-2">Присвоение номеров</h5>
+                                <p class="text-muted small mb-4">
+                                    Вы уверены, что хотите присвоить номера удостоверений <strong>сразу для всех курсов</strong> этой
+                                    группы?<br><br>
+                                    <span class="text-success fw-bold"><i class="bi bi-info-circle me-1"></i> Студентам, у которых уже есть
+                                        номера, они не будут изменены.</span>
+                                    </p>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
+                                                data-bs-dismiss="modal">Отмена</button>
+                                        <button type="button" id="confirmAssignBtn" class="btn btn-brand fw-bold w-50 rounded-3">
+                                            <i class="bi bi-check-lg me-1"></i> Присвоить
+                                        </button>
                                     </div>
-                                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-list-check me-1"></i> Пройденные тесты по курсу:
-                                    </h6>
-                                    <div class="table-responsive border rounded">
-                                        <table class="table table-hover table-striped align-middle m-0">
-                                            <thead class="table-light text-muted small fw-bold">
-                                                <tr>
-                                                    <th>Тест / Материал</th>
-                                                    <th>Статус</th>
-                                                    <th>Баллы (%)</th>
-                                                    <th>Верно</th>
-                                                    <th>Дата сдачи</th>
-                                                    <th class="text-center">Действие</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="modalAttemptsTableBody"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                                    <button type="button" class="btn btn-light border fw-bold px-4 rounded-3"
-                                            data-bs-dismiss="modal">Закрыть</button>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- МОДАЛЬНОЕ ОКНО 2: УНИВЕРСАЛЬНАЯ НАСТРОЙКА ПАРАМЕТРОВ ГЕНЕРАЦИИ ОТЧЕТА -->
-                    <div class="modal fade" id="reportSetupModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-                         aria-labelledby="reportSetupModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-md modal-dialog-centered">
-                            <div class="modal-content shadow-lg border-0 rounded-4">
-                                <form asp-action="GenerateCourseReport" method="post">
-                                    <input type="hidden" id="modalGroupConfigId" name="groupConfigId" value="" />
-                                    <input type="hidden" id="modalTemplateId" name="templateId" value="" />
-
-                                    <div class="modal-header bg-primary text-white rounded-top-4">
-                                        <h5 class="modal-title d-flex align-items-center gap-2" id="reportSetupModalLabel">
-                                            <i class="bi bi-gear-fill"></i> Настройка формирования
+                        <!-- МОДАЛЬНОЕ ОКНО: РЕЗУЛЬТАТЫ ТЕСТИРОВАНИЯ СТУДЕНТА -->
+                        <div class="modal fade" id="studentReportModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+                             aria-labelledby="studentReportModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                <div class="modal-content shadow-lg border-0 rounded-4">
+                                    <div class="modal-header bg-dark text-white rounded-top-4">
+                                        <h5 class="modal-title d-flex align-items-center gap-2" id="studentReportModalLabel">
+                                            <i class="bi bi-bar-chart-line"></i> Результаты обучения
                                         </h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body p-4">
-                                        <div class="p-3 bg-light border rounded-3 mb-3">
-                                            <div class="form-check form-switch m-0">
-                                                <input class="form-check-input" type="checkbox" id="checkboxSplitByCompany"
-                                                       name="splitByCompany" value="true" style="cursor: pointer;">
-                                                <label class="form-check-label fw-bold text-dark" for="checkboxSplitByCompany"
-                                                       style="cursor: pointer;">
-                                                    <i class="bi bi-building me-1"></i> Разделить файлы по компаниям?
-                                                </label>
-                                            </div>
-                                            <small class="text-muted d-block mt-1">Если включено, система сформирует ZIP-архив с отдельными
-                                                файлами под каждую организацию.</small>
-                                            </div>
-
-                                            <div id="commissionFieldsBlock" class="d-none">
-                                                <div class="row mb-3">
-                                                    <div class="col-md-7">
-                                                        <label class="form-label small fw-bold">Номер приказа комиссии:</label>
-                                                        <input type="text" id="inputCommissionOrderNumber" name="commissionOrderNumber"
-                                                               class="form-control form-control-sm" placeholder="Например: № 45-ОД">
-                                                    </div>
-                                                    <div class="col-md-5">
-                                                        <label class="form-label small fw-bold">Дата приказа:</label>
-                                                        <input type="date" id="inputCommissionOrderDate" name="commissionOrderDate"
-                                                               class="form-control form-control-sm">
-                                                    </div>
-                                                </div>
-                                                <h6 class="text-primary fw-bold border-bottom pb-1 mb-3"><i class="bi bi-briefcase me-1"></i>
-                                                    Члены комиссии:</h6>
-                                                    <div class="mb-3">
-                                                        <label class="form-label small fw-bold">Председатель комиссии:</label>
-                                                        <select id="selectChairman" name="chairmanInput" class="commission-select"
-                                                                placeholder="Выберите или введите..."></select>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label class="form-label small fw-bold">Член комиссии №1:</label>
-                                                        <select id="selectMember1" name="member1Input" class="commission-select"
-                                                                placeholder="Выберите или введите..."></select>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label class="form-label small fw-bold">Член комиссии №2:</label>
-                                                        <select id="selectMember2" name="member2Input" class="commission-select"
-                                                                placeholder="Выберите или введите..."></select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                                                <button type="button" class="btn btn-light border fw-bold px-4 rounded-3"
-                                                        data-bs-dismiss="modal">Отмена</button>
-                                                <button type="submit" class="btn btn-brand fw-bold px-4 rounded-3"><i
-                                                    class="bi bi-download me-1"></i> Сформировать</button>
-                                                </div>
-                                            </form>
+                                        <div class="mb-4 bg-light p-3 rounded border">
+                                            <strong class="text-muted small fw-bold text-uppercase">Слушатель:</strong>
+                                            <span id="modalStudentName" class="text-primary fs-5 fw-bold ms-2"></span>
+                                        </div>
+                                        <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-list-check me-1"></i> Пройденные тесты по курсу:
+                                        </h6>
+                                        <div class="table-responsive border rounded">
+                                            <table class="table table-hover table-striped align-middle m-0">
+                                                <thead class="table-light text-muted small fw-bold">
+                                                    <tr>
+                                                        <th>Тест / Материал</th>
+                                                        <th>Статус</th>
+                                                        <th>Баллы (%)</th>
+                                                        <th>Верно</th>
+                                                        <th>Дата сдачи</th>
+                                                        <th class="text-center">Действие</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="modalAttemptsTableBody"></tbody>
+                                            </table>
                                         </div>
                                     </div>
+                                    <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                                        <button type="button" class="btn btn-light border fw-bold px-4 rounded-3"
+                                                data-bs-dismiss="modal">Закрыть</button>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                @section Scripts {
-                                    <script>
-                                        // ==========================================
-                                        // ФУНКЦИЯ УВЕДОМЛЕНИЙ (TOASTS)
-                                        // ==========================================
-                                        function showToast(message, type = 'success') {
-                                            const container = document.getElementById('toastContainer');
-                                            const toast = document.createElement('div');
-            
-                                            toast.className = `custom-toast ${type}`;
-            
-                                            let iconClass = 'bi-check-circle-fill text-success';
-                                            if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
-                                            if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
-            
-                                            toast.innerHTML = `
-                                                    <i class="bi ${iconClass} fs-4 me-3"></i>
-                                                    <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
-                                                `;
-            
-                                            container.appendChild(toast);
-            
-                                            setTimeout(() => {
-                                                toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-                                                setTimeout(() => toast.remove(), 300);
-                                            }, 4000);
-                                        }
+                        <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКА ГЕНЕРАЦИИ ОТЧЕТА -->
+                        <div class="modal fade" id="reportSetupModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+                             aria-labelledby="reportSetupModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-md modal-dialog-centered">
+                                <div class="modal-content shadow-lg border-0 rounded-4">
+                                    <form asp-action="GenerateCourseReport" method="post">
+                                        <input type="hidden" id="modalGroupConfigId" name="groupConfigId" value="" />
+                                        <input type="hidden" id="modalTemplateId" name="templateId" value="" />
 
-                                        // ==========================================
-                                        // ЛОГИКА ПРИСВОЕНИЯ НОМЕРОВ (ДЛЯ ВСЕЙ ГРУППЫ)
-                                        // ==========================================
-                                        let currentAssignGroupId = null;
+                                        <div class="modal-header bg-primary text-white rounded-top-4">
+                                            <h5 class="modal-title d-flex align-items-center gap-2" id="reportSetupModalLabel">
+                                                <i class="bi bi-gear-fill"></i> Настройка формирования
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="p-3 bg-light border rounded-3 mb-3">
+                                                <div class="form-check form-switch m-0">
+                                                    <input class="form-check-input" type="checkbox" id="checkboxSplitByCompany"
+                                                           name="splitByCompany" value="true" style="cursor: pointer;">
+                                                    <label class="form-check-label fw-bold text-dark" for="checkboxSplitByCompany"
+                                                           style="cursor: pointer;">
+                                                        <i class="bi bi-building me-1"></i> Разделить файлы по компаниям?
+                                                    </label>
+                                                </div>
+                                                <small class="text-muted d-block mt-1">Если включено, система сформирует ZIP-архив с отдельными
+                                                    файлами под каждую организацию.</small>
+                                                </div>
 
-                                        function openAssignModal(groupId) {
-                                            currentAssignGroupId = groupId;
-                                            new bootstrap.Modal(document.getElementById('assignCertificatesModal')).show();
-                                        }
+                                                <div id="commissionFieldsBlock" class="d-none">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-7">
+                                                            <label class="form-label small fw-bold">Номер приказа комиссии:</label>
+                                                            <input type="text" id="inputCommissionOrderNumber" name="commissionOrderNumber"
+                                                                   class="form-control form-control-sm" placeholder="Например: № 45-ОД">
+                                                        </div>
+                                                        <div class="col-md-5">
+                                                            <label class="form-label small fw-bold">Дата приказа:</label>
+                                                            <input type="date" id="inputCommissionOrderDate" name="commissionOrderDate"
+                                                                   class="form-control form-control-sm">
+                                                        </div>
+                                                    </div>
+                                                    <h6 class="text-primary fw-bold border-bottom pb-1 mb-3"><i class="bi bi-briefcase me-1"></i>
+                                                        Члены комиссии:</h6>
+                                                        <div class="mb-3">
+                                                            <label class="form-label small fw-bold">Председатель комиссии:</label>
+                                                            <select id="selectChairman" name="chairmanInput" class="commission-select"
+                                                                    placeholder="Выберите или введите..."></select>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label small fw-bold">Член комиссии №1:</label>
+                                                            <select id="selectMember1" name="member1Input" class="commission-select"
+                                                                    placeholder="Выберите или введите..."></select>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label small fw-bold">Член комиссии №2:</label>
+                                                            <select id="selectMember2" name="member2Input" class="commission-select"
+                                                                    placeholder="Выберите или введите..."></select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                                                    <button type="button" class="btn btn-light border fw-bold px-4 rounded-3"
+                                                            data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="submit" class="btn btn-brand fw-bold px-4 rounded-3"><i
+                                                        class="bi bi-download me-1"></i> Сформировать</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                        document.getElementById('confirmAssignBtn').addEventListener('click', async function () {
-                                            if (!currentAssignGroupId) return;
-            
-                                            this.disabled = true;
-                                            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
+                                    <!-- МОДАЛКА ЗАГРУЗКИ НОМЕРОВ ИЗ МИНТРУДА -->
+                                    <div class="modal fade" id="importMintrudModal" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                                <div class="modal-header bg-warning text-white rounded-top-4">
+                                                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel me-2"></i> Загрузка номеров из
+                                                        Минтруда</h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <p class="text-muted small mb-3">Выберите Excel-файл, выгруженный из Минтруда. Система сопоставит номера
+                                                            по колонке «Id внешней системы» и обновит официальные номера.</p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold small">ФАЙЛ EXCEL</label>
+                                                                <input type="file" id="mintrudFileInput" class="form-control modal-input" accept=".xlsx, .xls" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                                                            <button type="button" class="btn btn-light border fw-bold" data-bs-dismiss="modal">Отмена</button>
+                                                            <button type="button" id="btnImportMintrud" class="btn btn-warning fw-bold text-white"
+                                                                    onclick="importMintrudNumbers()">
+                                                                <i class="bi bi-upload me-1"></i> Загрузить
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                            try {
-                                                const response = await fetch(`/Report/AssignCertificates?groupId=${currentAssignGroupId}`, {
-                                                    method: 'POST'
-                                                });
-                                                const result = await response.json();
-                
-                                                bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
-
-                                                if (result.success) {
-                                                    showToast(result.message, 'success');
-                                                    setTimeout(() => window.location.reload(), 1500);
-                                                } else {
-                                                    showToast("Ошибка: " + result.message, 'danger');
-                                                }
-                                            } catch (err) {
-                                                bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
-                                                showToast("Ошибка сети при попытке присвоения номеров.", 'danger');
-                                            } finally {
-                                                this.disabled = false;
-                                                this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Присвоить';
-                                            }
-                                        });
-
-                                        // ==========================================
-                                        // ЛОГИКА ФОРМИРОВАНИЯ XML ДЛЯ МИНТРУДА
-                                        // ==========================================
-                                        async function exportMintrudXml(groupId) {
-                                            try {
-                                                const response = await fetch(`/Report/ExportGroupToMintrudXml?groupId=${groupId}`);
-                
-                                                if (response.ok) {
-                                                    const blob = await response.blob();
-                    
-                                                    let filename = `EISOT_Группа_${groupId}.xml`;
-                                                    const disposition = response.headers.get('Content-Disposition');
-                                                    if (disposition && disposition.includes('filename=')) {
-                                                        const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                                                        if (match && match[1]) {
-                                                            filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
-                                                        }
+                                            @section Scripts {
+                                                <script>
+                                                    // ==========================================
+                                                    // TOASTS
+                                                    // ==========================================
+                                                    function showToast(message, type = 'success') {
+                                                        const container = document.getElementById('toastContainer');
+                                                        const toast = document.createElement('div');
+                                                        toast.className = `custom-toast ${type}`;
+                                                        let iconClass = 'bi-check-circle-fill text-success';
+                                                        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+                                                        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+                                                        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+                                                        container.appendChild(toast);
+                                                        setTimeout(() => {
+                                                            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+                                                            setTimeout(() => toast.remove(), 300);
+                                                        }, 4000);
                                                     }
-                    
-                                                    const url = window.URL.createObjectURL(blob);
-                                                    const a = document.createElement('a');
-                                                    a.href = url;
-                                                    a.download = filename;
-                                                    document.body.appendChild(a);
-                                                    a.click();
-                                                    a.remove();
-                                                    window.URL.revokeObjectURL(url);
-                    
-                                                    showToast('XML-файл для Минтруда успешно сформирован!', 'success');
-                                                } else {
-                                                    // Сервер вернул ошибку (400) с JSON
-                                                    const errorJson = await response.json();
-                                                    showToast(errorJson.message || 'Ошибка формирования XML-файла.', 'danger');
-                                                }
-                                            } catch (err) {
-                                                showToast('Ошибка сети при формировании XML-файла.', 'danger');
-                                            }
-                                        }
 
-                                        // ==========================================
-                                        // ОСТАЛЬНАЯ ЛОГИКА (Комиссия, Отчеты, Тесты)
-                                        // ==========================================
-                                        const commissionData = [
-                                                @foreach (var c in commission)
-                                            {
-                                                        @: { value: '@c.Id', text: '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(c.DisplayName)' },
-                                            }
-                                            ];
+                                                    // ==========================================
+                                                    // ФИЛЬТР И ПАГИНАЦИЯ
+                                                    // ==========================================
+                                                    let currentGroupPage = 1;
+                                                    const groupsAccordion = document.getElementById('groupsAccordion');
+                                                    const groupItems = groupsAccordion ? Array.from(groupsAccordion.querySelectorAll('.group-item')) : [];
+                                                    const groupSearchInput = document.getElementById('groupSearchInput');
+                                                    const groupPageSizeSelect = document.getElementById('groupPageSizeSelect');
+                                                    let groupPageSize = groupPageSizeSelect ? parseInt(groupPageSizeSelect.value) : 10;
 
-                                        let tsChairman, tsMember1, tsMember2;
+                                                    function updateGroupsPagination() {
+                                                        if (!groupsAccordion) return;
+                                                        const searchText = groupSearchInput.value.trim().toLowerCase();
 
-                                        document.addEventListener("DOMContentLoaded", function () {
-                                            const selectConfig = {
-                                                options: commissionData,
-                                                valueField: 'value',
-                                                labelField: 'text',
-                                                searchField: ['text'],
-                                                create: true,
-                                                createOnBlur: true,
-                                                persist: false,
-                                                plugins: ['dropdown_input']
-                                            };
-
-                                            tsChairman = new TomSelect('#selectChairman', selectConfig);
-                                            tsMember1 = new TomSelect('#selectMember1', selectConfig);
-                                            tsMember2 = new TomSelect('#selectMember2', selectConfig);
-                                        });
-
-                                        function openReportSetupModal(groupConfigId, templateId, requiresCommission, isPerStudent) {
-                                            document.getElementById('modalGroupConfigId').value = groupConfigId;
-                                            document.getElementById('modalTemplateId').value = templateId;
-                                            document.getElementById('checkboxSplitByCompany').checked = false;
-
-                                            const commissionBlock = document.getElementById('commissionFieldsBlock');
-                                            const companyBlock = document.getElementById('checkboxSplitByCompany').closest('.p-3');
-                                            const selects = [document.getElementById('selectChairman'), document.getElementById('selectMember1'), document.getElementById('selectMember2')];
-                                            const orderNumInput = document.getElementById('inputCommissionOrderNumber');
-                                            const orderDateInput = document.getElementById('inputCommissionOrderDate');
-
-                                            if (requiresCommission) {
-                                                commissionBlock.classList.remove('d-none');
-                                                selects.forEach(s => s.setAttribute('required', 'required'));
-                                                orderNumInput.setAttribute('required', 'required');
-                                                orderDateInput.setAttribute('required', 'required');
-                                                orderNumInput.value = "";
-                                                orderDateInput.value = "";
-                                                if (tsChairman) { tsChairman.clear(); tsMember1.clear(); tsMember2.clear(); }
-                                            } else {
-                                                commissionBlock.classList.add('d-none');
-                                                selects.forEach(s => s.removeAttribute('required'));
-                                                orderNumInput.removeAttribute('required');
-                                                orderDateInput.removeAttribute('required');
-                                            }
-
-                                            if (isPerStudent) {
-                                                companyBlock.classList.add('d-none');
-                                            } else {
-                                                companyBlock.classList.remove('d-none');
-                                            }
-
-                                            new bootstrap.Modal(document.getElementById('reportSetupModal')).show();
-                                        }
-
-                                        function openStudentPushModal(studentId, courseId, fullName) {
-                                            document.getElementById('modalStudentName').innerText = fullName;
-                                            const tableBody = document.getElementById('modalAttemptsTableBody');
-                                            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Загрузка данных...</td></tr>';
-
-                                            new bootstrap.Modal(document.getElementById('studentReportModal')).show();
-
-                                            fetch(`/Report/GetStudentTestAttempts?studentId=${studentId}&courseId=${courseId}`)
-                                                .then(response => response.json())
-                                                .then(data => {
-                                                    tableBody.innerHTML = '';
-                                                    if (data.length === 0) {
-                                                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Попыток сдачи тестов не найдено.</td></tr>';
-                                                        return;
-                                                    }
-                                                    data.forEach(attempt => {
-                                                        let statusBadge = `<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>В процессе</span>`;
-                                                        if (attempt.status === 'Passed' || attempt.status === 'Success' || attempt.status === 'Completed') {
-                                                            statusBadge = `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Сдано</span>`;
-                                                        } else if (attempt.status === 'Failed') {
-                                                            statusBadge = `<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Не сдано</span>`;
-                                                        } else if (attempt.status === 'Abandoned') {
-                                                            statusBadge = `<span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i>Аннулирован</span>`;
+                                                        let filteredItems = groupItems;
+                                                        if (searchText.length > 0) {
+                                                            filteredItems = groupItems.filter(item => item.textContent.toLowerCase().includes(searchText));
                                                         }
 
-                                                        tableBody.insertAdjacentHTML('beforeend', `
-                                                                <tr>
-                                                                    <td class="fw-bold text-dark">${attempt.testName}</td>
-                                                                    <td>${statusBadge}</td>
-                                                                    <td><span class="fw-bold text-primary">${attempt.scorePercentage}%</span></td>
-                                                                    <td>${attempt.correctAnswersCount} / ${attempt.totalQuestionsCount}</td>
-                                                                    <td class="text-muted small">${attempt.finishedAt}</td>
-                                                                    <td class="text-center">
-                                                                        <a href="/Report/DownloadTestResult?attemptId=${attempt.id}" class="btn btn-sm btn-outline-primary rounded-3" title="Скачать протокол">
-                                                                            <i class="bi bi-download"></i>
-                                                                        </a>
-                                                                    </td>
-                                                                </tr>
-                                                            `);
+                                                        const totalRows = filteredItems.length;
+                                                        const infoEl = document.getElementById('groupPaginationInfo');
+                                                        const buttonsEl = document.getElementById('groupPaginationButtons');
+
+                                                        if (totalRows === 0) {
+                                                            groupItems.forEach(item => item.style.display = 'none');
+                                                            infoEl.textContent = 'Показано 0-0 из 0 групп';
+                                                            buttonsEl.innerHTML = '';
+                                                            updateSelectedCount();
+                                                            return;
+                                                        }
+
+                                                        const totalPages = Math.ceil(totalRows / groupPageSize);
+                                                        if (currentGroupPage > totalPages) currentGroupPage = totalPages;
+                                                        if (currentGroupPage < 1) currentGroupPage = 1;
+
+                                                        const startIndex = (currentGroupPage - 1) * groupPageSize;
+                                                        const endIndex = Math.min(startIndex + groupPageSize, totalRows);
+
+                                                        groupItems.forEach(item => item.style.display = 'none');
+                                                        filteredItems.slice(startIndex, endIndex).forEach(item => item.style.display = '');
+
+                                                        infoEl.textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} групп`;
+
+                                                        buttonsEl.innerHTML = '';
+
+                                                        const prevLi = document.createElement('li');
+                                                        prevLi.className = `page-item ${currentGroupPage === 1 ? 'disabled' : ''}`;
+                                                        prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
+                                                        if (currentGroupPage > 1) {
+                                                            prevLi.addEventListener('click', () => { currentGroupPage--; updateGroupsPagination(); });
+                                                        }
+                                                        buttonsEl.appendChild(prevLi);
+
+                                                        for (let i = 1; i <= totalPages; i++) {
+                                                            const li = document.createElement('li');
+                                                            li.className = `page-item ${currentGroupPage === i ? 'active' : ''}`;
+                                                            li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+                                                            li.addEventListener('click', () => { currentGroupPage = i; updateGroupsPagination(); });
+                                                            buttonsEl.appendChild(li);
+                                                        }
+
+                                                        const nextLi = document.createElement('li');
+                                                        nextLi.className = `page-item ${currentGroupPage === totalPages ? 'disabled' : ''}`;
+                                                        nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
+                                                        if (currentGroupPage < totalPages) {
+                                                            nextLi.addEventListener('click', () => { currentGroupPage++; updateGroupsPagination(); });
+                                                        }
+                                                        buttonsEl.appendChild(nextLi);
+
+                                                        updateSelectedCount();
+                                                    }
+
+                                                    if (groupSearchInput) {
+                                                        groupSearchInput.addEventListener('input', () => {
+                                                            currentGroupPage = 1;
+                                                            updateGroupsPagination();
+                                                        });
+                                                    }
+                                                    if (groupPageSizeSelect) {
+                                                        groupPageSizeSelect.addEventListener('change', function () {
+                                                            groupPageSize = parseInt(this.value);
+                                                            currentGroupPage = 1;
+                                                            updateGroupsPagination();
+                                                        });
+                                                    }
+
+                                                    // ==========================================
+                                                    // МАССОВЫЙ ВЫБОР
+                                                    // ==========================================
+                                                    function toggleSelectAll(source) {
+                                                        const checkboxes = document.querySelectorAll('.group-checkbox');
+                                                        checkboxes.forEach(cb => {
+                                                            const groupItem = cb.closest('.group-item');
+                                                            if (groupItem && groupItem.style.display !== 'none') {
+                                                                cb.checked = source.checked;
+                                                            }
+                                                        });
+                                                        if (!source.checked) {
+                                                            checkboxes.forEach(cb => cb.checked = false);
+                                                        }
+                                                        updateSelectedCount();
+                                                    }
+
+                                                    function updateSelectedCount() {
+                                                        const checked = document.querySelectorAll('.group-checkbox:checked');
+                                                        const badge = document.getElementById('selectedCountBadge');
+                                                        if (badge) {
+                                                            if (checked.length > 0) {
+                                                                badge.textContent = checked.length;
+                                                                badge.classList.remove('d-none');
+                                                            } else {
+                                                                badge.classList.add('d-none');
+                                                            }
+                                                        }
+            
+                                                        // Синхронизируем чекбокс "Выбрать все"
+                                                        const selectAll = document.getElementById('selectAllGroups');
+                                                        if (selectAll) {
+                                                            const visibleCheckboxes = Array.from(document.querySelectorAll('.group-checkbox')).filter(cb => {
+                                                                const groupItem = cb.closest('.group-item');
+                                                                return groupItem && groupItem.style.display !== 'none';
+                                                            });
+                                                            if (visibleCheckboxes.length > 0) {
+                                                                selectAll.checked = visibleCheckboxes.every(cb => cb.checked);
+                                                            } else {
+                                                                selectAll.checked = false;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    function getSelectedGroupIds() {
+                                                        return Array.from(document.querySelectorAll('.group-checkbox:checked')).map(cb => parseInt(cb.value));
+                                                    }
+
+                                                    // ==========================================
+                                                    // ГЕНЕРАЦИЯ XML ПО ВЫБРАННЫМ ГРУППАМ
+                                                    // ==========================================
+                                                    async function generateMintrudXml() {
+                                                        const groupIds = getSelectedGroupIds();
+                                                        if (groupIds.length === 0) {
+                                                            showToast('Выберите хотя бы одну группу для формирования шаблона', 'danger');
+                                                            return;
+                                                        }
+
+                                                        try {
+                                                            const formData = new FormData();
+                                                            groupIds.forEach(id => formData.append('groupIds', id));
+
+                                                            const response = await fetch('/Report/ExportGroupsToMintrudXml', {
+                                                                method: 'POST',
+                                                                body: formData
+                                                            });
+
+                                                            if (response.ok) {
+                                                                const blob = await response.blob();
+                                                                let filename = `EISOT_Группы.xml`;
+                                                                const disposition = response.headers.get('Content-Disposition');
+                                                                if (disposition && disposition.includes('filename=')) {
+                                                                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                                                                    if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
+                                                                }
+                                                                const url = window.URL.createObjectURL(blob);
+                                                                const a = document.createElement('a');
+                                                                a.href = url;
+                                                                a.download = filename;
+                                                                document.body.appendChild(a);
+                                                                a.click();
+                                                                a.remove();
+                                                                window.URL.revokeObjectURL(url);
+                                                                showToast('XML-файл успешно сформирован!', 'success');
+                                                            } else {
+                                                                const errorJson = await response.json();
+                                                                showToast(errorJson.message || 'Ошибка формирования XML', 'danger');
+                                                            }
+                                                        } catch (err) {
+                                                            showToast('Ошибка сети при формировании XML', 'danger');
+                                                        }
+                                                    }
+
+                                                    // ==========================================
+                                                    // ПРИСВОЕНИЕ НОМЕРОВ (одиночное)
+                                                    // ==========================================
+                                                    let currentAssignGroupId = null;
+
+                                                    function openAssignModal(groupId) {
+                                                        currentAssignGroupId = groupId;
+                                                        new bootstrap.Modal(document.getElementById('assignCertificatesModal')).show();
+                                                    }
+
+                                                    document.getElementById('confirmAssignBtn').addEventListener('click', async function () {
+                                                        if (!currentAssignGroupId) return;
+                                                        this.disabled = true;
+                                                        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
+
+                                                        try {
+                                                            const response = await fetch(`/Report/AssignCertificates?groupId=${currentAssignGroupId}`, { method: 'POST' });
+                                                            const result = await response.json();
+                                                            bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
+
+                                                            if (result.success) {
+                                                                showToast(result.message, 'success');
+                                                                setTimeout(() => window.location.reload(), 1500);
+                                                            } else {
+                                                                showToast("Ошибка: " + result.message, 'danger');
+                                                            }
+                                                        } catch (err) {
+                                                            bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
+                                                            showToast("Ошибка сети при попытке присвоения номеров.", 'danger');
+                                                        } finally {
+                                                            this.disabled = false;
+                                                            this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Присвоить';
+                                                        }
                                                     });
-                                                })
-                                                .catch(() => {
-                                                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Ошибка загрузки данных.</td></tr>';
-                                                });
-                                        }
-                                    </script>
-                                }
+
+                                                    // ==========================================
+                                                    // КОМИССИЯ (Tom Select) + ОТЧЕТЫ
+                                                    // ==========================================
+                                                    const commissionData = [
+                                                                                                                                                                                                                                                                                                                                                            @foreach (var c in commission)
+                                                        {
+                                                                                                                                                                                                                                                                                                                                                                                            @: { value: '@c.Id', text: '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(c.DisplayName)' },
+                                                        }
+                                                                                                                                                                                                                                                                                                                                                        ];
+
+                                                    let tsChairman, tsMember1, tsMember2;
+
+                                                    document.addEventListener("DOMContentLoaded", function () {
+                                                        const selectConfig = {
+                                                            options: commissionData,
+                                                            valueField: 'value',
+                                                            labelField: 'text',
+                                                            searchField: ['text'],
+                                                            create: true,
+                                                            createOnBlur: true,
+                                                            persist: false,
+                                                            plugins: ['dropdown_input']
+                                                        };
+                                                        tsChairman = new TomSelect('#selectChairman', selectConfig);
+                                                        tsMember1 = new TomSelect('#selectMember1', selectConfig);
+                                                        tsMember2 = new TomSelect('#selectMember2', selectConfig);
+
+                                                        updateGroupsPagination();
+                                                    });
+
+                                                    function openReportSetupModal(groupConfigId, templateId, requiresCommission, isPerStudent) {
+                                                        document.getElementById('modalGroupConfigId').value = groupConfigId;
+                                                        document.getElementById('modalTemplateId').value = templateId;
+                                                        document.getElementById('checkboxSplitByCompany').checked = false;
+
+                                                        const commissionBlock = document.getElementById('commissionFieldsBlock');
+                                                        const companyBlock = document.getElementById('checkboxSplitByCompany').closest('.p-3');
+                                                        const selects = [document.getElementById('selectChairman'), document.getElementById('selectMember1'), document.getElementById('selectMember2')];
+                                                        const orderNumInput = document.getElementById('inputCommissionOrderNumber');
+                                                        const orderDateInput = document.getElementById('inputCommissionOrderDate');
+
+                                                        if (requiresCommission) {
+                                                            commissionBlock.classList.remove('d-none');
+                                                            selects.forEach(s => s.setAttribute('required', 'required'));
+                                                            orderNumInput.setAttribute('required', 'required');
+                                                            orderDateInput.setAttribute('required', 'required');
+                                                            orderNumInput.value = "";
+                                                            orderDateInput.value = "";
+                                                            if (tsChairman) { tsChairman.clear(); tsMember1.clear(); tsMember2.clear(); }
+                                                        } else {
+                                                            commissionBlock.classList.add('d-none');
+                                                            selects.forEach(s => s.removeAttribute('required'));
+                                                            orderNumInput.removeAttribute('required');
+                                                            orderDateInput.removeAttribute('required');
+                                                        }
+
+                                                        if (isPerStudent) companyBlock.classList.add('d-none');
+                                                        else companyBlock.classList.remove('d-none');
+
+                                                        new bootstrap.Modal(document.getElementById('reportSetupModal')).show();
+                                                    }
+
+                                                    // ==========================================
+                                                    // РЕЗУЛЬТАТЫ ТЕСТОВ
+                                                    // ==========================================
+                                                    function openStudentPushModal(studentId, courseId, groupId, fullName) {
+                                                        document.getElementById('modalStudentName').innerText = fullName;
+                                                        const tableBody = document.getElementById('modalAttemptsTableBody');
+                                                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Загрузка данных...</td></tr>';
+
+                                                        new bootstrap.Modal(document.getElementById('studentReportModal')).show();
+
+                                                       fetch(`/Report/GetStudentTestAttempts?studentId=${studentId}&courseId=${courseId}&groupId=${groupId}`)
+                                                            .then(response => response.json())
+                                                            .then(data => {
+                                                                tableBody.innerHTML = '';
+                                                                if (data.length === 0) {
+                                                                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Попыток сдачи тестов не найдено.</td></tr>';
+                                                                    return;
+                                                                }
+                                                                data.forEach(attempt => {
+                                                                    let statusBadge = `<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>В процессе</span>`;
+                                                                    if (attempt.status === 'Passed' || attempt.status === 'Success' || attempt.status === 'Completed') {
+                                                                        statusBadge = `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Сдано</span>`;
+                                                                    } else if (attempt.status === 'Failed') {
+                                                                        statusBadge = `<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Не сдано</span>`;
+                                                                    } else if (attempt.status === 'Abandoned') {
+                                                                        statusBadge = `<span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i>Аннулирован</span>`;
+                                                                    }
+
+                                                                    tableBody.insertAdjacentHTML('beforeend', `
+                                                                                                                                                                                                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                                                                                                                                                                                                <td class="fw-bold text-dark">${attempt.testName}</td>
+                                                                                                                                                                                                                                                                                                                                                                                <td>${statusBadge}</td>
+                                                                                                                                                                                                                                                                                                                                                                                <td><span class="fw-bold text-primary">${attempt.scorePercentage}%</span></td>
+                                                                                                                                                                                                                                                                                                                                                                                <td>${attempt.correctAnswersCount} / ${attempt.totalQuestionsCount}</td>
+                                                                                                                                                                                                                                                                                                                                                                                <td class="text-muted small">${attempt.finishedAt}</td>
+                                                                                                                                                                                                                                                                                                                                                                                <td class="text-center">
+                                                                                                                                                                                                                                                                                                                                                                                    <a href="/Report/DownloadTestResult?attemptId=${attempt.id}" class="btn btn-sm btn-outline-primary rounded-3" title="Скачать протокол">
+                                                                                                                                                                                                                                                                                                                                                                                        <i class="bi bi-download"></i>
+                                                                                                                                                                                                                                                                                                                                                                                    </a>
+                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                            </tr>
+                                                                                                                                                                                                                                                                                                                                                                        `);
+                                                                });
+                                                            })
+                                                            .catch(() => {
+                                                                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Ошибка загрузки данных.</td></tr>';
+                                                            });
+                                                    }
+
+                                                    // ==========================================
+                                                    // ЗАГРУЗКА ИЗ МИНТРУДА (Excel)
+                                                    // ==========================================
+                                                    function openImportModal() {
+                                                        document.getElementById('mintrudFileInput').value = '';
+                                                        new bootstrap.Modal(document.getElementById('importMintrudModal')).show();
+                                                    }
+
+                                                    async function importMintrudNumbers() {
+                                                        const fileInput = document.getElementById('mintrudFileInput');
+                                                        const btn = document.getElementById('btnImportMintrud');
+
+                                                        if (fileInput.files.length === 0) {
+                                                            showToast('Выберите файл для загрузки!', 'danger');
+                                                            return;
+                                                        }
+
+                                                        const formData = new FormData();
+                                                        formData.append('excelFile', fileInput.files[0]);
+
+                                                        btn.disabled = true;
+                                                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Загрузка...';
+
+                                                        try {
+                                                            const response = await fetch('/Report/ImportMintrudNumbers', { method: 'POST', body: formData });
+                                                            const result = await response.json();
+                                                            bootstrap.Modal.getInstance(document.getElementById('importMintrudModal')).hide();
+
+                                                            if (result.success) {
+                                                                showToast(result.message, 'success');
+                                                                setTimeout(() => window.location.reload(), 2000);
+                                                            } else {
+                                                                showToast(result.message, 'danger');
+                                                            }
+                                                        } catch (err) {
+                                                            bootstrap.Modal.getInstance(document.getElementById('importMintrudModal')).hide();
+                                                            showToast('Ошибка сети при загрузке файла.', 'danger');
+                                                        } finally {
+                                                            btn.disabled = false;
+                                                            btn.innerHTML = '<i class="bi bi-upload me-1"></i> Загрузить';
+                                                        }
+                                                    }
+
+                                                    // ==========================================
+                                                    // ВЫГРУЗКА ДЛЯ ФИС ФРДО (Excel)
+                                                    // ==========================================
+                                                    async function exportFrdo() {
+                                                        const btn = document.getElementById('btnExportFrdo');
+            
+                                                        // Защита от двойного клика
+                                                        if (btn.classList.contains('loading')) return;
+
+                                                        const groupIds = getSelectedGroupIds();
+                                                        if (groupIds.length === 0) {
+                                                            showToast('Выберите хотя бы одну группу для выгрузки', 'danger');
+                                                            return;
+                                                        }
+
+                                                        // Сохраняем оригинальное состояние
+                                                        const originalLabel = document.getElementById('frdoBtnLabel').textContent;
+                                                        const originalSublabel = document.getElementById('frdoBtnSublabel').textContent;
+                                                        const originalIcon = document.getElementById('frdoBtnIcon').outerHTML;
+
+                                                        // Включаем режим загрузки
+                                                        btn.classList.add('loading');
+                                                        document.getElementById('frdoBtnLabel').textContent = 'Формируется...';
+                                                        document.getElementById('frdoBtnSublabel').textContent = 'Подождите';
+                                                        document.getElementById('frdoBtnIcon').outerHTML = '<span class="spinner-border spinner-border-sm text-white" role="status" id="frdoBtnIcon"></span>';
+
+                                                        try {
+                                                            const formData = new FormData();
+                                                            groupIds.forEach(id => formData.append('groupIds', id));
+
+                                                            const response = await fetch('/Report/ExportGroupsToFrdoExcel', {
+                                                                method: 'POST',
+                                                                body: formData
+                                                            });
+
+                                                            if (response.ok) {
+                                                                const blob = await response.blob();
+                                                                let filename = `Отчет_ФРДО_${new Date().toISOString().split('T')[0]}.xlsx`;
+                                                                const disposition = response.headers.get('Content-Disposition');
+                                                                if (disposition && disposition.includes('filename=')) {
+                                                                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                                                                    if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
+                                                                }
+                                                                const url = window.URL.createObjectURL(blob);
+                                                                const a = document.createElement('a');
+                                                                a.href = url;
+                                                                a.download = filename;
+                                                                document.body.appendChild(a);
+                                                                a.click();
+                                                                a.remove();
+                                                                window.URL.revokeObjectURL(url);
+                                                                showToast('Excel-файл для ФИС ФРДО успешно сформирован!', 'success');
+                                                            } else {
+                                                                const errorJson = await response.json();
+                                                                showToast(errorJson.message || 'Ошибка формирования Excel-файла', 'danger');
+                                                            }
+                                                        } catch (err) {
+                                                            showToast('Ошибка сети при формировании Excel-файла', 'danger');
+                                                        } finally {
+                                                            // Возвращаем исходное состояние кнопки
+                                                            btn.classList.remove('loading');
+                                                            document.getElementById('frdoBtnLabel').textContent = originalLabel;
+                                                            document.getElementById('frdoBtnSublabel').textContent = originalSublabel;
+                                                            document.getElementById('frdoBtnIcon').outerHTML = originalIcon;
+                                                        }
+                                                    }
+
+                                                    // ==========================================
+                                                    // ВЫГРУЗКА СТАТИСТИКИ (Excel)
+                                                    // ==========================================
+                                                    async function exportStatistics() {
+                                                        const btn = document.getElementById('btnExportStats');
+            
+                                                        // Защита от двойного клика
+                                                        if (btn.classList.contains('loading')) return;
+
+                                                        const groupIds = getSelectedGroupIds();
+                                                        if (groupIds.length === 0) {
+                                                            showToast('Выберите хотя бы одну группу для выгрузки статистики', 'danger');
+                                                            return;
+                                                        }
+
+                                                        // Сохраняем оригинальное состояние
+                                                        const originalLabel = document.getElementById('statsBtnLabel').textContent;
+                                                        const originalSublabel = document.getElementById('statsBtnSublabel').textContent;
+                                                        const originalIcon = document.getElementById('statsBtnIcon').outerHTML;
+
+                                                        // Включаем режим загрузки
+                                                        btn.classList.add('loading');
+                                                        document.getElementById('statsBtnLabel').textContent = 'Формируется...';
+                                                        document.getElementById('statsBtnSublabel').textContent = 'Подождите';
+                                                        document.getElementById('statsBtnIcon').outerHTML = '<span class="spinner-border spinner-border-sm text-white" role="status" id="statsBtnIcon"></span>';
+
+                                                        try {
+                                                            const formData = new FormData();
+                                                            groupIds.forEach(id => formData.append('groupIds', id));
+
+                                                            const response = await fetch('/Report/ExportGroupsStatistics', {
+                                                                method: 'POST',
+                                                                body: formData
+                                                            });
+
+                                                            if (response.ok) {
+                                                                const blob = await response.blob();
+                                                                let filename = `Статистика_по_группам_${new Date().toISOString().split('T')[0]}.xlsx`;
+                                                                const disposition = response.headers.get('Content-Disposition');
+                                                                if (disposition && disposition.includes('filename=')) {
+                                                                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                                                                    if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
+                                                                }
+                                                                const url = window.URL.createObjectURL(blob);
+                                                                const a = document.createElement('a');
+                                                                a.href = url;
+                                                                a.download = filename;
+                                                                document.body.appendChild(a);
+                                                                a.click();
+                                                                a.remove();
+                                                                window.URL.revokeObjectURL(url);
+                                                                showToast('Статистика успешно сформирована!', 'success');
+                                                            } else {
+                                                                const errorJson = await response.json();
+                                                                showToast(errorJson.message || 'Ошибка формирования статистики', 'danger');
+                                                            }
+                                                        } catch (err) {
+                                                            showToast('Ошибка сети при формировании статистики', 'danger');
+                                                        } finally {
+                                                            // Возвращаем исходное состояние кнопки
+                                                            btn.classList.remove('loading');
+                                                            document.getElementById('statsBtnLabel').textContent = originalLabel;
+                                                            document.getElementById('statsBtnSublabel').textContent = originalSublabel;
+                                                            document.getElementById('statsBtnIcon').outerHTML = originalIcon;
+                                                        }
+                                                    }
+                                                </script>
+                                            }

@@ -6,17 +6,21 @@ namespace SdoApp.Models;
 public class StudentSubmission
 {
     public int Id { get; set; }
-    
+
     public int CourseMaterialId { get; set; }
     public CourseMaterial? CourseMaterial { get; set; }
 
     public int StudentId { get; set; }
     public User? Student { get; set; }
 
+    // НОВОЕ: Привязка к группе, чтобы зачет падал куда надо
+    public int GroupId { get; set; }
+    public Group? Group { get; set; }
+
     // Общие статусы тикета
     public SubmissionStatus Status { get; set; } = SubmissionStatus.OnReview;
     public int? Grade { get; set; } // null, пока статус OnReview или NeedFix
-    
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 

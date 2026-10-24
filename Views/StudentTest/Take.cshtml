@@ -236,7 +236,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     testId: @ViewBag.TestId,
-                    courseId: @ViewBag.CourseId, // Передаем ID курса в DTO
+                    courseId: @ViewBag.CourseId,
+                    groupId: @ViewBag.GroupId,
                     studentAnswers: answersPayload
                 })
             });

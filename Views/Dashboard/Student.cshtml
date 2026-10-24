@@ -3,8 +3,7 @@
     Layout = "_StudentLayout";
     ViewData["Title"] = "Личный кабинет слушателя";
 
-    var progressMap = ViewBag.StudentProgress as Dictionary<int, SdoApp.Models.CourseProgress> ?? new Dictionary<int,
-SdoApp.Models.CourseProgress>();
+    var progressMap = ViewBag.StudentProgress as Dictionary<string, SdoApp.Models.CourseProgress> ?? new Dictionary<string, SdoApp.Models.CourseProgress>();
     var fullName = User.FindFirst("FullName")?.Value ?? "Слушатель";
 }
 
@@ -111,6 +110,12 @@ SdoApp.Models.CourseProgress>();
         border: 1px solid #fde68a;
     }
 
+    .status-badge.upcoming {
+        background-color: #e0e7ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+    }
+
     /* Кнопка */
     .btn-brand {
         background-color: var(--brand-primary);
@@ -123,7 +128,6 @@ SdoApp.Models.CourseProgress>();
     .course-card-link:hover .btn-brand {
         background-color: var(--brand-dark);
         color: white !important;
-        /* Принудительно белый цвет */
         box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
     }
 
@@ -131,7 +135,6 @@ SdoApp.Models.CourseProgress>();
     .course-card-link:hover .btn-outline-success {
         color: #198754 !important;
         background-color: rgba(25, 135, 84, 0.1);
-        /* Легкий зеленый фон при наведении */
     }
 
     /* СТИЛИ ДЛЯ УВЕДОМЛЕНИЙ */
@@ -158,40 +161,18 @@ SdoApp.Models.CourseProgress>();
         border-left: 6px solid #ccc;
     }
 
-    .custom-toast.success {
-        border-left-color: #198754;
-    }
-
-    .custom-toast.danger {
-        border-left-color: #dc3545;
-    }
-
-    .custom-toast.warning {
-        border-left-color: #F59E0B;
-    }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.warning { border-left-color: #F59E0B; }
 
     @@keyframes slideInRight {
-        from {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(120%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
 
     @@keyframes fadeOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        to {
-            transform: translateX(120%);
-            opacity: 0;
-        }
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(120%); opacity: 0; }
     }
 </style>
 
@@ -234,11 +215,18 @@ SdoApp.Models.CourseProgress>();
     {
         @foreach (var config in Model)
         {
-            bool isCoursePassed = progressMap.TryGetValue(config.CourseId, out var progress) && progress.IsCompleted;
-            
-            var startDate = config.CourseStartDate ?? config.Group?.StartDate;
-            var endDate = config.CourseEndDate ?? config.Group?.EndDate;
-            
+            // Ключ совпадает с тем, который строит контроллер
+            string progressKey = $"{config.GroupId}_{config.CourseId}";
+            bool isCoursePassed = progressMap.TryGetValue(progressKey, out var progress) && progress.IsCompleted;
+
+            // ⚠️ Только даты группы (CourseStartDate/CourseEndDate — отчётные, не для студента)
+            var startDate   = config.Group?.StartDate;
+            var endDate     = config.Group?.EndDate;
+            var accessUntil = config.Group?.MaterialAccessDate;
+
+            // Курс ещё не начался, но уже доступен (фича «видно заранее»)
+            bool isUpcoming = startDate.HasValue && startDate.Value.Date > DateTime.Today;
+
             string completionDateStr = "";
             if (progress != null && progress.CompletedAt.HasValue)
             {
@@ -246,7 +234,8 @@ SdoApp.Models.CourseProgress>();
             }
 
             <div class="col">
-                <a href="/CourseMaterials/StudentView?courseId=@config.CourseId" class="course-card-link">
+                <!-- Передаем groupId, чтобы перейти в правильный контекст группы -->
+                <a href="/CourseMaterials/StudentView?courseId=@config.CourseId&groupId=@config.GroupId" class="course-card-link">
                     <div class="card h-100 course-student-card shadow-sm d-flex flex-column">
                         <div>
                             <img src="@(string.IsNullOrEmpty(config.Course?.ImageUrl) ? "/uploads/courses/default-course.jpg" : config.Course.ImageUrl)"
@@ -264,89 +253,107 @@ SdoApp.Models.CourseProgress>();
                                             Зачет: @completionDateStr
                                         </small>
                                     }
+                                    else if (isUpcoming)
+                                    {
+                                        <span class="status-badge upcoming">
+                                            <i class="bi bi-hourglass-split"></i> СКОРО
+                                        </span>
+                                        <small class="text-secondary fw-semibold" style="font-size:0.75rem;">
+                                            Старт: @startDate?.ToString("dd.MM.yyyy")
+                                        </small>
+                                    }
                                     else
                                     {
                                         <span class="status-badge learning">
                                             <i class="bi bi-clock-history"></i> В ПРОЦЕССЕ
                                         </span>
-                                        <!-- Перенесли сюда сроки обучения, убрав "До:" -->
                                         <small class="text-secondary fw-semibold" style="font-size:0.75rem;">
                                             @if (startDate.HasValue && endDate.HasValue)
                                             {
-                                                <span>@startDate.Value.ToString("dd.MM.yyyy") —
-                                                    @endDate.Value.ToString("dd.MM.yyyy")</span>
-                                                }
+                                                <span>@startDate.Value.ToString("dd.MM.yyyy") — @endDate.Value.ToString("dd.MM.yyyy")</span>
+                                            }
                                             else if (endDate.HasValue)
-                                                {
-                                                    <span>@endDate.Value.ToString("dd.MM.yyyy")</span>
-                                                }
-                                            </small>
-                                        }
-                                    </div>
-
-                                    <!-- Название -->
-                                    <h6 class="card-title fw-bold text-dark mb-2"
-                                        style="min-height: 2.4em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                        @config.Course?.Title
-                                    </h6>
-
-                                    <!-- Описание (максимум 2 строки) -->
-                                    @if (!string.IsNullOrEmpty(config.Course?.Description))
-                                    {
-                                        <p class="card-text text-muted small mb-0"
-                                           style="font-size: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                            @config.Course.Description
-                                        </p>
+                                            {
+                                                <span>@endDate.Value.ToString("dd.MM.yyyy")</span>
+                                            }
+                                        </small>
                                     }
                                 </div>
-                            </div>
 
-                            <!-- Кнопка -->
-                            <div class="px-3 pb-3 pt-0 mt-auto bg-transparent">
-                                <span
-                                    class="btn @(isCoursePassed ? "btn-outline-success" : "btn-brand") w-100 fw-bold py-1.5 shadow-sm d-flex align-items-center justify-content-center gap-2 rounded-3"
-                                    style="font-size: 0.85rem;">
-                                    @if (isCoursePassed)
-                                    {
-                                        <i class="bi bi-eye"></i> <span>Просмотреть</span>
-                                    }
-                                    else
-                                    {
-                                        <i class="bi bi-play-circle"></i> <span>Начать обучение</span>
-                                    }
-                                </span>
+                                <!-- Название -->
+                                <h6 class="card-title fw-bold text-dark mb-2"
+                                    style="min-height: 2.4em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    @config.Course?.Title
+                                </h6>
+
+                                <!-- Описание (максимум 2 строки) -->
+                                @if (!string.IsNullOrEmpty(config.Course?.Description))
+                                {
+                                    <p class="card-text text-muted small mb-0"
+                                       style="font-size: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        @config.Course.Description
+                                    </p>
+                                }
+
+                                <!-- Срок доступа к материалам -->
+                                @if (accessUntil.HasValue && !isCoursePassed)
+                                {
+                                    <p class="text-muted mb-0 mt-2" style="font-size: 0.75rem;">
+                                        <i class="bi bi-calendar-check me-1"></i>
+                                        Материалы доступны до <strong>@accessUntil.Value.ToString("dd.MM.yyyy")</strong>
+                                    </p>
+                                }
                             </div>
                         </div>
-                    </a>
-                </div>
-            }
-        }
-    </div>
 
-    <script>
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `custom-toast ${type}`;
-            let iconClass = 'bi-check-circle-fill text-success';
-            if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
-            if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
-            toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+                        <!-- Кнопка -->
+                        <div class="px-3 pb-3 pt-0 mt-auto bg-transparent">
+                            <span class="btn @(isCoursePassed ? "btn-outline-success" : "btn-brand") w-100 fw-bold py-1.5 shadow-sm d-flex align-items-center justify-content-center gap-2 rounded-3" style="font-size: 0.85rem;">
+                                @if (isCoursePassed)
+                                {
+                                    <i class="bi bi-eye"></i> <span>Просмотреть</span>
+                                }
+                                else if (isUpcoming)
+                                {
+                                    <i class="bi bi-journal-text"></i> <span>Открыть материалы</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-play-circle"></i> <span>Начать обучение</span>
+                                }
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
         }
+    }
+</div>
 
-        document.addEventListener("DOMContentLoaded", function () {
-            @if (Model.Any())
-                {
-                    <text>
-                            setTimeout(() => {
-                                showToast('Курсы отсортированы по приоритету сдачи.', 'warning');
-                            }, 1000);
-                    </text>
-            }
-        });
-    </script>
+<script>
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        let iconClass = 'bi-check-circle-fill text-success';
+        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        @if (Model.Any())
+        {
+            <text>
+                setTimeout(() => {
+                    showToast('Курсы отсортированы по приоритету сдачи.', 'warning');
+                }, 1000);
+            </text>
+        }
+    });
+</script>

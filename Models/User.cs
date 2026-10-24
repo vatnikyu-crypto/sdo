@@ -32,6 +32,10 @@ public class User
 
     public string? Department { get; set; } = string.Empty;
 
+    // === СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ ===
+    public bool IsPrivacyAccepted { get; set; } = false;
+    public DateTime? PrivacyAcceptedAt { get; set; }
+
     [Required]
     public UserRole Role { get; set; }
 

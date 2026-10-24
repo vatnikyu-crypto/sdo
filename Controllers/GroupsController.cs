@@ -541,7 +541,7 @@ public class GroupsController : Controller
         return Json(filteredCompanies);
     }
 
-    // GET: /Groups/DownloadAccesses/5
+       // GET: /Groups/DownloadAccesses/5
     [HttpGet]
     public async Task<IActionResult> DownloadAccesses(int id)
     {
@@ -565,6 +565,9 @@ public class GroupsController : Controller
 
         string SanitizeFileName(string name) => System.Text.RegularExpressions.Regex.Replace(name, @"[\\/:*?""<>|]", "").Trim();
 
+        // ============================================================
+        // СЛУЧАЙ 1: Все студенты из одной компании — отдаем один Excel
+        // ============================================================
         if (studentsByCompany.Count == 1)
         {
             var singleGroup = studentsByCompany.First();
@@ -573,9 +576,19 @@ public class GroupsController : Controller
             byte[] fileBytes = GenerateExcelForCompany(singleGroup.Key, singleGroup.ToList());
             string fileName = $"Доступы для группы № {group.GroupNumber} - {companyName}.xlsx";
 
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            // Правильное кодирование русского имени (RFC 5987)
+            var contentDisposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+            {
+                FileNameStar = fileName
+            };
+            Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = contentDisposition.ToString();
+
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         }
 
+        // ============================================================
+        // СЛУЧАЙ 2: Несколько компаний — пакуем в ZIP-архив
+        // ============================================================
         using (var memoryStream = new MemoryStream())
         {
             using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
@@ -595,7 +608,15 @@ public class GroupsController : Controller
             }
 
             string zipFileName = $"Доступы для группы № {group.GroupNumber} (по компаниям).zip";
-            return File(memoryStream.ToArray(), "application/zip", zipFileName);
+
+            // Правильное кодирование русского имени ZIP-файла (RFC 5987)
+            var contentDispositionZip = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+            {
+                FileNameStar = zipFileName
+            };
+            Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = contentDispositionZip.ToString();
+
+            return File(memoryStream.ToArray(), "application/zip");
         }
     }
 

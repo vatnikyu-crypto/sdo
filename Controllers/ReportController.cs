@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Xml.Linq;
+using ClosedXML.Excel;
 
 namespace SdoApp.Controllers;
 
@@ -69,17 +70,43 @@ public class ReportController : Controller
         ViewBag.Commission = commission;
         ViewBag.ProgressMap = progressMap;
 
+        // === НОВОЕ: Определяем, кто сдал итоговые тесты ===
+
+        // 1. Находим все материалы, которые являются "Итоговыми тестами"
+        var finalTestMaterials = await _context.CourseMaterials
+            .Where(m => m.Type == MaterialType.Test && m.TestKind == TestStatus.Итоговый)
+            .ToDictionaryAsync(m => m.Id, m => m.CourseId); // Ключ: MaterialId, Значение: CourseId
+
+        // 2. Находим все успешные попытки для этих тестов
+        var passedAttempts = await _context.TestAttempts
+    .Where(a => a.Status == AttemptStatus.Passed && finalTestMaterials.Keys.Contains(a.CourseMaterialId))
+    .Select(a => new { a.StudentId, a.GroupId, a.CourseMaterialId }) // <-- ДОБАВИТЬ GroupId
+    .ToListAsync();
+
+        // 3. Создаем HashSet для быстрой проверки на лету (ключ: "StudentId_CourseId")
+        var passedTestsSet = new HashSet<string>();
+        foreach (var attempt in passedAttempts)
+        {
+            if (finalTestMaterials.TryGetValue(attempt.CourseMaterialId, out int courseId))
+            {
+                passedTestsSet.Add($"{attempt.StudentId}_{courseId}_{attempt.GroupId}");
+            }
+        }
+
+        // Передаем во View
+        ViewBag.PassedFinalTests = passedTestsSet;
+
         return View(groups);
     }
 
-        [HttpPost]
+    [HttpPost]
     public async Task<IActionResult> AssignCertificates(int groupId)
     {
         var group = await _context.Groups
             .Include(g => g.GroupStudents)
             .FirstOrDefaultAsync(g => g.Id == groupId);
 
-        if (group == null) 
+        if (group == null)
             return Json(new { success = false, message = "Группа не найдена." });
 
         var configs = await _context.GroupCourseConfigs
@@ -92,9 +119,9 @@ public class ReportController : Controller
 
         // Проверка на Минтруд (игнорируем Высоту=8 и ОЗП=10)
         var allowedMintrudIds = new[] { 8, 10 };
-        bool hasBlockingMintrudCourses = configs.Any(c => 
-            c.Course != null && 
-            c.Course.MintrudProgramId != null && 
+        bool hasBlockingMintrudCourses = configs.Any(c =>
+            c.Course != null &&
+            c.Course.MintrudProgramId != null &&
             !allowedMintrudIds.Contains(c.Course.MintrudProgramId.Value));
 
         if (hasBlockingMintrudCourses)
@@ -161,16 +188,16 @@ public class ReportController : Controller
             foreach (var studentId in studentIds)
             {
                 var progress = await _context.CourseProgresses
-                    .FirstOrDefaultAsync(p => 
-                        p.CourseId == config.CourseId && 
-                        p.StudentId == studentId && 
+                    .FirstOrDefaultAsync(p =>
+                        p.CourseId == config.CourseId &&
+                        p.StudentId == studentId &&
                         p.GroupId == groupId);
 
                 if (progress == null)
                 {
-                    progress = new CourseProgress 
-                    { 
-                        CourseId = config.CourseId, 
+                    progress = new CourseProgress
+                    {
+                        CourseId = config.CourseId,
                         StudentId = studentId,
                         GroupId = groupId
                     };
@@ -201,25 +228,27 @@ public class ReportController : Controller
         }
 
         await _context.SaveChangesAsync();
-        
+
         if (totalAssigned == 0 && totalMtAssigned == 0)
             return Json(new { success = true, message = "У всех студентов уже есть номера." });
-            
+
         string msg = "";
         if (totalAssigned > 0) msg += $"Обычных: {totalAssigned}. ";
         if (totalMtAssigned > 0) msg += $"Минтруд: {totalMtAssigned}.";
-        
+
         return Json(new { success = true, message = $"Успешно присвоено: {msg}" });
     }
 
     // 2. AJAX-метод для получения сданных тестов студента (для Push-окна)
     [HttpGet]
-    public async Task<IActionResult> GetStudentTestAttempts(int studentId, int courseId)
+    public async Task<IActionResult> GetStudentTestAttempts(int studentId, int courseId, int groupId)
     {
         var attempts = await _context.TestAttempts
-            .Include(a => a.CourseMaterial)
-            .Where(a => a.StudentId == studentId && a.CourseMaterial!.CourseId == courseId)
-            .ToListAsync();
+        .Include(a => a.CourseMaterial)
+        .Where(a => a.StudentId == studentId 
+                 && a.CourseMaterial!.CourseId == courseId 
+                 && a.GroupId == groupId) // <-- ДОБАВИТЬ ПРОВЕРКУ ГРУППЫ
+        .ToListAsync();
 
         var result = attempts.Select(a => new
         {
@@ -237,223 +266,124 @@ public class ReportController : Controller
         return Json(result);
     }
 
-    // МЕТОД: Выгрузка ОБЩЕГО XML по всей группе (только если ВСЕ курсы Минтрудовские)
-    [HttpGet]
-    public async Task<IActionResult> ExportGroupToMintrudXml(int groupId)
+    // МЕТОД: Выгрузка ОБЩЕГО XML по нескольким группам
+    [HttpPost]
+    public async Task<IActionResult> ExportGroupsToMintrudXml([FromForm] List<int> groupIds)
     {
-        // 1. Получаем группу со всеми курсами (ПЕРЕИМЕНОВАЛИ В currentGroup!)
-        var currentGroup = await _context.Groups
-            .Include(g => g.GroupStudents)
-            .FirstOrDefaultAsync(g => g.Id == groupId);
+        if (groupIds == null || !groupIds.Any())
+            return BadRequest(new { success = false, message = "Не выбрано ни одной группы." });
 
-        if (currentGroup == null)
-            return BadRequest(new { success = false, message = "Группа не найдена." });
+        var allRecords = new List<(GroupCourseConfig config, CourseProgress progress, SdoApp.Models.Group group)>();
+        var errors = new List<string>();
 
-        var configs = await _context.GroupCourseConfigs
-            .Include(c => c.Course).ThenInclude(c => c!.MintrudProgram)
-            .Where(c => c.GroupId == groupId)
-            .ToListAsync();
-
-        if (!configs.Any())
-            return BadRequest(new { success = false, message = "В группе нет привязанных курсов." });
-
-        // 2. ПРОВЕРКА: ВСЕ курсы в группе должны быть Минтрудовскими
-        bool allMintrud = configs.All(c => c.Course != null && c.Course.MintrudProgramId != null);
-        if (!allMintrud)
+        foreach (var groupId in groupIds)
         {
-            return BadRequest(new { success = false, message = "Нельзя сформировать XML Минтруда! В группе есть курсы, не относящиеся к программам Минтруда. Шаблон доступен только для групп, где ВСЕ курсы являются программами Минтруда." });
-        }
+            var group = await _context.Groups
+                .Include(g => g.GroupStudents)
+                .FirstOrDefaultAsync(g => g.Id == groupId);
 
-        // 3. Собираем все записи (студент × курс) для этой группы
-        var allRecords = new List<(GroupCourseConfig Config, CourseProgress Progress)>();
-
-        foreach (var cfg in configs)
-        {
-            var studentIds = cfg.AllowedStudentIds?
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(int.Parse).ToList() ?? new List<int>();
-
-            if (!studentIds.Any() && currentGroup.GroupStudents != null)
+            if (group == null)
             {
-                studentIds = currentGroup.GroupStudents.Select(gs => gs.StudentId).ToList();
+                errors.Add($"Группа с ID {groupId} не найдена.");
+                continue;
             }
 
-            if (!studentIds.Any()) continue;
-
-            var progresses = await _context.CourseProgresses
-                .Include(p => p.Student).ThenInclude(s => s!.Company)
-                .Where(p => p.CourseId == cfg.CourseId && p.GroupId == groupId && studentIds.Contains(p.StudentId))
+            var configs = await _context.GroupCourseConfigs
+                .Include(c => c.Course).ThenInclude(c => c!.MintrudProgram)
+                .Where(c => c.GroupId == groupId)
                 .ToListAsync();
 
-            foreach (var p in progresses)
+            if (!configs.Any())
             {
-                allRecords.Add((cfg, p));
+                errors.Add($"В группе №{group.GroupNumber} нет привязанных курсов.");
+                continue;
+            }
+
+            bool allMintrud = configs.All(c => c.Course != null && c.Course.MintrudProgramId != null);
+            if (!allMintrud)
+            {
+                errors.Add($"В группе №{group.GroupNumber} есть курсы, не относящиеся к программам Минтруда.");
+                continue;
+            }
+
+            foreach (var config in configs)
+            {
+                var studentIds = config.AllowedStudentIds?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse).ToList() ?? new List<int>();
+
+                if (!studentIds.Any() && group.GroupStudents != null)
+                    studentIds = group.GroupStudents.Select(gs => gs.StudentId).ToList();
+
+                if (!studentIds.Any()) continue;
+
+                var progresses = await _context.CourseProgresses
+                    .Include(p => p.Student).ThenInclude(s => s!.Company)
+                    .Where(p => p.CourseId == config.CourseId && p.GroupId == groupId && studentIds.Contains(p.StudentId))
+                    .ToListAsync();
+
+                foreach (var p in progresses)
+                {
+                    allRecords.Add((config, p, group));
+                }
             }
         }
+
+        if (errors.Any())
+            return BadRequest(new { success = false, message = string.Join(" ", errors) });
 
         if (!allRecords.Any())
-            return BadRequest(new { success = false, message = "Нет записей для формирования XML (в группе нет студентов или прогресса)." });
+            return BadRequest(new { success = false, message = "Нет записей для формирования XML (в выбранных группах нет студентов или прогресса)." });
 
-        if (allRecords.Any(r => string.IsNullOrEmpty(r.Progress.MintrudNumber)))
-        {
-            return BadRequest(new { success = false, message = "Ошибка: У некоторых студентов нет присвоенного номера Минтруда (МТ-). Пожалуйста, сначала сохраните костяк группы или обновите номера." });
-        }
+        if (allRecords.Any(r => string.IsNullOrEmpty(r.progress.MintrudNumber)))
+            return BadRequest(new { success = false, message = "У некоторых студентов нет присвоенного номера Минтруда. Сначала сохраните костяк групп или присвойте номера." });
 
-            // 4. Формируем XML
-            var xDoc = new XDocument(
-                new XElement("RegistrySet",
-                    new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
-                    from rec in allRecords
-                    select new XElement("RegistryRecord",
-                        new XAttribute("outerId", rec.Progress.MintrudNumber),
-                        new XElement("Worker",
-                            new XElement("LastName", rec.Progress.Student!.LastName ?? ""),
-                            new XElement("FirstName", rec.Progress.Student.FirstName ?? ""),
-                            new XElement("MiddleName", rec.Progress.Student.MiddleName ?? ""),
-                            new XElement("Snils", rec.Progress.Student.Snils ?? ""),
-                            new XElement("Citizenship", "Россия"),
-                            new XElement("Position", rec.Progress.Student.Position ?? ""),
-                            new XElement("EmployerInn", rec.Progress.Student.Company?.Inn ?? ""),
-                            new XElement("EmployerTitle", rec.Progress.Student.Company?.Name ?? "")
-                        ),
-                        new XElement("Organization",
-                            new XElement("Inn", "7017999506"),
-                            new XElement("Title", "АНО ДПО \"ЭНЕРГЕТИК\"")
-                        ),
-                        new XElement("Test",
-                            new XAttribute("isPassed", "true"),
-                            new XAttribute("learnProgramId", rec.Config.Course!.MintrudProgram!.NumberProgram ?? ""),
-                            new XElement("Date", rec.Config.CourseEndDate?.ToString("yyyy-MM-dd") ?? currentGroup.EndDate.ToString("yyyy-MM-dd")),
-                            new XElement("ProtocolNumber", rec.Config.ProtocolNumber ?? ""),
-                            new XElement("LearnProgramTitle", rec.Config.Course.MintrudProgram.Name ?? "")
-                        )
-                    )
+        // ИСПРАВЛЕНО: используем .Select() вместо from..select
+        var registryRecords = allRecords.Select(item =>
+            new XElement("RegistryRecord",
+                new XAttribute("outerId", item.progress.MintrudNumber),
+                new XElement("Worker",
+                    new XElement("LastName", item.progress.Student!.LastName ?? ""),
+                    new XElement("FirstName", item.progress.Student.FirstName ?? ""),
+                    new XElement("MiddleName", item.progress.Student.MiddleName ?? ""),
+                    new XElement("Snils", item.progress.Student.Snils ?? ""),
+                    new XElement("Citizenship", "Россия"),
+                    new XElement("Position", item.progress.Student.Position ?? ""),
+                    new XElement("EmployerInn", item.progress.Student.Company?.Inn ?? ""),
+                    new XElement("EmployerTitle", item.progress.Student.Company?.Name ?? "")
+                ),
+                new XElement("Organization",
+                    new XElement("Inn", "7017999506"),
+                    new XElement("Title", "АНО ДПО \"ЭНЕРГЕТИК\"")
+                ),
+                new XElement("Test",
+                    new XAttribute("isPassed", "true"),
+                    new XAttribute("learnProgramId", item.config.Course!.MintrudProgram!.NumberProgram ?? ""),
+                    new XElement("Date", item.config.CourseEndDate?.ToString("yyyy-MM-dd") ?? item.group.EndDate.ToString("yyyy-MM-dd")),
+                    new XElement("ProtocolNumber", item.config.ProtocolNumber ?? ""),
+                    new XElement("LearnProgramTitle", item.config.Course.MintrudProgram.Name ?? "")
                 )
-            );
+            )
+        );
 
-            // 5. Отдаем файл
-            using (var stream = new MemoryStream())
-            {
-                xDoc.Save(stream);
-                stream.Position = 0;
+        var xDoc = new XDocument(
+            new XElement("RegistrySet",
+                new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+                registryRecords
+            )
+        );
 
-                string fileName = $"EISOT_Group_{currentGroup.GroupNumber}.xml";
-                return File(stream.ToArray(), "application/xml", fileName);
-            }
-        }
+        using var stream = new MemoryStream();
+        xDoc.Save(stream);
+        stream.Position = 0;
 
-        // 3. Кнопка "Сформировать" — Обработка параметров генерации отчета
-        [HttpPost]
-        public async Task<IActionResult> GenerateCourseReport(
-            int groupConfigId,
-            int templateId,
-            string? chairmanInput,
-            string? member1Input,
-            string? member2Input,
-            string? commissionOrderNumber,
-            string? commissionOrderDate,
-            bool splitByCompany = false)
-        {
-            var config = await _context.GroupCourseConfigs
-                .Include(c => c.Group)
-                .Include(c => c.Course)
-                .FirstOrDefaultAsync(c => c.Id == groupConfigId);
+        string fileName = $"EISOT_Группы_{string.Join("_", groupIds)}.xml";
 
-            var template = await _context.CourseDocumentTemplates
-                .FirstOrDefaultAsync(t => t.Id == templateId);
+        Response.Headers["Content-Disposition"] =
+            $"attachment; filename=\"{System.Text.Encoding.UTF8.GetString(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(fileName))}\"; filename*=UTF-8''{Uri.EscapeDataString(fileName)}";
 
-            if (config == null || template == null)
-            {
-                return NotFound("Конфигурация курса или шаблон документа не найдены.");
-            }
-
-            var studentIds = config.AllowedStudentIds
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(int.Parse).ToList();
-
-            // Если список пуст (не настраивали), берем всех из группы
-            if (!studentIds.Any() && config.Group != null)
-            {
-                // Придется подгрузить GroupStudents, если их нет
-                var groupStudents = await _context.GroupStudents
-                    .Where(gs => gs.GroupId == config.GroupId)
-                    .Select(gs => gs.StudentId)
-                    .ToListAsync();
-                studentIds = groupStudents;
-            }
-
-            var students = await _context.Users
-                .Include(u => u.Company)
-                .Where(u => studentIds.Contains(u.Id))
-                .ToListAsync();
-
-            var chairmanData = await ResolveCommissionMemberAsync(chairmanInput);
-            var member1Data = await ResolveCommissionMemberAsync(member1Input);
-            var member2Data = await ResolveCommissionMemberAsync(member2Input);
-
-            var documentService = new DocumentGenerationService(_env.WebRootPath);
-            string groupNumber = config.Group?.GroupNumber ?? "Группа";
-
-            // РЕЖИМ А: Индивидуальные документы
-            if (template.IsPerStudent)
-            {
-                byte[]? finalDocBytes = null;
-
-                foreach (var student in students)
-                {
-                    var singleStudentList = new List<User> { student };
-                    byte[] currentDocBytes = await documentService.GenerateDocxReportAsync(
-                        config, template, singleStudentList, chairmanData, member1Data, member2Data, commissionOrderNumber, commissionOrderDate);
-
-                    if (finalDocBytes == null) finalDocBytes = currentDocBytes;
-                    else finalDocBytes = AppendDocxBytes(finalDocBytes, currentDocBytes);
-                }
-
-                if (finalDocBytes != null)
-                {
-                    return File(finalDocBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}_{groupNumber}_Все_Слушатели.docx");
-                }
-                return BadRequest("Список студентов пуст.");
-            }
-
-            // РЕЖИМ Б: Разделение по компаниям
-            if (splitByCompany)
-            {
-                var studentGroups = students.GroupBy(s => s.Company?.Name ?? "Физические лица").ToList();
-
-                using (var zipMS = new MemoryStream())
-                {
-                    using (var archive = new ZipArchive(zipMS, ZipArchiveMode.Create, true))
-                    {
-                        foreach (var group in studentGroups)
-                        {
-                            byte[] docBytes = await documentService.GenerateDocxReportAsync(
-                                config, template, group.ToList(), chairmanData, member1Data, member2Data, commissionOrderNumber, commissionOrderDate);
-
-                            var zipEntry = archive.CreateEntry($"{template.Name}_{group.Key}.docx", CompressionLevel.Optimal);
-                            using (var entryStream = zipEntry.Open())
-                            {
-                                await entryStream.WriteAsync(docBytes, 0, docBytes.Length);
-                            }
-                        }
-                    }
-                    return File(zipMS.ToArray(), "application/zip", $"{template.Name}_{groupNumber}_По_Компаниям.zip");
-                }
-            }
-
-            // РЕЖИМ В: Обычный отчёт
-            try
-            {
-                byte[] fileBytes = await documentService.GenerateDocxReportAsync(
-                    config, template, students, chairmanData, member1Data, member2Data, commissionOrderNumber, commissionOrderDate);
-
-                return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}_{groupNumber}.docx");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Ошибка генерации: {ex.Message}");
-            }
-        }
+        return File(stream.ToArray(), "application/xml");
+    }
 
     // 4. Вспомогательный метод: Склейка двух документов
     private byte[] AppendDocxBytes(byte[] baseDocBytes, byte[] appendDocBytes)
@@ -478,6 +408,315 @@ public class ReportController : Controller
             }
             return baseStream.ToArray();
         }
+    }
+
+    // POST: /Report/ExportGroupsToFrdoExcel
+    [HttpPost]
+    public async Task<IActionResult> ExportGroupsToFrdoExcel([FromForm] List<int> groupIds)
+    {
+        if (groupIds == null || !groupIds.Any())
+            return BadRequest(new { success = false, message = "Не выбрано ни одной группы." });
+
+        var errors = new List<string>();
+        var studentsToExport = new List<(User student, SdoApp.Models.Group group, Course course, GroupCourseConfig config, CourseProgress progress)>();
+
+        var allowedMintrudIds = new[] { 8, 10 }; // Высота и ОЗП
+
+        foreach (var groupId in groupIds)
+        {
+            var group = await _context.Groups
+                .Include(g => g.GroupStudents)
+                .FirstOrDefaultAsync(g => g.Id == groupId);
+
+            if (group == null) { errors.Add($"Группа с ID {groupId} не найдена."); continue; }
+
+            var configs = await _context.GroupCourseConfigs
+                .Include(c => c.Course)
+                .Where(c => c.GroupId == groupId)
+                .ToListAsync();
+
+            if (!configs.Any()) { errors.Add($"В группе №{group.GroupNumber} нет привязанных курсов."); continue; }
+
+            // ПРОВЕРКА: Не должно быть курсов Минтруда (кроме 8 и 10)
+            bool hasBlockingMintrud = configs.Any(c =>
+                c.Course != null &&
+                c.Course.MintrudProgramId != null &&
+                !allowedMintrudIds.Contains(c.Course.MintrudProgramId.Value));
+
+            if (hasBlockingMintrud)
+            {
+                errors.Add($"В группе №{group.GroupNumber} есть курсы Минтруда, не относящиеся к ОЗП или Высоте. Выгрузка невозможна.");
+                continue;
+            }
+
+            foreach (var config in configs)
+            {
+                var studentIds = config.AllowedStudentIds?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse).ToList() ?? new List<int>();
+
+                if (!studentIds.Any() && group.GroupStudents != null)
+                    studentIds = group.GroupStudents.Select(gs => gs.StudentId).ToList();
+
+                if (!studentIds.Any()) continue;
+
+                var progresses = await _context.CourseProgresses
+                    .Include(p => p.Student)
+                    .Where(p => p.CourseId == config.CourseId && p.GroupId == groupId && studentIds.Contains(p.StudentId))
+                    .ToListAsync();
+
+                foreach (var p in progresses)
+                {
+                    // Проверка: должен быть внутренний номер
+                    if (string.IsNullOrEmpty(p.CertificateNumber))
+                    {
+                        errors.Add($"У студента {p.Student?.LastName} {p.Student?.FirstName} нет присвоенного номера удостоверения. Сначала присвойте номера.");
+                        continue;
+                    }
+
+                    studentsToExport.Add((p.Student!, group, config.Course!, config, p));
+                }
+            }
+        }
+
+        if (errors.Any())
+            return BadRequest(new { success = false, message = string.Join(" ", errors) });
+
+        if (!studentsToExport.Any())
+            return BadRequest(new { success = false, message = "Нет данных для выгрузки." });
+
+        // === ЗАПОЛНЕНИЕ EXCEL ===
+        string templatePath = Path.Combine(_env.WebRootPath, "fis-frdo.xlsx");
+        if (!System.IO.File.Exists(templatePath))
+            return BadRequest(new { success = false, message = "Файл шаблона fis-frdo.xlsx не найден в корне проекта." });
+
+        using var workbook = new XLWorkbook(templatePath);
+        var worksheet = workbook.Worksheet(1); // Берем первый лист "Шаблон"
+
+        int row = 2; // Начинаем со второй строки (первая - заголовки)
+
+        foreach (var item in studentsToExport)
+        {
+            var student = item.student;
+            var group = item.group;
+            var course = item.course;
+            var progress = item.progress;
+            var config = item.config;
+
+            // Вычисляем даты
+            var endDate = config.CourseEndDate ?? group.EndDate;
+            var startDate = config.CourseStartDate ?? group.StartDate;
+
+            // А: Вид документа
+            worksheet.Cell(row, 1).Value = "Удостоверение о повышении квалификации";
+            // B: Статус документа
+            worksheet.Cell(row, 2).Value = "Оригинал";
+            // C, D, E: Подтверждения
+            worksheet.Cell(row, 3).Value = "Нет";
+            worksheet.Cell(row, 4).Value = "Нет";
+            worksheet.Cell(row, 5).Value = "Нет";
+            // F: Серия документа
+            worksheet.Cell(row, 6).Value = "нет";
+            // G: Номер документа
+            worksheet.Cell(row, 7).Value = progress.CertificateNumber;
+            // H: Дата выдачи документа
+            worksheet.Cell(row, 8).Value = endDate.ToString("dd.MM.yyyy");
+            // I: Регистрационный номер
+            worksheet.Cell(row, 9).Value = progress.CertificateNumber;
+            // J: Тип программы
+            worksheet.Cell(row, 10).Value = "Повышение квалификации";
+            // K: Наименование программы
+            worksheet.Cell(row, 11).Value = course.Title;
+
+            worksheet.Cell(row, 14).Value = "нет";
+
+            // L - S (12-19) оставляем пустыми
+
+            // T (19): Год начала
+            worksheet.Cell(row, 19).Value = startDate.Year;
+            // U (20): Год окончания
+            worksheet.Cell(row, 20).Value = endDate.Year;
+            // V (21): Срок обучения
+            if (course.DurationHours.HasValue)
+                worksheet.Cell(row, 21).Value = course.DurationHours.Value;
+
+            // W (22): Фамилия
+            worksheet.Cell(row, 22).Value = student.LastName;
+            // X (23): Имя
+            worksheet.Cell(row, 23).Value = student.FirstName;
+            // Y (24): Отчество
+            worksheet.Cell(row, 24).Value = student.MiddleName ?? "";
+            // Z (25): Дата рождения
+            if (student.BirthDate.HasValue)
+                worksheet.Cell(row, 25).Value = student.BirthDate.Value.ToString("dd.MM.yyyy");
+
+            // AA (26): Пол
+            worksheet.Cell(row, 26).Value = student.Gender == Gender.Муж ? "Муж" : "Жен";
+
+            // AB (27): СНИЛС
+            worksheet.Cell(row, 27).Value = student.Snils ?? "";
+            // AC (28): Форма обучения
+            worksheet.Cell(row, 28).Value = "Очная";
+            // AD (29): Источник финансирования
+            worksheet.Cell(row, 29).Value = "Платное обучение";
+            // AE (30): Форма получения образования
+            worksheet.Cell(row, 30).Value = "в образовательной организации";
+            // AF (31): Гражданство (643 - Россия)
+            worksheet.Cell(row, 31).Value = "643";
+
+            row++;
+        }
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        // Имя файла на русском
+        string fileName = $"Отчет_ФРДО_{DateTime.Today:yyyy-MM-dd}.xlsx";
+
+        // Используем стандартный заголовок с параметром filename* (RFC 5987)
+        // Это гарантирует, что браузер возьмёт именно русское имя
+        var contentDisposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+        {
+            FileNameStar = fileName
+        };
+        Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = contentDisposition.ToString();
+
+        return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+
+    // POST: /Report/ExportGroupsStatistics
+    [HttpPost]
+    public async Task<IActionResult> ExportGroupsStatistics([FromForm] List<int> groupIds)
+    {
+        if (groupIds == null || !groupIds.Any())
+            return BadRequest(new { success = false, message = "Не выбрано ни одной группы." });
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Статистика");
+
+        // Заголовки
+        string[] headers = {
+            "Курс", "Группа", "Сроки обучения", "Слушатель",
+            "Компания", "Подразделение", "Должность", "Дата сдачи итогового теста"
+        };
+
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var cell = worksheet.Cell(1, i + 1);
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#F0F4FF"); // Легкий синий фон
+            cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        }
+
+        int row = 2;
+        bool hasData = false;
+
+        foreach (var groupId in groupIds)
+        {
+            var group = await _context.Groups.FindAsync(groupId);
+            if (group == null) continue;
+
+            var configs = await _context.GroupCourseConfigs
+                .Include(c => c.Course)
+                .Where(c => c.GroupId == groupId)
+                .ToListAsync();
+
+            if (!configs.Any()) continue;
+
+            foreach (var config in configs)
+            {
+                // Получаем список студентов
+                var studentIds = config.AllowedStudentIds?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse).ToList() ?? new List<int>();
+
+                if (!studentIds.Any())
+                {
+                    studentIds = await _context.GroupStudents
+                        .Where(gs => gs.GroupId == groupId)
+                        .Select(gs => gs.StudentId)
+                        .ToListAsync();
+                }
+
+                var students = await _context.Users
+                    .Include(u => u.Company)
+                    .Where(u => studentIds.Contains(u.Id))
+                    .OrderBy(u => u.LastName)
+                    .ToListAsync();
+
+                // Ищем материал "Итоговый тест" для этого курса
+                var finalTest = await _context.CourseMaterials
+                    .FirstOrDefaultAsync(m => m.CourseId == config.CourseId
+                                           && m.Type == MaterialType.Test
+                                           && m.TestKind == TestStatus.Итоговый);
+
+                var startDateStr = config.CourseStartDate?.ToString("dd.MM.yyyy") ?? group.StartDate.ToString("dd.MM.yyyy");
+                var endDateStr = config.CourseEndDate?.ToString("dd.MM.yyyy") ?? group.EndDate.ToString("dd.MM.yyyy");
+                var datesRange = $"{startDateStr} - {endDateStr}";
+
+                foreach (var student in students)
+                {
+                    hasData = true;
+                    string testDateStr = "";
+
+                    if (finalTest != null)
+                    {
+                        // Ищем ПЕРВУЮ успешную попытку (AttemptStatus.Passed — это единственный "успешный" статус в твоём enum)
+                        var firstSuccessAttempt = await _context.TestAttempts
+                            .Where(a => a.CourseMaterialId == finalTest.Id
+                                     && a.StudentId == student.Id
+                                     && a.Status == AttemptStatus.Passed)
+                            .OrderBy(a => a.FinishedAt) // Самая ранняя успешная сдача
+                            .FirstOrDefaultAsync();
+
+                        if (firstSuccessAttempt != null && firstSuccessAttempt.FinishedAt.HasValue)
+                        {
+                            testDateStr = firstSuccessAttempt.FinishedAt.Value.ToString("dd.MM.yyyy");
+                        }
+                    }
+
+                    // Заполняем строку
+                    worksheet.Cell(row, 1).Value = config.Course?.Title ?? "Без названия";
+                    worksheet.Cell(row, 2).Value = group.GroupNumber;
+                    worksheet.Cell(row, 3).Value = datesRange;
+                    worksheet.Cell(row, 4).Value = $"{student.LastName} {student.FirstName} {student.MiddleName}".Trim();
+                    worksheet.Cell(row, 5).Value = student.Company?.Name ?? "Частное лицо";
+                    worksheet.Cell(row, 6).Value = student.Department ?? "—";
+                    worksheet.Cell(row, 7).Value = student.Position ?? "—";
+                    worksheet.Cell(row, 8).Value = testDateStr;
+
+                    // Границы для строки
+                    worksheet.Range(row, 1, row, 8).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                    worksheet.Range(row, 1, row, 8).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+                    row++;
+                }
+            }
+        }
+
+        if (!hasData)
+            return BadRequest(new { success = false, message = "Нет данных для выгрузки статистики." });
+
+        // Автоширина
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+
+        string fileName = $"Статистика_по_группам_{DateTime.Today:yyyy-MM-dd}.xlsx";
+
+        // Настройка заголовка для скачивания (кириллица)
+        var contentDisposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+        {
+            FileNameStar = fileName
+        };
+        Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = contentDisposition.ToString();
+
+        return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
 
     // 5. Парсинг комиссии
@@ -509,6 +748,67 @@ public class ReportController : Controller
     {
         byte[] fileBytes = System.Text.Encoding.UTF8.GetBytes($"Результат попытки тестирования #{attemptId}. (Заглушка)");
         return File(fileBytes, "text/plain", $"Test_Result_{attemptId}.txt");
+    }
+
+    // POST: /Report/ImportMintrudNumbers
+    [HttpPost]
+    public async Task<IActionResult> ImportMintrudNumbers(IFormFile excelFile)
+    {
+        if (excelFile == null || excelFile.Length == 0)
+            return Json(new { success = false, message = "Файл не выбран или пуст." });
+
+        try
+        {
+            using var stream = new MemoryStream();
+            await excelFile.CopyToAsync(stream);
+
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheet(1); // Берем первый лист
+
+            // Ищем номера колонок по заголовкам (чтобы не зависеть от порядка колонок)
+            var headerRow = worksheet.Row(1);
+            int colExternalId = headerRow.CellsUsed().First(c => c.GetString().Trim() == "Id внешней системы").Address.ColumnNumber;
+            int colRegNumber = headerRow.CellsUsed().First(c => c.GetString().Trim() == "Номер в реестре").Address.ColumnNumber;
+
+            int updatedCount = 0;
+            int notFoundCount = 0;
+
+            // Проходим по всем строкам, начиная со 2-й
+            foreach (var row in worksheet.RowsUsed().Skip(1))
+            {
+                string externalId = row.Cell(colExternalId).GetString().Trim();
+                string regNumber = row.Cell(colRegNumber).GetString().Trim();
+
+                if (string.IsNullOrEmpty(externalId) || string.IsNullOrEmpty(regNumber))
+                    continue;
+
+                // Ищем запись в базе по MintrudNumber
+                var progress = await _context.CourseProgresses
+                    .FirstOrDefaultAsync(p => p.MintrudNumber == externalId);
+
+                if (progress != null)
+                {
+                    progress.MintrudOfficialNumber = regNumber;
+                    updatedCount++;
+                }
+                else
+                {
+                    notFoundCount++;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            string message = $"Импорт завершен. Обновлено записей: {updatedCount}.";
+            if (notFoundCount > 0)
+                message += $" Не найдено в системе (пропущено): {notFoundCount}.";
+
+            return Json(new { success = true, message = message });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Ошибка при чтении файла: {ex.Message}" });
+        }
     }
 }
 

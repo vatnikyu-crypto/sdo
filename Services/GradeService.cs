@@ -9,7 +9,7 @@ namespace SdoApp.Services;
 
 public class GradeService
 {
-    public static async Task RecalculateCourseProgressAsync(AppDbContext context, int studentId, int courseId)
+    public static async Task RecalculateCourseProgressAsync(AppDbContext context, int studentId, int courseId, int? groupId)
     {
         // 1. Одним запросом забираем все обязательные материалы этого курса (кроме тренажеров)
         var mandatoryMaterials = await context.CourseMaterials
@@ -30,7 +30,7 @@ public class GradeService
                      && s.Status == SubmissionStatus.Completed)
             .ToListAsync();
 
-        // 3. ИСПРАВЛЕНО: Запрашиваем из новой таблицы TestAttempts ВСЕ успешные попытки тестов студента
+        // 3. Запрашиваем из новой таблицы TestAttempts ВСЕ успешные попытки тестов студента
         var studentPassedTests = await context.TestAttempts
             .Where(a => a.StudentId == studentId 
                      && mandatoryMaterialIds.Contains(a.CourseMaterialId) 
@@ -45,7 +45,6 @@ public class GradeService
         {
             if (material.Type == MaterialType.Assignment)
             {
-                // Задание сдано, если есть закрытый тикет с оценкой 3, 4 или 5
                 bool isAssignmentPassed = studentAssignments.Any(s => 
                     s.CourseMaterialId == material.Id && s.Grade >= 3);
                 
@@ -53,21 +52,19 @@ public class GradeService
             }
             else if (material.Type == MaterialType.Test)
             {
-                // ИСПРАВЛЕНО: Тест считается сданным, если в таблице TestAttempts 
-                // есть хотя бы одна запись со статусом Passed по этому материалу
                 bool isTestPassed = studentPassedTests.Any(a => a.CourseMaterialId == material.Id);
-
                 if (isTestPassed) completedMandatoryCount++;
             }
         }
 
-        // 5. Ищем существующую запись прогресса по курсу или создаем её
+        // 5. Ищем существующую запись прогресса СТРОГО по студенту, курсу и ГРУППЕ
         var progress = await context.CourseProgresses
-            .FirstOrDefaultAsync(p => p.StudentId == studentId && p.CourseId == courseId);
+            .FirstOrDefaultAsync(p => p.StudentId == studentId && p.CourseId == courseId && p.GroupId == groupId);
 
         if (progress == null)
         {
-            progress = new CourseProgress { StudentId = studentId, CourseId = courseId };
+            // Создаем запись сразу с привязкой к группе
+            progress = new CourseProgress { StudentId = studentId, CourseId = courseId, GroupId = groupId };
             context.CourseProgresses.Add(progress);
         }
 
@@ -77,7 +74,7 @@ public class GradeService
             if (!progress.IsCompleted)
             {
                 progress.IsCompleted = true;
-                progress.CompletedAt = DateTime.UtcNow; // Фиксируем точную дату окончания курса
+                progress.CompletedAt = DateTime.UtcNow;
             }
         }
         else

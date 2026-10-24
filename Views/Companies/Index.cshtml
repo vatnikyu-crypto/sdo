@@ -114,15 +114,36 @@
         border-color: var(--brand-primary);
         color: white;
     }
-    .pagination .page-link {
-        color: var(--brand-primary);
-        border-radius: 6px;
-        margin: 0 2px;
-        border: 1px solid #dee2e6;
+        /* === ПАГИНАЦИЯ (явные контрастные стили) === */
+    #groupPaginationButtons {
+        gap: 4px;
     }
-    .pagination .page-link:hover {
-        background-color: #f0f4ff;
-        color: var(--brand-primary);
+    #groupPaginationButtons .page-link {
+        color: #4F589D !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        font-weight: 700;
+        min-width: 38px;
+        text-align: center;
+        border-radius: 6px !important;
+        margin: 0 2px;
+        transition: all 0.2s;
+    }
+    #groupPaginationButtons .page-link:hover {
+        background-color: #f0f4ff !important;
+        color: #3b4382 !important;
+        border-color: #4F589D !important;
+    }
+    #groupPaginationButtons .page-item.active .page-link {
+        background-color: #4F589D !important;
+        border-color: #4F589D !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(79, 88, 157, 0.35);
+    }
+    #groupPaginationButtons .page-item.disabled .page-link {
+        color: #cbd5e1 !important;
+        background-color: #f8f9fa !important;
+        border-color: #e2e8f0 !important;
     }
 
     /* Кнопка добавления */

@@ -1,0 +1,265 @@
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Политика использования файлов cookie | СДО "Энергетик"</title>
+    
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
+    <style>
+        :root {
+            --brand-primary: #4F589D;
+            --brand-dark: #3b4382;
+            --brand-accent: #F59E0B;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .policy-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-top: 6px solid var(--brand-primary);
+            padding: 3rem;
+        }
+
+        .policy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .policy-logo {
+            width: 50px;
+            height: 50px;
+            background: #f0f4ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-primary);
+            font-size: 1.5rem;
+        }
+
+        .policy-title {
+            font-weight: 800;
+            color: var(--brand-dark);
+            font-size: 1.75rem;
+            margin: 0;
+        }
+
+        .policy-subtitle {
+            color: #888;
+            font-size: 0.9rem;
+            margin: 0.25rem 0 0 0;
+        }
+
+        .btn-back {
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-back:hover {
+            background: var(--brand-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+        }
+
+        .policy-body h2 {
+            color: var(--brand-dark);
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--brand-accent);
+            display: inline-block;
+        }
+
+        .policy-body p, .policy-body li {
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .policy-body ul {
+            padding-left: 1.5rem;
+        }
+
+        .policy-body code {
+            background: #f0f4ff;
+            color: var(--brand-primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid var(--brand-primary);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+            color: #445;
+            font-size: 0.9rem;
+        }
+
+        .cookie-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .cookie-table th {
+            background: #f8fafc;
+            color: var(--brand-dark);
+            font-weight: 700;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .cookie-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f3f5;
+            color: #555;
+            vertical-align: top;
+        }
+
+        .cookie-table code {
+            font-size: 0.8rem;
+        }
+
+        @@media (max-width: 768px) {
+            .policy-container { padding: 1.5rem; }
+            .policy-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .btn-back { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="policy-container">
+    <div class="policy-header">
+        <div>
+            <div class="policy-logo"><i class="bi bi-shield-check"></i></div>
+            <h1 class="policy-title mt-3">Политика использования файлов cookie</h1>
+            <p class="policy-subtitle">АНО ДПО «Энергетик»</p>
+        </div>
+        
+        <!-- Кнопка возврата на страницу согласия -->
+        <a href="/Consent" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Вернуться к согласию
+        </a>
+    </div>
+
+    <div class="policy-body">
+        <h2>1. Что такое cookie</h2>
+        <p>
+            Файлы cookie — это небольшие текстовые файлы, которые сохраняются в вашем браузере при посещении сайта.
+            Они помогают сайту «запоминать» ваши действия и предпочтения (например, вход в систему, выбранный язык, настройки интерфейса) на протяжении определённого времени.
+        </p>
+        <p>
+            Файлы cookie не содержат вирусов и не могут запускать программы. Они не содержат ваших паролей в открытом виде.
+        </p>
+
+        <h2>2. Какие cookie мы используем</h2>
+        <p>В системе дистанционного обучения «Энергетик» используются только <strong>технически необходимые</strong> cookie. Мы не используем аналитические и рекламные cookie.</p>
+
+        <table class="cookie-table">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">Название</th>
+                    <th style="width: 20%;">Тип</th>
+                    <th>Назначение</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>.AspNetCore.Cookies</code></td>
+                    <td>Сессионная / постоянная</td>
+                    <td>Хранит зашифрованные данные авторизации (логин, роль, ФИО). Без этой cookie вход в систему невозможен.</td>
+                </tr>
+                <tr>
+                    <td><code>.AspNetCore.Antiforgery.*</code></td>
+                    <td>Сессионная</td>
+                    <td>Защищает формы от CSRF-атак (поддельных запросов от вашего имени).</td>
+                </tr>
+                <tr>
+                    <td><code>.AspNetCore.Session</code></td>
+                    <td>Сессионная</td>
+                    <td>Хранит временные данные текущей сессии (например, промежуточные шаги тестирования).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            Мы <strong>не используем</strong> файлы cookie для отслеживания вашего поведения на других сайтах, а также не передаём их рекламным сетям и аналитическим сервисам (Яндекс.Метрика, Google Analytics и т. п.).
+        </div>
+
+        <h2>3. Срок хранения</h2>
+        <ul>
+            <li><strong>Cookie авторизации</strong> хранится до 7 дней с момента входа (или до выхода из системы).</li>
+            <li><strong>Сессионные cookie</strong> удаляются автоматически при закрытии браузера.</li>
+        </ul>
+
+        <h2>4. Как управлять cookie</h2>
+        <p>Вы можете в любой момент отключить или удалить cookie в настройках вашего браузера. Инструкции для популярных браузеров:</p>
+        <ul>
+            <li><strong>Google Chrome:</strong> Настройки → Конфиденциальность и безопасность → Файлы cookie и другие данные сайтов.</li>
+            <li><strong>Mozilla Firefox:</strong> Настройки → Приватность и защита → Куки и данные сайтов.</li>
+            <li><strong>Microsoft Edge:</strong> Настройки → Файлы cookie и разрешения для сайтов.</li>
+            <li><strong>Safari:</strong> Настройки → Конфиденциальность → Управление данными сайтов.</li>
+        </ul>
+        <p>
+            <strong>Важно:</strong> если вы полностью отключите cookie, вы не сможете авторизоваться в системе и пользоваться материалами курсов — это технически невозможно.
+        </p>
+
+        <h2>5. Изменения в политике</h2>
+        <p>
+            Администрация СДО «Энергетик» вправе изменять настоящую политику. Актуальная версия всегда доступна по адресу <code>/Consent/CookiePolicy</code>.
+        </p>
+
+        <h2>6. Контакты</h2>
+        <p>
+            Если у вас есть вопросы по обработке файлов cookie, свяжитесь с нами:<br><br>
+            <strong>АНО ДПО «Энергетик»</strong><br>
+            <strong>Адрес:</strong> 634015, РФ, г. Томск, ул. Энергетическая, д. 2<br>
+            <strong>Телефоны:</strong> +7 (3822) 72-00-36, +7 (3822) 61-11-92<br>
+            <strong>Электронная почта:</strong> <a href="mailto:fot@dpo-energo.ru" style="color: var(--brand-primary);">fot@dpo-energo.ru</a>, <a href="mailto:ttv@dpo-energo.ru" style="color: var(--brand-primary);">ttv@dpo-energo.ru</a>
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

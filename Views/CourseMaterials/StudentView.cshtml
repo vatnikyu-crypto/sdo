@@ -477,7 +477,7 @@
                     </div>
                 `;
 
-                fetch(`/StudentTest/GetTestState?materialId=${id}`)
+                fetch(`/StudentTest/GetTestState?materialId=${id}&groupId=@ViewBag.GroupId`)
                     .then(res => res.json())
                     .then(state => {
                         const tbody = document.getElementById('testAttemptsTableBody');
@@ -618,6 +618,8 @@
         button.textContent = 'Отправка...';
 
         const formData = new FormData(form);
+        // ДОБАВЛЕНО: Передаем groupId при сдаче практики
+        formData.append("groupId", "@ViewBag.GroupId");
 
         try {
             const response = await fetch('/StudentCourse/SubmitAssignment', {
@@ -644,7 +646,8 @@
 
     function confirmAndStartTest(testId, testTitle) {
         if (confirm(`Вы действительно готовы запустить тест:\n"${testTitle}"?\n\nВнимание: Если у теста есть ограничение по времени, таймер запустится сразу после нажатия кнопки ОК!`)) {
-            window.location.href = `/StudentTest/Take?testId=${testId}`;
+            // ДОБАВЛЕНО: Передаем groupId в URL при запуске теста
+            window.location.href = `/StudentTest/Take?testId=${testId}&groupId=@ViewBag.GroupId`;
         }
     }
 

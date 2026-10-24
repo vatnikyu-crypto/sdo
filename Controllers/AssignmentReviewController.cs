@@ -23,7 +23,6 @@ public class AssignmentReviewController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        // Достаем тикеты вместе со всей цепочкой сообщений и их авторами
         var submissions = await _context.StudentSubmissions
             .Include(s => s.CourseMaterial).ThenInclude(m => m!.Course)
             .Include(s => s.Student)
@@ -54,10 +53,8 @@ public class AssignmentReviewController : Controller
             return Json(new { success = false, message = "Оценка должна быть в диапазоне от 2 до 5!" });
         }
 
-        // Текущий проверяющий администратор (замени на реальный получение User.Id из сессии)
         int currentAdminId = 2; 
 
-        // 1. Добавляем рецензию преподавателя как сообщение в чат
         var chatMessage = new SubmissionMessage
         {
             StudentSubmissionId = submission.Id,
@@ -68,16 +65,15 @@ public class AssignmentReviewController : Controller
         };
         _context.SubmissionMessages.Add(chatMessage);
 
-        // 2. Меняем глобальный статус тикета
         if (grade.HasValue)
         {
             submission.Grade = grade;
-            submission.Status = SubmissionStatus.Completed; // Работа принята, оценка стоит
+            submission.Status = SubmissionStatus.Completed;
         }
         else
         {
             submission.Grade = null;
-            submission.Status = SubmissionStatus.NeedFix; // Отправлено на доработку
+            submission.Status = SubmissionStatus.NeedFix;
         }
 
         submission.UpdatedAt = DateTime.UtcNow;
@@ -89,7 +85,8 @@ public class AssignmentReviewController : Controller
             var material = await _context.CourseMaterials.FindAsync(submission.CourseMaterialId);
             if (material != null)
             {
-                await GradeService.RecalculateCourseProgressAsync(_context, submission.StudentId, material.CourseId);
+                // ВАЖНО: Передаем submission.GroupId!
+                await GradeService.RecalculateCourseProgressAsync(_context, submission.StudentId, material.CourseId, submission.GroupId);
             }
         }
 
@@ -99,7 +96,6 @@ public class AssignmentReviewController : Controller
     [HttpGet]
     public async Task<IActionResult> GetPendingCount()
     {
-        // Считаем только те тикеты, которые висят в статусе "На проверке"
         int count = await _context.StudentSubmissions
             .CountAsync(s => s.Status == SubmissionStatus.OnReview && s.CourseMaterial != null && s.CourseMaterial.Type == MaterialType.Assignment);
         return Json(new { count });

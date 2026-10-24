@@ -298,9 +298,9 @@
                 const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
         
                 toast.innerHTML = `
-                    <i class="bi ${iconClass} fs-4 me-3"></i>
-                    <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
-                `;
+                            <i class="bi ${iconClass} fs-4 me-3"></i>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
+                        `;
         
                 container.appendChild(toast);
         
@@ -493,11 +493,11 @@
                     return;
                 }
                 skeletonStudentsBody.innerHTML = selectedStudents.map(st => `
-                    <tr id="student-row-item-${st.id}">
-                        <td><div class="fw-bold text-dark">${st.fio}</div></td>
-                        <td class="text-muted small"><span class="d-block text-secondary fw-bold">${st.company}</span><span class="d-block" style="font-size:0.75rem;">${st.position}</span></td>
-                        <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeStudentFromSkeleton(${st.id})">×</button></td>
-                    </tr>`).join('');
+                            <tr id="student-row-item-${st.id}">
+                                <td><div class="fw-bold text-dark">${st.fio}</div></td>
+                                <td class="text-muted small"><span class="d-block text-secondary fw-bold">${st.company}</span><span class="d-block" style="font-size:0.75rem;">${st.position}</span></td>
+                                <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeStudentFromSkeleton(${st.id})">×</button></td>
+                            </tr>`).join('');
             }
 
             function renderCoursesTable() {
@@ -506,10 +506,10 @@
                     return;
                 }
                 skeletonCoursesBody.innerHTML = selectedCourses.map(c => `
-                    <tr id="course-row-item-${c.courseId}">
-                        <td class="fw-bold text-dark small">📚 ${c.title}</td>
-                        <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCourseFromSkeleton(${c.courseId})">×</button></td>
-                    </tr>`).join('');
+                            <tr id="course-row-item-${c.courseId}">
+                                <td class="fw-bold text-dark small">📚 ${c.title}</td>
+                                <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCourseFromSkeleton(${c.courseId})">×</button></td>
+                            </tr>`).join('');
             }
 
             function renderCompaniesTable() {
@@ -518,11 +518,11 @@
                     return;
                 }
                 skeletonCompaniesBody.innerHTML = selectedCompanies.map(c => `
-                    <tr id="company-row-item-${c.id}">
-                        <td class="fw-bold text-dark small">🏢 ${c.name}</td>
-                        <td class="text-secondary small">${c.inn}</td>
-                        <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCompanyFromSkeleton(${c.id})">×</button></td>
-                    </tr>`).join('');
+                            <tr id="company-row-item-${c.id}">
+                                <td class="fw-bold text-dark small">🏢 ${c.name}</td>
+                                <td class="text-secondary small">${c.inn}</td>
+                                <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCompanyFromSkeleton(${c.id})">×</button></td>
+                            </tr>`).join('');
             }
 
             // ==========================================
@@ -593,8 +593,8 @@
                 accordionContainer.innerHTML = selectedCourses.map((c) => {
                     if (c.configId === 0) {
                         return `<div class="card bg-light border p-3 small text-muted text-center" style="border-radius:12px;">
-                                    📌 Курс <strong>«${c.title}»</strong> добавлен. Сохраните костяк, чтобы открыть доступ к настройкам.
-                                </div>`;
+                                            📌 Курс <strong>«${c.title}»</strong> добавлен. Сохраните костяк, чтобы открыть доступ к настройкам.
+                                        </div>`;
                     }
 
                     const allowedIdsArray = c.allowedIds ? c.allowedIds.split(',').map(id => parseInt(id)) : [];
@@ -603,15 +603,15 @@
                     let studentsCheckboxesHtml = selectedStudents.map(st => {
                         const isChecked = isFirstTime || allowedIdsArray.includes(st.id);
                         return `
-                            <div class="col-md-6 col-lg-4">
-                                <div class="p-2 border rounded bg-white d-flex align-items-center gap-2 small">
-                                    <input type="checkbox" class="form-check-input ms-1 course-student-checkbox-${c.configId}" value="${st.id}" ${isChecked ? 'checked' : ''} />
-                                    <div class="overflow-hidden">
-                                        <div class="fw-bold text-dark text-truncate">${st.fio}</div>
-                                        <div class="text-muted text-truncate" style="font-size:0.75rem;">${st.company}</div>
-                                    </div>
-                                </div>
-                            </div>`;
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="p-2 border rounded bg-white d-flex align-items-center gap-2 small">
+                                            <input type="checkbox" class="form-check-input ms-1 course-student-checkbox-${c.configId}" value="${st.id}" ${isChecked ? 'checked' : ''} />
+                                            <div class="overflow-hidden">
+                                                <div class="fw-bold text-dark text-truncate">${st.fio}</div>
+                                                <div class="text-muted text-truncate" style="font-size:0.75rem;">${st.company}</div>
+                                            </div>
+                                        </div>
+                                    </div>`;
                     }).join('');
 
                     if (selectedStudents.length === 0) {
@@ -619,40 +619,40 @@
                     }
 
                     return `
-                        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
-                            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center" role="button" 
-                                 data-bs-toggle="collapse" data-bs-target="#collapse-config-${c.configId}" style="cursor:pointer;">
-                                <span class="fw-bold text-dark fs-5">📚 ${c.title}</span>
-                                <span class="text-muted small fw-bold">⚙️ Настройки &darr;</span>
-                            </div>
-                            <div id="collapse-config-${c.configId}" class="collapse p-4 border-top">
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-4">
-                                        <label class="form-label text-muted small fw-bold">НОМЕР ПРОТОКОЛА / ПРИКАЗА</label>
-                                        <input type="text" id="protocol-input-${c.configId}" class="form-control form-control-sm fw-bold" value="${c.protocol || ''}" />
+                                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+                                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center" role="button" 
+                                         data-bs-toggle="collapse" data-bs-target="#collapse-config-${c.configId}" style="cursor:pointer;">
+                                        <span class="fw-bold text-dark fs-5">📚 ${c.title}</span>
+                                        <span class="text-muted small fw-bold">⚙️ Настройки &darr;</span>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label text-muted small fw-bold">НАЧАЛО ОБУЧЕНИЯ</label>
-                                        <input type="date" id="start-input-${c.configId}" class="form-control form-control-sm" value="${c.start || ''}" />
+                                    <div id="collapse-config-${c.configId}" class="collapse p-4 border-top">
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-md-4">
+                                                <label class="form-label text-muted small fw-bold">НОМЕР ПРОТОКОЛА / ПРИКАЗА</label>
+                                                <input type="text" id="protocol-input-${c.configId}" class="form-control form-control-sm fw-bold" value="${c.protocol || ''}" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label text-muted small fw-bold">НАЧАЛО ОБУЧЕНИЯ</label>
+                                                <input type="date" id="start-input-${c.configId}" class="form-control form-control-sm" value="${c.start || ''}" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label text-muted small fw-bold">ЭКЗАМЕН (ОКОНЧАНИЕ)</label>
+                                                <input type="date" id="end-input-${c.configId}" class="form-control form-control-sm" value="${c.end || ''}" />
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small fw-bold">ДОПУСК СЛУШАТЕЛЕЙ К КУРСУ</label>
+                                        </div>
+                                        <div class="row g-2 mb-4">
+                                            ${studentsCheckboxesHtml}
+                                        </div>
+                                        <div class="text-end border-top pt-3">
+                                            <button type="button" class="btn btn-sm btn-brand fw-bold px-4 py-2 rounded-3" onclick="saveIndividualCourseConfig(${c.configId})">
+                                                <i class="bi bi-check-lg me-1"></i> Сохранить параметры курса
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label text-muted small fw-bold">ЭКЗАМЕН (ОКОНЧАНИЕ)</label>
-                                        <input type="date" id="end-input-${c.configId}" class="form-control form-control-sm" value="${c.end || ''}" />
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label text-muted small fw-bold">ДОПУСК СЛУШАТЕЛЕЙ К КУРСУ</label>
-                                </div>
-                                <div class="row g-2 mb-4">
-                                    ${studentsCheckboxesHtml}
-                                </div>
-                                <div class="text-end border-top pt-3">
-                                    <button type="button" class="btn btn-sm btn-brand fw-bold px-4 py-2 rounded-3" onclick="saveIndividualCourseConfig(${c.configId})">
-                                        <i class="bi bi-check-lg me-1"></i> Сохранить параметры курса
-                                    </button>
-                                </div>
-                            </div>
-                        </div>`;
+                                </div>`;
                 }).join('');
             }
 
@@ -705,30 +705,41 @@
             // 9. СКАЧИВАНИЕ ДОСТУПОВ (AJAX)
             // ==========================================
             document.getElementById('downloadAccessesBtn').addEventListener('click', async function (e) {
-                e.preventDefault(); // Отменяем стандартное поведение кнопки
+                e.preventDefault();
                 const btn = this;
                 const originalHtml = btn.innerHTML;
-        
-                // Показываем загрузку на кнопке
+
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Формирование...';
 
                 try {
                     const response = await fetch(`/Groups/DownloadAccesses/${currentGroupId}`);
-            
+
                     if (response.ok) {
-                        // Если файл успешно сформирован, скачиваем его через Blob
                         const blob = await response.blob();
-                
-                        // Пытаемся достать имя файла из заголовков, иначе ставим дефолтное
-                        let filename = `Доступы_Группа_${currentGroupId}.xlsx`;
                         const disposition = response.headers.get('Content-Disposition');
-                        if (disposition && disposition.includes('filename=')) {
-                            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                            const matches = filenameRegex.exec(disposition);
-                            if (matches != null && matches[1]) {
-                                filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                        let filename = null;
+
+                        if (disposition) {
+                            // 1. Сначала ищем filename*=UTF-8''... (правильное русское имя)
+                            let matchStar = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+                            if (matchStar && matchStar[1]) {
+                                filename = decodeURIComponent(matchStar[1].replace(/['"]/g, '').trim());
+                            } else {
+                                // 2. Fallback: filename="..." (латиница или старый формат)
+                                let match = disposition.match(/filename\s*=\s*"?([^";]+)"?/i);
+                                if (match && match[1]) {
+                                    filename = decodeURIComponent(match[1].replace(/['"]/g, '').trim());
+                                }
                             }
+                        }
+
+                        // Если имя так и не нашли — дефолт по MIME-типу
+                        if (!filename) {
+                            const isZip = response.headers.get('Content-Type')?.includes('zip');
+                            filename = isZip
+                                ? `Доступы_Группа_${currentGroupId}.zip`
+                                : `Доступы_Группа_${currentGroupId}.xlsx`;
                         }
 
                         const url = window.URL.createObjectURL(blob);
@@ -743,9 +754,7 @@
 
                         showToast('Файл с доступами успешно сформирован!', 'success');
                     } else {
-                        // Если сервер вернул ошибку (например, 404), читаем текст и показываем пуш
                         const errorText = await response.text();
-                        // Очищаем текст от возможных HTML-тегов, если сервер вернул целую страницу ошибки
                         const cleanError = errorText.replace(/<[^>]+>/g, '').trim();
                         showToast(cleanError || 'Не удалось сформировать файл.', 'danger');
                     }
@@ -753,7 +762,6 @@
                     console.error('Ошибка скачивания:', err);
                     showToast('Сбой сети при скачивании файла.', 'danger');
                 } finally {
-                    // Возвращаем кнопку в исходное состояние
                     btn.disabled = false;
                     btn.innerHTML = originalHtml;
                 }
