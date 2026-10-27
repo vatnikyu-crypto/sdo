@@ -1,52 +1,132 @@
 @model IEnumerable<SdoApp.Models.Course>
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Управление курсами";
+    ViewData["Title"] = "Курсы";
 }
 
 <style>
-    .course-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-        border: none;
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-gray: #e2e8f0;
+    }
+
+    /* Компактная горизонтальная карточка */
+    .course-list-card {
+        border: 1px solid var(--brand-gray);
         border-radius: 12px;
+        background: #fff;
+        transition: all 0.25s ease-in-out;
+        padding: 12px 16px; /* Уменьшили внутренние отступы */
+    }
+
+    .course-list-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(79, 88, 157, 0.08) !important;
+        border-color: var(--brand-primary);
+    }
+
+    /* Уменьшенное превью (картинка) */
+    .course-thumbnail {
+        width: 110px;
+        height: 75px;
+        min-width: 110px;
+        border-radius: 8px;
         overflow: hidden;
+        background-color: #f8fafc;
+        border: 1px solid var(--brand-gray);
     }
 
-    .course-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .course-img-container {
-        height: 180px;
-        background-color: #eaecf4;
-        position: relative;
-    }
-
-    .course-img {
+    .course-thumbnail img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
 
+    .course-title-text {
+        font-size: 1.05rem;
+        color: var(--brand-dark);
+        transition: color 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* Обрезаем слишком длинные названия */
+    }
+
+    .course-list-card:hover .course-title-text {
+        color: var(--brand-primary);
+    }
+
+    /* Стили для кнопок-иконок */
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        box-shadow: 0 4px 10px rgba(79, 88, 157, 0.25);
+    }
+
+    /* Пагинация */
+    #paginationButtons .page-link {
+        color: var(--brand-primary) !important;
+        background-color: #ffffff !important;
+        border: 1px solid var(--brand-gray) !important;
+        font-weight: 700;
+        min-width: 38px;
+        text-align: center;
+        border-radius: 6px !important;
+        margin: 0 2px;
+        transition: all 0.2s;
+    }
+
+    #paginationButtons .page-link:hover {
+        background-color: #f0f4ff !important;
+        color: var(--brand-dark) !important;
+        border-color: var(--brand-primary) !important;
+    }
+
+    #paginationButtons .page-item.active .page-link {
+        background-color: var(--brand-primary) !important;
+        border-color: var(--brand-primary) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(79, 88, 157, 0.35);
+    }
+
+    #paginationButtons .page-item.disabled .page-link {
+        color: #cbd5e1 !important;
+        background-color: #f8f9fa !important;
+        border-color: var(--brand-gray) !important;
+    }
+
     .fade-out {
         opacity: 0;
-        transition: opacity 0.3s ease;
+        transform: scale(0.95);
+        transition: opacity 0.3s ease, transform 0.3s ease;
     }
 </style>
 
 <!-- 1. ВЕРХНЯЯ ПАНЕЛЬ С КНОПКОЙ СОЗДAНИЯ -->
 <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
     <div>
-        <h2 class="fw-bold text-dark m-0">Учебные курсы</h2>
-        <small class="text-muted">Конструктор и наполнение обучающих программ СДО</small>
+        <h3 class="fw-bold text-dark d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-journal-bookmark-fill text-primary fs-3"></i> Курсы
+        </h3>
     </div>
-    <a href="/Courses/Create" class="btn btn-primary px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
-        <svg xmlns="http://w3.org" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path
-            d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-        </svg>
-        Создать курс
+    <a href="/Courses/Create" class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3">
+        <i class="bi bi-plus-lg"></i> Создать курс
     </a>
 </div>
 
@@ -54,29 +134,29 @@
 <div class="row g-3 align-items-center mb-4">
     <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
         <span>Показать по:</span>
-        <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 75px;">
-            <option value="9" selected>9</option>
-            <option value="18">18</option>
-            <option value="36">36</option>
+        <select id="pageSizeSelect" class="form-select form-select-sm rounded-3 shadow-none border" style="width: 80px;">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
         </select>
     </div>
-    <div class="col-sm ms-auto" style="max-width: 400px;">
-        <div class="input-group input-group-sm">
-            <span class="input-group-text bg-light text-muted">🔍</span>
-            <input type="text" id="courseTableSearchInput" class="form-control"
+    <div class="col-sm ms-auto" style="max-width: 450px;">
+        <div class="input-group input-group-sm rounded-3 overflow-hidden border bg-white shadow-sm">
+            <span class="input-group-text bg-white text-muted border-0"><i class="bi bi-search"></i></span>
+            <input type="text" id="courseTableSearchInput" class="form-control border-0 shadow-none"
                    placeholder="Поиск по названию или описанию..." autocomplete="off" />
         </div>
     </div>
 </div>
 
-<!-- 3. СЕТКА КАРТОЧЕК КУРСОВ (3 В РЯД) -->
-<div class="row row-cols-1 row-cols-md-3 g-4" id="coursesGridContainer">
+<!-- 3. СПИСОК КАРТОЧЕК КУРСОВ -->
+<div class="d-flex flex-column gap-2" id="coursesGridContainer">
     @if (!Model.Any())
     {
-        <div class="col-12 w-100 text-center py-5 text-muted" id="noCoursesMessage">
-            <span style="font-size: 3rem;">📖</span>
-            <h5 class="fw-bold mt-2">В системе пока нет созданных курсов</h5>
-            <p class="small">Нажмите кнопку «Создать курс» вверху экрана, чтобы начать наполнение.</p>
+        <div class="col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm" id="noCoursesMessage">
+            <i class="bi bi-journal-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i>
+            <h5 class="fw-bold text-dark">В системе пока нет созданных курсов</h5>
+            <p class="small text-muted mb-0">Нажмите кнопку «Создать курс» вверху экрана, чтобы начать наполнение.</p>
         </div>
     }
     else
@@ -84,52 +164,57 @@
         @foreach (var course in Model)
         {
             <div class="col course-card-wrapper" id="course-card-@course.Id" data-id="@course.Id">
-                <div class="card h-100 shadow-sm course-card bg-white">
-                    <div class="course-img-container">
-                        <img src="@course.ImageUrl" class="course-img" alt="Обложка курса"
-                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://w3.org\' width=\'100%\' height=\'100%\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\' %234e73df\'/><text x=\'50%\' y=\'55%\' font-family=\'sans-serif\' font-weight=\'bold\' font-size=\'14\' fill=\'white\' text-anchor=\'middle\'>📚 СДО Курс</text></svg>';">
+                <!-- Основной контейнер карточки (Flexbox для выравнивания в строку) -->
+                 <div class="course-list-card shadow-sm d-flex flex-column flex-md-row align-items-md-center gap-3" 
+                     onclick="window.location.href='/CourseMaterials/Index?courseId=@course.Id'" 
+                     style="cursor: pointer;">
+                    
+                    <!-- 1. Превью -->
+                    <div class="course-thumbnail flex-shrink-0">
+                        <img src="@course.ImageUrl" alt="Обложка курса"
+                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://w3.org\' width=\'100%\' height=\'100%\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\'%234e73df\'/><text x=\'50%\' y=\'55%\' font-family=\'sans-serif\' font-weight=\'bold\' font-size=\'14\' fill=\'white\' text-anchor=\'middle\'>СДО</text></svg>';">
                     </div>
                     
-                    <div class="card-body d-flex flex-column p-4">
-                        <h5 class="card-title fw-bold text-dark mb-2 course-title">@course.Title</h5>
-                        <p class="card-text text-muted small flex-grow-1 course-description">
-                            @if (!string.IsNullOrWhiteSpace(course.Description))
-                            {
-                                <!-- Выводим текст, только если описание заполнено. Если длинное — обрезаем. -->
-                                @(course.Description.Length > 120 ? course.Description.Substring(0, 115) + "..." :
-                                                course.Description)
-                            }
-                        </p>
+                    <!-- 2. Информация (растягивается на свободное место) -->
+                    <div class="flex-grow-1 min-w-0 pe-md-3">
+                        <h5 class="fw-bold course-title-text mb-1" title="@course.Title">@course.Title</h5>
                         
-                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-                            <span class="small text-secondary fw-bold">
-                                📑 Элементов: @course.Materials.Count
+                        <!-- Описание выводится ТОЛЬКО если оно есть -->
+                        @if (!string.IsNullOrWhiteSpace(course.Description))
+                        {
+                            <p class="text-muted small mb-2 course-description text-truncate" style="max-width: 100%;">
+                                @course.Description
+                            </p>
+                        }
+                        
+                        <!-- Метаданные (кол-во элементов и дата) -->
+                        <div class="d-flex flex-wrap gap-3 align-items-center mt-2 mt-md-0">
+                            <span class="text-secondary small fw-semibold">
+                                <i class="bi bi-collection-play me-1"></i> Элементов: @course.Materials.Count
                             </span>
-                            <small class="text-muted" style="font-size: 0.75rem;">
-                                @course.CreatedAt.ToString("dd.MM.yyyy")
-                            </small>
+                            <span class="text-muted small">
+                                <i class="bi bi-calendar3 me-1"></i> @course.CreatedAt.ToString("dd.MM.yyyy")
+                            </span>
                         </div>
                     </div>
-                    
-                    <!-- ИСПРАВЛЕННАЯ СТРУКТУРА КНОПОК: Наполнение (Большая), Карандаш и Корзина (Маленькие справа) -->
-                    <div class="card-footer bg-light border-0 p-3 d-flex gap-1.5 align-items-center">
-                        <a href="/CourseMaterials/Index?courseId=@course.Id"
-                           class="btn btn-sm btn-primary fw-bold flex-grow-1 py-1.5">
-                            ⚙️ Наполнение
+
+                    <!-- 3. Кнопки действий (Три кнопки в ряд) -->
+                    <div class="d-flex gap-2 flex-shrink-0 mt-3 mt-md-0">
+                        <!-- Шестеренка (Наполнение) -->
+                        <a href="/CourseMaterials/Index?courseId=@course.Id" class="btn btn-action btn-brand" title="Наполнение курса" onclick="event.stopPropagation();">
+                            <i class="bi bi-gear-fill"></i>
                         </a>
-                        <a href="/Courses/Edit/@course.Id" class="btn btn-sm btn-light border text-secondary px-2.5 py-1.5"
-                           title="Редактировать карточку">
-                            ✏️
+                        
+                        <!-- Карандаш (Редактировать) -->
+                        <a href="/Courses/Edit/@course.Id" class="btn btn-action btn-outline-primary" title="Редактировать карточку" onclick="event.stopPropagation();">
+                            <i class="bi bi-pencil-square"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-danger px-2.5 py-1.5" title="Удалить учебный курс"
+                        
+                        <!-- Корзина (Удалить) -->
+                        <button class="btn btn-action btn-outline-danger" title="Удалить учебный курс"
                                 data-bs-toggle="modal" data-bs-target="#deleteCourseModal"
-                                onclick="prepareDeleteCourse(@course.Id, '@course.Title')">
-                            <svg xmlns="http://w3.org" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                <path
-                                d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
-                                <path
-                                d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
-                            </svg>
+                                onclick="event.stopPropagation(); prepareDeleteCourse(@course.Id, '@course.Title')">
+                            <i class="bi bi-trash"></i>
                         </button>
                     </div>
                 </div>
@@ -139,8 +224,8 @@
 </div>
 
 <!-- 4. СТРОКА НАВИГАЦИИ ПО СТРАНИЦАМ -->
-<div class="d-flex justify-content-between align-items-center px-1 mt-4 mb-4">
-    <div id="paginationInfo" class="small text-muted">Показано 0-0 из 0 курсов</div>
+<div class="d-flex justify-content-between align-items-center px-1 mt-4 mb-5">
+    <div id="paginationInfo" class="small text-muted fw-bold">Показано 0-0 из 0 курсов</div>
     <nav>
         <ul id="paginationButtons" class="pagination pagination-sm m-0">
             <!-- Сгенерируется автоматически -->
@@ -148,28 +233,29 @@
     </nav>
 </div>
 
-<!-- КРАСИВОЕ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ Bootstrap 5 -->
+<!-- КРАСИВОЕ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
 <div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-body p-4 text-center">
                 <div class="text-danger mb-3">
-                    <span style="font-size: 3rem; line-height: 1;">⚠️</span>
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 3.5rem;"></i>
                 </div>
                 <h5 class="fw-bold text-dark mb-2">Удаление курса</h5>
                 <p class="text-muted small mb-0">Вы действительно хотите безвозвратно удалить курс</p>
                 <p id="deleteCourseNameText" class="fw-bold text-danger mb-4"></p>
                 
                 <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50"
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
                             data-bs-dismiss="modal">Отмена</button>
                     <button id="confirmDeleteCourseBtn" type="button"
-                            class="btn btn-danger px-4 fw-bold w-50">Удалить</button>
+                            class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script>
     let currentPage = 1;
     const gridContainer = document.getElementById('coursesGridContainer');
@@ -185,7 +271,7 @@
         let filteredCards = cards;
         if (searchText.length > 0) {
             filteredCards = cards.filter(card => {
-                const title = card.querySelector('.course-title')?.textContent?.toLowerCase() ?? "";
+                const title = card.querySelector('.course-title-text')?.textContent?.toLowerCase() ?? "";
                 const description = card.querySelector('.course-description')?.textContent?.toLowerCase() ?? "";
                 return title.includes(searchText) || description.includes(searchText);
             });
@@ -202,8 +288,8 @@
             if (!noMessage && cards.length > 0) {
                 const emptyDiv = document.createElement('div');
                 emptyDiv.id = 'noCoursesMessage';
-                emptyDiv.className = 'col-12 w-100 text-center py-5 text-muted';
-                emptyDiv.innerHTML = '<span style="font-size: 3rem;">🔍</span><h5 class="fw-bold mt-2">По вашему запросу ничего не найдено</h5>';
+                emptyDiv.className = 'col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm';
+                emptyDiv.innerHTML = '<i class="bi bi-search text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">По вашему запросу ничего не найдено</h5>';
                 gridContainer.appendChild(emptyDiv);
             }
             return;
@@ -233,7 +319,7 @@
 
         const prevLi = document.createElement('li');
         prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<span class="page-link">&laquo;</span>`;
+        prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
         if (currentPage > 1) {
             prevLi.addEventListener('click', () => { currentPage--; updateCoursePagination(); });
         }
@@ -242,14 +328,14 @@
         for (let i = 1; i <= totalPages; i++) {
             const li = document.createElement('li');
             li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-            li.innerHTML = `<span class="page-link">${i}</span>`;
+            li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
             li.addEventListener('click', () => { currentPage = i; updateCoursePagination(); });
             paginationContainer.appendChild(li);
         }
 
         const nextLi = document.createElement('li');
         nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<span class="page-link">&raquo;</span>`;
+        nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
         if (currentPage < totalPages) {
             nextLi.addEventListener('click', () => { currentPage++; updateCoursePagination(); });
         }
@@ -272,7 +358,7 @@
 
     function prepareDeleteCourse(id, courseTitle) {
         courseIdToDelete = id;
-        document.getElementById('deleteCourseNameText').textContent = courseTitle;
+        document.getElementById('deleteCourseNameText').textContent = `«${courseTitle}»`;
     }
 
     document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async function () {
@@ -287,26 +373,22 @@
             const result = await response.json();
 
             if (result.success) {
-                // Закрываем окно симуляцией клика на "Отмена"
                 document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
 
-                // Плавно гасим и вырезаем карточку из сетки
                 const cardWrapper = document.getElementById(`course-card-${courseIdToDelete}`);
                 if (cardWrapper) {
                     cardWrapper.classList.add('fade-out');
                     setTimeout(() => {
                         cardWrapper.remove();
                         
-                        // Проверяем, остались ли курсы в базе
                         const cards = gridContainer.querySelectorAll('.course-card-wrapper');
                         if (cards.length === 0) {
-                            gridContainer.innerHTML = `<div id="noCoursesMessage" class="col-12 w-100 text-center py-5 text-muted"><span style="font-size: 3rem;">📖</span><h5 class="fw-bold mt-2">В системе пока нет созданных курсов</h5></div>`;
+                            gridContainer.innerHTML = `<div id="noCoursesMessage" class="col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm"><i class="bi bi-journal-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">В системе пока нет созданных курсов</h5></div>`;
                         }
                         updateCoursePagination();
                     }, 300);
                 }
             } else {
-                // Выводим понятную ошибку (например, если в курсе уже есть лекции)
                 alert('Внимание: ' + result.message);
                 document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
             }

@@ -190,17 +190,17 @@ public class CoursesController : Controller
     }
 
 
-    // GET: /Courses/Edit/5
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        // Загружаем курс из базы
+        // Ищем КУРС, а не группу!
         var course = await _context.Courses
-    .Include(c => c.DocumentTemplates)
-    .FirstOrDefaultAsync(c => c.Id == id);
+            .Include(c => c.DocumentTemplates)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (course == null) return NotFound();
 
-        // Заполняем текстовые данные карточки
+        // Заполняем ViewBag для страницы
         ViewBag.Id = course.Id;
         ViewBag.CourseTitle = course.Title;
         ViewBag.Description = course.Description;
@@ -208,23 +208,10 @@ public class CoursesController : Controller
         ViewBag.DurationHours = course.DurationHours;
         ViewBag.RecertificationMonths = course.RecertificationMonths;
         ViewBag.DocumentTemplates = course.DocumentTemplates.OrderBy(t => t.SortOrder).ToList();
-
-        // Передаем текущий ID привязанной программы
         ViewBag.CurrentMintrudProgramId = course.MintrudProgramId;
 
-        // ГАРАНТИРОВАННО загружаем программы Минтруда и проверяем, чтобы список не был пустым
-        var dbPrograms = await _context.MintrudPrograms.OrderBy(p => p.Name).ToListAsync();
-
-        // Если справочник вдруг пуст (база пересоздалась без сидинга), создадим временный список, чтобы страница не висла
-        if (dbPrograms == null || !dbPrograms.Any())
-        {
-            dbPrograms = new List<MintrudProgram>
-        {
-            new MintrudProgram { Id = 1, Code = "ИД46А", Name = "Тестовая программа (Проверьте сидинг базы!)" }
-        };
-        }
-
-        ViewBag.MintrudPrograms = dbPrograms;
+        // Загружаем программы Минтруда
+        ViewBag.MintrudPrograms = await _context.MintrudPrograms.OrderBy(p => p.Name).ToListAsync();
 
         return View();
     }
@@ -407,21 +394,27 @@ public class CoursesController : Controller
 
     // POST: /Courses/CreateMintrudProgram
     [HttpPost]
-    public async Task<IActionResult> CreateMintrudProgram(string name, string code)
+    public async Task<IActionResult> CreateMintrudProgram(string name, string code, string numberProgram)
     {
         if (string.IsNullOrWhiteSpace(name))
             return Json(new { success = false, message = "Название не может быть пустым" });
 
-        var program = new MintrudProgram { Name = name.Trim(), Code = code?.Trim() ?? string.Empty };
+        var program = new MintrudProgram
+        {
+            Name = name.Trim(),
+            Code = code?.Trim() ?? string.Empty,
+            NumberProgram = numberProgram?.Trim() ?? string.Empty
+        };
+
         _context.MintrudPrograms.Add(program);
         await _context.SaveChangesAsync();
 
-        return Json(new { success = true, id = program.Id, name = program.Name, code = program.Code });
+        return Json(new { success = true, id = program.Id, name = program.Name, code = program.Code, numberProgram = program.NumberProgram });
     }
 
     // POST: /Courses/EditMintrudProgram
     [HttpPost]
-    public async Task<IActionResult> EditMintrudProgram(int id, string name, string code)
+    public async Task<IActionResult> EditMintrudProgram(int id, string name, string code, string numberProgram)
     {
         var program = await _context.MintrudPrograms.FindAsync(id);
         if (program == null)
@@ -432,11 +425,12 @@ public class CoursesController : Controller
 
         program.Name = name.Trim();
         program.Code = code?.Trim() ?? string.Empty;
+        program.NumberProgram = numberProgram?.Trim() ?? string.Empty;
 
         _context.MintrudPrograms.Update(program);
         await _context.SaveChangesAsync();
 
-        return Json(new { success = true, id = program.Id, name = program.Name, code = program.Code });
+        return Json(new { success = true, id = program.Id, name = program.Name, code = program.Code, numberProgram = program.NumberProgram });
     }
 
     // POST: /Courses/DeleteMintrudProgram

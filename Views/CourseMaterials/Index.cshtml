@@ -12,14 +12,13 @@
         --brand-bg: #f8f9fc;
     }
 
-    /* Стили для карточек тем */
     .theme-card {
         border: 1px solid var(--brand-gray);
         border-radius: 12px;
         background: #fff;
         margin-bottom: 20px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
     
     .theme-header {
@@ -33,14 +32,15 @@
         transition: all 0.2s;
     }
     
-    .theme-header:hover { background-color: #f1f5f9; }
-    
+    .theme-header:hover {
+        background-color: #f1f5f9;
+    }
+
     .theme-header[aria-expanded="true"] {
         border-bottom-color: var(--brand-gray);
         background-color: #f0f4ff;
     }
 
-    /* Стили для карточек материалов */
     .material-card {
         border-left: 4px solid var(--brand-primary);
         transition: transform 0.2s, box-shadow 0.2s;
@@ -58,7 +58,6 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     }
 
-    /* Блок предпросмотра */
     .preview-container {
         max-height: 0;
         overflow: hidden;
@@ -73,13 +72,13 @@
         overflow-y: auto;
     }
 
-    /* Стили полей ввода (как в компаниях) */
     .modal-input {
         background-color: #f8fafc;
         border: 1px solid var(--brand-gray);
         border-radius: 8px;
         padding: 10px 12px;
     }
+
     .modal-input:focus {
         background-color: #fff;
         border-color: var(--brand-primary);
@@ -92,9 +91,14 @@
         border: none;
         transition: all 0.3s;
     }
-    .btn-brand:hover { background-color: var(--brand-dark); color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3); }
 
-    /* Бейджи параметров теста */
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+
     .test-info-badge {
         background-color: #f8f9fa;
         border: 1px solid #e9ecef;
@@ -107,9 +111,6 @@
         gap: 4px;
     }
 
-    /* ========================================= */
-    /* СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ (TOASTS) */
-    /* ========================================= */
     .toast-container-custom {
         position: fixed;
         top: 20px;
@@ -125,7 +126,7 @@
         max-width: 400px;
         background: white;
         border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         display: flex;
         align-items: center;
         padding: 15px 20px;
@@ -133,26 +134,45 @@
         border-left: 6px solid #ccc;
     }
 
-    .custom-toast.success { border-left-color: #198754; }
-    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.success {
+        border-left-color: #198754;
+    }
+
+    .custom-toast.danger {
+        border-left-color: #dc3545;
+    }
 
     @@keyframes slideInRight {
-        from { transform: translateX(120%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+        from {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
 
     @@keyframes fadeOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(120%); opacity: 0; }
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
     }
 </style>
 
-<!-- Контейнер для уведомлений -->
 <div id="toastContainer" class="toast-container-custom"></div>
 
-<!-- 1. НАВИГАЦИОННАЯ ШАПКА -->
 <div class="mb-4 mt-2">
-    <a href="/Courses/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 hover-primary" style="transition: color 0.2s;">
+    <a href="/Courses/Index"
+       class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 hover-primary"
+       style="transition: color 0.2s;">
         <i class="bi bi-arrow-left"></i> Назад к витрине курсов
     </a>
     <div class="d-flex justify-content-between align-items-end">
@@ -160,17 +180,18 @@
             <h3 class="fw-bold text-dark m-0">Конструктор курса: @Model.Title</h3>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3" data-bs-toggle="modal" data-bs-target="#addThemeModal">
+            <button class="btn btn-outline-primary fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3"
+                    data-bs-toggle="modal" data-bs-target="#addThemeModal">
                 <i class="bi bi-folder-plus"></i> Создать тему
             </button>
-            <button class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
+            <button class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3"
+                    data-bs-toggle="modal" data-bs-target="#addMaterialModal">
                 <i class="bi bi-plus-lg"></i> Добавить материал
             </button>
         </div>
     </div>
 </div>
 
-<!-- 2. СПИСОК ТЕМ И МАТЕРИАЛОВ -->
 <div id="themesContainer">
     @if (Model.Themes == null || !Model.Themes.Any())
     {
@@ -185,580 +206,727 @@
         @foreach (var theme in Model.Themes.OrderBy(t => t.Order))
         {
             <div class="theme-card">
-                <div class="theme-header" data-bs-toggle="collapse" data-bs-target="#theme-collapse-@theme.Id" aria-expanded="true">
+                <div class="theme-header" data-bs-toggle="collapse" data-bs-target="#theme-collapse-@theme.Id"
+                     aria-expanded="true">
                     <div class="d-flex align-items-center gap-3">
                         <i class="bi bi-folder2-open text-primary fs-4"></i>
                         <h5 class="fw-bold text-dark m-0">@theme.Title</h5>
-                        <span class="badge bg-secondary rounded-pill" style="font-size: 0.7rem;">@(theme.Materials?.Count ?? 0)</span>
+                        <span class="badge bg-secondary rounded-pill" style="font-size: 0.7rem;">@(theme.Materials?.Count ??
+                                                                            0)</span>
+                        </div>
+                        <div class="d-flex gap-2" onclick="event.stopPropagation();">
+                            <button class="btn btn-sm btn-light border text-danger" title="Удалить тему"
+                                    onclick="prepareDeleteTheme(@theme.Id)" data-bs-toggle="modal" data-bs-target="#deleteThemeModal">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="d-flex gap-2" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm btn-light border text-danger" title="Удалить тему" onclick="prepareDeleteTheme(@theme.Id)" data-bs-toggle="modal" data-bs-target="#deleteThemeModal">
-                            <i class="bi bi-trash3"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="collapse show" id="theme-collapse-@theme.Id">
-                    <div class="p-3 bg-white">
-                        @if (theme.Materials == null || !theme.Materials.Any())
-                        {
-                            <div class="text-muted small text-center py-3 fst-italic">В этой теме пока нет материалов.</div>
-                        }
-                        else
-                        {
-                            @foreach (var m in theme.Materials.OrderBy(x => x.Order))
+                    <div class="collapse show" id="theme-collapse-@theme.Id">
+                        <div class="p-3 bg-white">
+                            @if (theme.Materials == null || !theme.Materials.Any())
                             {
-                                <div class="material-card" id="material-item-@m.Id">
-                                    <div class="p-3" onclick="togglePreview(@m.Id)">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <!-- Стрелочки сортировки -->
-                                                <div class="d-flex flex-column gap-1" onclick="event.stopPropagation();">
-                                                    <button class="btn btn-sm btn-light border-0 p-1" onclick="changeOrder(@m.Id, 'up')" title="Вверх"><i class="bi bi-chevron-up text-muted"></i></button>
-                                                    <button class="btn btn-sm btn-light border-0 p-1" onclick="changeOrder(@m.Id, 'down')" title="Вниз"><i class="bi bi-chevron-down text-muted"></i></button>
-                                                </div>
-                                                <div>
-                                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                                        <span class="badge bg-secondary type-badge text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">@m.Type.ToString()</span>
-                                                        
-                                                        @if (m.Type == SdoApp.Models.MaterialType.Test)
-                                                        {
-                                                            <span class="test-info-badge" title="Статус теста"><i class="bi bi-bullseye"></i> @m.TestKind.ToString()</span>
-                                                            <span class="test-info-badge" title="Время"><i class="bi bi-clock"></i> @(m.TimeLimit > 0 ? $"{m.TimeLimit} мин" : "Без лимита")</span>
-                                                            <span class="test-info-badge" title="Порог сдачи"><i class="bi bi-graph-up"></i> @m.PassPercentage%</span>
-                                                            <span class="test-info-badge" title="Перемешивание"><i class="bi bi-shuffle"></i> @(m.ShuffleQuestions ? "Да" : "Нет")</span>
-                                                        }
+                                <div class="text-muted small text-center py-3 fst-italic">В этой теме пока нет материалов.</div>
+                            }
+                            else
+                            {
+                                @foreach (var m in theme.Materials.OrderBy(x => x.Order))
+                                {
+                                    <div class="material-card" id="material-item-@m.Id">
+                                        <div class="p-3" onclick="togglePreview(@m.Id)">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="d-flex flex-column gap-1" onclick="event.stopPropagation();">
+                                                        <button class="btn btn-sm btn-light border-0 p-1" onclick="changeOrder(@m.Id, 'up')"
+                                                                title="Вверх"><i class="bi bi-chevron-up text-muted"></i></button>
+                                                        <button class="btn btn-sm btn-light border-0 p-1"
+                                                                onclick="changeOrder(@m.Id, 'down')" title="Вниз"><i
+                                                            class="bi bi-chevron-down text-muted"></i></button>
+                                                        </div>
+                                                        <div>
+                                                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                                <span class="badge bg-secondary type-badge text-uppercase"
+                                                                      style="font-size: 0.65rem; letter-spacing: 0.5px;">@m.Type.ToString()</span>
+                                                                @if (m.Type == SdoApp.Models.MaterialType.Test)
+                                                                {
+                                                                    <span class="test-info-badge" title="Тип тестирования"><i
+                                                                        class="bi bi-bullseye"></i> @m.TestKind.ToString()</span>
+                                                                        <span class="test-info-badge" title="Время"><i class="bi bi-clock"></i>
+                                                                            @(m.TimeLimit > 0 ? $"{m.TimeLimit} мин" : "Без лимита")</span>
+                                                                            <span class="test-info-badge" title="Порог сдачи"><i class="bi bi-graph-up"></i>
+                                                                                @m.PassPercentage%</span>
+                                                                                <span class="test-info-badge" title="Перемешивание"><i
+                                                                                    class="bi bi-shuffle"></i> @(m.ShuffleQuestions ? "Да" : "Нет")</span>
+                                                                                }
+                                                                            </div>
+                                                                            <h6 class="fw-bold text-dark mb-0">@m.Title</h6>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="d-flex gap-2" onclick="event.stopPropagation();">
+                                                                        @if (m.Type == SdoApp.Models.MaterialType.Test)
+                                                                        {
+                                                                            <a href="/TestConstructor/Index?testId=@m.Id"
+                                                                               class="btn btn-sm btn-outline-success fw-bold px-3" title="Редактировать вопросы"><i
+                                                                                class="bi bi-list-check"></i> Вопросы</a>
+                                                                            }
+                                                                            <button class="btn btn-sm btn-light border text-secondary"
+                                                                                    onclick="prepareEditMaterial(@m.Id)" data-bs-toggle="modal"
+                                                                                    data-bs-target="#editMaterialModal" title="Редактировать"><i
+                                                                                class="bi bi-pencil"></i></button>
+                                                                                <button class="btn btn-sm btn-light border text-danger"
+                                                                                        onclick="prepareDeleteMaterial(@m.Id, '@m.Title')" data-bs-toggle="modal"
+                                                                                        data-bs-target="#deleteMaterialModal" title="Удалить"><i
+                                                                                    class="bi bi-trash3"></i></button>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="preview-container" id="preview-content-@m.Id"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        </div>
                                                     </div>
-                                                    <h6 class="fw-bold text-dark mb-0">@m.Title</h6>
+                                                </div>
+                                            }
+                                        }
+
+                                        <!-- БЛОК: МАТЕРИАЛЫ БЕЗ ТЕМЫ -->
+                                        @{
+                                            var orphanMaterials = Model.Materials?.Where(m => m.ThemeId == null).OrderBy(m => m.Order).ToList();
+                                            if (orphanMaterials != null && orphanMaterials.Any())
+                                            {
+                                                <div class="theme-card border-warning">
+                                                    <div class="theme-header bg-warning bg-opacity-10" data-bs-toggle="collapse"
+                                                         data-bs-target="#theme-collapse-none" aria-expanded="true">
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <i class="bi bi-inbox text-warning fs-4"></i>
+                                                            <h5 class="fw-bold text-dark m-0">Материалы без темы</h5>
+                                                        </div>
+                                                    </div>
+                                                    <div class="collapse show" id="theme-collapse-none">
+                                                        <div class="p-3 bg-white">
+                                                            @foreach (var m in orphanMaterials)
+                                                            {
+                                                                <div class="material-card border-warning" id="material-item-@m.Id">
+                                                                    <div class="p-3" onclick="togglePreview(@m.Id)">
+                                                                        <div class="d-flex justify-content-between align-items-center">
+                                                                            <div class="d-flex align-items-center gap-3">
+                                                                                <div>
+                                                                                    <span class="badge bg-secondary type-badge mb-1 text-uppercase"
+                                                                                          style="font-size: 0.65rem;">@m.Type.ToString()</span>
+                                                                                    <h6 class="fw-bold text-dark mb-0">@m.Title</h6>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="d-flex gap-2" onclick="event.stopPropagation();">
+                                                                                <button class="btn btn-sm btn-light border text-secondary"
+                                                                                        onclick="prepareEditMaterial(@m.Id)" data-bs-toggle="modal"
+                                                                                        data-bs-target="#editMaterialModal"><i class="bi bi-pencil"></i></button>
+                                                                                <button class="btn btn-sm btn-light border text-danger"
+                                                                                        onclick="prepareDeleteMaterial(@m.Id, '@m.Title')" data-bs-toggle="modal"
+                                                                                        data-bs-target="#deleteMaterialModal"><i class="bi bi-trash3"></i></button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="preview-container" id="preview-content-@m.Id"></div>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+
+                                    <!-- МОДАЛЬНЫЕ ОКНА -->
+                                    <div class="modal fade" id="addThemeModal" tabindex="-1">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                                <div class="modal-header bg-light border-0 py-3 rounded-top-4">
+                                                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2"><i
+                                                        class="bi bi-folder-plus text-primary"></i> Новая тема</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <label class="form-label text-muted small fw-bold">НАЗВАНИЕ ТЕМЫ <span
+                                                            class="text-danger">*</span></label>
+                                                            <input type="text" id="newThemeTitle" class="form-control fw-bold modal-input"
+                                                                   placeholder="Название темы" />
+                                                        </div>
+                                                        <div class="modal-footer bg-light border-0 rounded-bottom-4">
+                                                            <button type="button" class="btn btn-light border fw-bold rounded-3"
+                                                                    data-bs-dismiss="modal">Отмена</button>
+                                                            <button type="button" class="btn btn-brand fw-bold px-4 rounded-3"
+                                                                    onclick="submitCreateTheme()">Создать</button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="d-flex gap-2" onclick="event.stopPropagation();">
-                                                @if (m.Type == SdoApp.Models.MaterialType.Test)
-                                                {
-                                                    <a href="/TestConstructor/Index?testId=@m.Id" class="btn btn-sm btn-outline-success fw-bold px-3" title="Редактировать вопросы"><i class="bi bi-list-check"></i> Вопросы</a>
-                                                }
-                                                <button class="btn btn-sm btn-light border text-secondary" onclick="prepareEditMaterial(@m.Id)" data-bs-toggle="modal" data-bs-target="#editMaterialModal" title="Редактировать"><i class="bi bi-pencil"></i></button>
-                                                <button class="btn btn-sm btn-light border text-danger" onclick="prepareDeleteMaterial(@m.Id, '@m.Title')" data-bs-toggle="modal" data-bs-target="#deleteMaterialModal" title="Удалить"><i class="bi bi-trash3"></i></button>
-                                            </div>
-                                        </div>
-                                        <div class="preview-container" id="preview-content-@m.Id"></div>
-                                    </div>
-                                </div>
-                            }
-                        }
-                    </div>
-                </div>
-            </div>
-        }
-    }
 
-    <!-- БЛОК: МАТЕРИАЛЫ БЕЗ ТЕМЫ -->
-    @{
-        var orphanMaterials = Model.Materials?.Where(m => m.ThemeId == null).OrderBy(m => m.Order).ToList();
-        if (orphanMaterials != null && orphanMaterials.Any())
-        {
-            <div class="theme-card border-warning">
-                <div class="theme-header bg-warning bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#theme-collapse-none" aria-expanded="true">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="bi bi-inbox text-warning fs-4"></i>
-                        <h5 class="fw-bold text-dark m-0">Материалы без темы</h5>
-                    </div>
-                </div>
-                <div class="collapse show" id="theme-collapse-none">
-                    <div class="p-3 bg-white">
-                        @foreach (var m in orphanMaterials)
-                        {
-                            <div class="material-card border-warning" id="material-item-@m.Id">
-                                <div class="p-3" onclick="togglePreview(@m.Id)">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div>
-                                                <span class="badge bg-secondary type-badge mb-1 text-uppercase" style="font-size: 0.65rem;">@m.Type.ToString()</span>
-                                                <h6 class="fw-bold text-dark mb-0">@m.Title</h6>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex gap-2" onclick="event.stopPropagation();">
-                                            <button class="btn btn-sm btn-light border text-secondary" onclick="prepareEditMaterial(@m.Id)" data-bs-toggle="modal" data-bs-target="#editMaterialModal"><i class="bi bi-pencil"></i></button>
-                                            <button class="btn btn-sm btn-light border text-danger" onclick="prepareDeleteMaterial(@m.Id, '@m.Title')" data-bs-toggle="modal" data-bs-target="#deleteMaterialModal"><i class="bi bi-trash3"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="preview-container" id="preview-content-@m.Id"></div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
-    }
-</div>
+                                            <div class="modal fade" id="deleteThemeModal" tabindex="-1">
+                                                <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                                                    <div class="modal-content border-0 shadow-lg text-center p-4 rounded-4">
+                                                        <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                                             style="width: 70px; height: 70px;">
+                                                            <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+                                                        </div>
+                                                        <h5 class="fw-bold text-dark mb-2">Удалить тему?</h5>
+                                                        <p class="text-muted small mb-4">Все материалы внутри темы <strong>не удалятся</strong>, а переместятся в
+                                                            раздел "Без темы".</p>
+                                                            <div class="d-flex gap-2 justify-content-center">
+                                                                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
+                                                                        data-bs-dismiss="modal">Отмена</button>
+                                                                <button type="button" id="confirmDeleteThemeBtn"
+                                                                        class="btn btn-danger fw-bold w-50 rounded-3">Удалить</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-<!-- МОДАЛЬНОЕ ОКНО: СОЗДАНИЕ ТЕМЫ -->
-<div class="modal fade" id="addThemeModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-light border-0 py-3 rounded-top-4">
-                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
-                    <i class="bi bi-folder-plus text-primary"></i> Новая тема
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <label class="form-label text-muted small fw-bold">НАЗВАНИЕ ТЕМЫ <span class="text-danger">*</span></label>
-                <input type="text" id="newThemeTitle" class="form-control form-control-lg fw-bold modal-input" placeholder="Например: Модуль 1. Введение" />
-            </div>
-            <div class="modal-footer bg-light border-0 rounded-bottom-4">
-                <button type="button" class="btn btn-light border fw-bold rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-brand fw-bold px-4 rounded-3" onclick="submitCreateTheme()">Создать</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛЬНОЕ ОКНО: УДАЛЕНИЕ ТЕМЫ -->
-<div class="modal fade" id="deleteThemeModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content border-0 shadow-lg text-center p-4 rounded-4">
-            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
-                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
-            </div>
-            <h5 class="fw-bold text-dark mb-2">Удалить тему?</h5>
-            <p class="text-muted small mb-4">Все материалы внутри темы <strong>не удалятся</strong>, а переместятся в раздел "Без темы".</p>
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" id="confirmDeleteThemeBtn" class="btn btn-danger fw-bold w-50 rounded-3">Удалить</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ МАТЕРИАЛА -->
-<div class="modal fade" id="addMaterialModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-light border-0 py-3 rounded-top-4">
-                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
-                    <i class="bi bi-plus-circle text-primary"></i> Добавление материала
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="addMaterialForm" enctype="multipart/form-data">
-                    <input type="hidden" name="courseId" value="@Model.Id" />
+                                                <!-- ДОБАВЛЕНИЕ МАТЕРИАЛА -->
+                                                <div class="modal fade" id="addMaterialModal" tabindex="-1" data-bs-backdrop="static">
+                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                        <div class="modal-content border-0 shadow-lg rounded-4">
+                                                            <div class="modal-header bg-light border-0 py-3 rounded-top-4">
+                                                                <h5 class="modal-title fw-bold d-flex align-items-center gap-2"><i
+                                                                    class="bi bi-plus-circle text-primary"></i> Добавление материала</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body p-4">
+                                                                    <form id="addMaterialForm" enctype="multipart/form-data">
+                                                                        <input type="hidden" name="courseId" value="@Model.Id" />
                     
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ВЫБЕРИТЕ ТЕМУ</label>
-                        <select name="themeId" id="newMaterialThemeId" class="form-select modal-input fw-bold text-secondary">
-                            <option value="">-- Без темы (в корень курса) --</option>
-                            @foreach (var t in Model.Themes.OrderBy(x => x.Order))
-                            {
-                                <option value="@t.Id">@t.Title</option>
-                            }
-                        </select>
-                    </div>
+                                                                        <div class="mb-3">
+                                                                            <label class="form-label text-muted small fw-bold">ВЫБЕРИТЕ ТЕМУ</label>
+                                                                            <select name="themeId" id="newMaterialThemeId"
+                                                                                    class="form-select modal-input fw-bold text-secondary">
+                                                                                <option value="">-- Без темы (в корень курса) --</option>
+                                                                                @foreach (var t in Model.Themes.OrderBy(x => x.Order))
+                                                                                {
+                                                                                    <option value="@t.Id">@t.Title</option>
+                                                                                }
+                                                                            </select>
+                                                                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">НАЗВАНИЕ ЭЛЕМЕНТА <span class="text-danger">*</span></label>
-                        <input name="title" type="text" class="form-control modal-input fw-bold" required placeholder="Например: Лекция 1" />
-                    </div>
+                                                                        <div class="mb-3">
+                                                                            <label class="form-label text-muted small fw-bold">НАЗВАНИЕ ЭЛЕМЕНТА <span
+                                                                                class="text-danger">*</span></label>
+                                                                                <input name="title" type="text" class="form-control modal-input fw-bold" required
+                                                                                       placeholder="Название элемента" />
+                                                                            </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ТИП КОНТЕНТА <span class="text-danger">*</span></label>
-                        <select name="type" id="materialType" class="form-select modal-input fw-bold text-secondary">
-                            <option value="0">Лекция (HTML-текст)</option>
-                            <option value="1">PDF-документ</option>
-                            <option value="2">Видео (MP4)</option>
-                            <option value="3">Изображение / Схема</option>
-                            <option value="4">Тестирование</option>
-                            <option value="5">Задание с ручной проверкой</option>
-                        </select>
-                    </div>
+                                                                            <div class="mb-3">
+                                                                                <label class="form-label text-muted small fw-bold">ТИП КОНТЕНТА <span
+                                                                                    class="text-danger">*</span></label>
+                                                                                    <select name="type" id="materialType" class="form-select modal-input fw-bold text-secondary">
+                                                                                        <option value="0">Лекция (HTML-текст)</option>
+                                                                                        <option value="1">PDF-документ</option>
+                                                                                        <option value="2">Видео</option>
+                                                                                        <option value="3">Изображение</option>
+                                                                                        <option value="4">Тестирование</option>
+                                                                                        <option value="5">Задание с ручной проверкой</option>
+                                                                                        <option value="6">SCORM-пакет (.zip)</option>
+                                                                                    </select>
+                                                                                </div>
 
-                    <div id="textBlock" class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ТЕКСТОВОЕ СОДЕРЖИМОЕ</label>
-                        <textarea name="textContent" class="form-control modal-input" rows="4" placeholder="Введите текст лекции..."></textarea>
-                    </div>
+                                                                                <div id="textBlock" class="mb-3">
+                                                                                    <label class="form-label text-muted small fw-bold">ТЕКСТОВОЕ СОДЕРЖИМОЕ</label>
+                                                                                    <!-- Контейнер для визуального редактора -->
+                                                                                    <div id="addQuillEditor" style="height: 250px; background: #fff;"></div>
+                                                                                    <!-- Скрытый инпут, куда будет падать готовый HTML -->
+                                                                                    <input type="hidden" name="textContent" id="addTextContentHidden" />
+                                                                                </div>
 
-                    <div id="fileBlock" class="mb-3 d-none">
-                        <label id="fileLabel" class="form-label text-muted small fw-bold">ПРИКРЕПИТЕ ФАЙЛ <span class="text-danger">*</span></label>
-                        <input name="uploadedFile" id="uploadedFileInput" type="file" class="form-control modal-input" accept="" />
-                    </div>
+                                                                                <div id="fileBlock" class="mb-3 d-none">
+                                                                                    <label id="fileLabel" class="form-label text-muted small fw-bold">ПРИКРЕПИТЕ ФАЙЛ <span
+                                                                                        class="text-danger">*</span></label>
+                                                                                        <input name="uploadedFile" id="uploadedFileInput" type="file" class="form-control modal-input"
+                                                                                               accept="" />
+                                                                                    </div>
 
-                    <div id="testSettingsBlock" class="d-none border rounded-3 p-3 bg-light mb-3">
-                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-gear me-1"></i> Параметры тестирования</h6>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold">СТАТУС ТЕСТА</label>
-                                <select name="testKind" class="form-select form-select-sm modal-input">
-                                    <option value="0">Промежуточный</option>
-                                    <option value="1">Итоговый</option>
-                                    <option value="2">Тренажер</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold">ПОРОГ (%)</label>
-                                <input type="number" name="passPercentage" class="form-control form-control-sm modal-input" min="1" max="100" value="80">
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="enableTimeLimit">
-                                    <label class="form-check-label small fw-bold text-muted" for="enableTimeLimit">Ограничить время</label>
-                                </div>
-                                <div id="timeLimitInputContainer" class="d-none d-flex align-items-center gap-2 mt-2">
-                                    <input type="number" name="timeLimit" id="timeLimit" class="form-control form-control-sm modal-input" style="width: 100px;" min="1" value="20">
-                                    <span class="small text-muted">минут</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="shuffleQuestions" id="shuffleQuestions" value="true">
-                                    <label class="form-check-label small fw-bold text-muted" for="shuffleQuestions">Перемешивать вопросы</label>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label text-muted small fw-bold">КОЛИЧЕСТВО ВОПРОСОВ (0 - все)</label>
-                                <input type="number" name="questionsCountToUse" class="form-control form-control-sm modal-input" min="0" value="0">
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer bg-light border-0 py-3 rounded-bottom-4">
-                <button type="button" class="btn btn-light border fw-bold rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button id="submitMaterialBtn" type="button" class="btn btn-brand px-4 fw-bold rounded-3">Сохранить</button>
-            </div>
-        </div>
-    </div>
-</div>
+                                                                                    <div id="testSettingsBlock" class="d-none border rounded-3 p-3 bg-light mb-3">
+                                                                                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-gear me-1"></i> Параметры тестирования</h6>
+                                                                                        <div class="row g-3">
+                                                                                            <div class="col-md-6">
+                                                                                                <label class="form-label text-muted small fw-bold">ТИП ТЕСТИРОВАНИЯ</label>
+                                                                                                <select name="testKind" class="form-select form-select-sm modal-input">
+                                                                                                    <option value="0">Промежуточный</option>
+                                                                                                    <option value="1">Итоговый</option>
+                                                                                                    <option value="2">Тренажер</option>
+                                                                                                </select>
+                                                                                            </div>
+                                                                                            <div class="col-md-6">
+                                                                                                <label class="form-label text-muted small fw-bold">Минимальный балл (%)</label>
+                                                                                                <input type="number" name="passPercentage"
+                                                                                                       class="form-control form-control-sm modal-input" min="1" max="100" value="80">
+                                                                                            </div>
+                                                                                            <div class="col-12">
+                                                                                                <div class="form-check form-switch">
+                                                                                                    <input class="form-check-input" type="checkbox" id="enableTimeLimit">
+                                                                                                    <label class="form-check-label small fw-bold text-muted"
+                                                                                                           for="enableTimeLimit">Ограничение по времени</label>
+                                                                                                </div>
+                                                                                                <div id="timeLimitInputContainer" class="d-none align-items-center gap-2 mt-2">
+                                                                                                    <input type="number" name="timeLimit" id="timeLimit"
+                                                                                                           class="form-control form-control-sm modal-input" style="width: 100px;" min="0"
+                                                                                                           value="0">
+                                                                                                    <span class="small text-muted">минут</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="col-12">
+                                                                                                <div class="form-check form-switch">
+                                                                                                    <input class="form-check-input" type="checkbox" name="shuffleQuestions"
+                                                                                                           id="shuffleQuestions" value="true">
+                                                                                                    <label class="form-check-label small fw-bold text-muted"
+                                                                                                           for="shuffleQuestions">Перемешать вопросы</label>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="col-12">
+                                                                                                <label class="form-label text-muted small fw-bold">КОЛИЧЕСТВО ВОПРОСОВ В ТЕСТЕ (0 -
+                                                                                                    все)</label>
+                                                                                                    <input type="number" name="questionsCountToUse"
+                                                                                                           class="form-control form-control-sm modal-input" min="0" value="0">
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </form>
+                                                                                </div>
+                                                                                <div class="modal-footer bg-light border-0 py-3 rounded-bottom-4">
+                                                                                    <button type="button" class="btn btn-light border fw-bold rounded-3"
+                                                                                            data-bs-dismiss="modal">Отмена</button>
+                                                                                    <button id="submitMaterialBtn" type="button"
+                                                                                            class="btn btn-brand px-4 fw-bold rounded-3">Сохранить</button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
 
-<!-- МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ МАТЕРИАЛА -->
-<div class="modal fade" id="editMaterialModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-light border-0 py-3 rounded-top-4">
-                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
-                    <i class="bi bi-pencil-square text-primary"></i> Редактирование
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="editMaterialForm" enctype="multipart/form-data">
-                    <input type="hidden" name="id" id="editMaterialId" />
+                                                                    <!-- РЕДАКТИРОВАНИЕ МАТЕРИАЛА -->
+                                                                    <div class="modal fade" id="editMaterialModal" tabindex="-1" data-bs-backdrop="static">
+                                                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                                                                <div class="modal-header bg-light border-0 py-3 rounded-top-4">
+                                                                                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2"><i
+                                                                                        class="bi bi-pencil-square text-primary"></i> Редактирование</h5>
+                                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                                    </div>
+                                                                                    <div class="modal-body p-4">
+                                                                                        <form id="editMaterialForm" enctype="multipart/form-data">
+                                                                                            <input type="hidden" name="id" id="editMaterialId" />
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ТЕМА</label>
-                        <select name="themeId" id="editMaterialThemeId" class="form-select modal-input fw-bold text-secondary">
-                            <option value="">-- Без темы --</option>
-                            @foreach (var t in Model.Themes.OrderBy(x => x.Order))
-                            {
-                                <option value="@t.Id">@t.Title</option>
-                            }
-                        </select>
-                    </div>
+                                                                                            <div class="mb-3">
+                                                                                                <label class="form-label text-muted small fw-bold">ТЕМА</label>
+                                                                                                <select name="themeId" id="editMaterialThemeId"
+                                                                                                        class="form-select modal-input fw-bold text-secondary">
+                                                                                                    <option value="">-- Без темы --</option>
+                                                                                                    @foreach (var t in Model.Themes.OrderBy(x => x.Order))
+                                                                                                    {
+                                                                                                        <option value="@t.Id">@t.Title</option>
+                                                                                                    }
+                                                                                                </select>
+                                                                                            </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">НАЗВАНИЕ <span class="text-danger">*</span></label>
-                        <input name="title" id="editMaterialTitle" type="text" class="form-control modal-input fw-bold" required />
-                    </div>
+                                                                                            <div class="mb-3">
+                                                                                                <label class="form-label text-muted small fw-bold">НАЗВАНИЕ <span
+                                                                                                    class="text-danger">*</span></label>
+                                                                                                    <input name="title" id="editMaterialTitle" type="text" class="form-control modal-input fw-bold"
+                                                                                                           required />
+                                                                                                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ТИП (Заблокирован)</label>
-                        <input type="text" id="editMaterialTypeLabel" class="form-control modal-input bg-light" readonly />
-                    </div>
+                                                                                                <div class="mb-3">
+                                                                                                    <label class="form-label text-muted small fw-bold">ТИП (Заблокирован)</label>
+                                                                                                    <input type="text" id="editMaterialTypeLabel" class="form-control modal-input bg-light"
+                                                                                                           readonly />
+                                                                                                </div>
 
-                    <div id="editTextBlock" class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ТЕКСТ</label>
-                        <textarea name="textContent" id="editMaterialTextContent" class="form-control modal-input" rows="4"></textarea>
-                    </div>
+                                                                                                <div id="editTextBlock" class="mb-3">
+                                                                                                    <label class="form-label text-muted small fw-bold">ТЕКСТ</label>
+                                                                                                    <div id="editQuillEditor" style="height: 250px; background: #fff;"></div>
+                                                                                                    <input type="hidden" name="textContent" id="editTextContentHidden" />
+                                                                                                </div>
 
-                    <div id="editFileBlock" class="mb-3 d-none">
-                        <label class="form-label text-muted small fw-bold">ЗАМЕНИТЬ ФАЙЛ (Необязательно)</label>
-                        <input name="uploadedFile" id="editUploadedFileInput" type="file" class="form-control modal-input" accept="" />
-                    </div>
+                                                                                                <div id="editFileBlock" class="mb-3 d-none">
+                                                                                                    <label class="form-label text-muted small fw-bold">ЗАМЕНИТЬ ФАЙЛ (Необязательно)</label>
+                                                                                                    <input name="uploadedFile" id="editUploadedFileInput" type="file"
+                                                                                                           class="form-control modal-input" accept="" />
+                                                                                                </div>
 
-                    <div id="editTestSettingsBlock" class="d-none border rounded-3 p-3 bg-light mb-3">
-                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-gear me-1"></i> Параметры</h6>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <select name="testKind" id="editTestKind" class="form-select form-select-sm modal-input">
-                                    <option value="0">Промежуточный</option>
-                                    <option value="1">Итоговый</option>
-                                    <option value="2">Тренажер</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <input type="number" name="passPercentage" id="editPassPercentage" class="form-control form-control-sm modal-input" min="1" max="100">
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="editEnableTimeLimit">
-                                    <label class="form-check-label small fw-bold text-muted" for="editEnableTimeLimit">Ограничить время</label>
-                                </div>
-                                <div id="editTimeLimitInputContainer" class="d-none d-flex align-items-center gap-2 mt-2">
-                                    <input type="number" name="timeLimit" id="editTimeLimit" class="form-control form-control-sm modal-input" style="width: 100px;" min="1">
-                                    <span class="small text-muted">минут</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="shuffleQuestions" id="editShuffleQuestions" value="true">
-                                    <label class="form-check-label small fw-bold text-muted" for="editShuffleQuestions">Перемешивать</label>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <input type="number" name="questionsCountToUse" id="editQuestionsCountToUse" class="form-control form-control-sm modal-input" min="0">
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer bg-light border-0 py-3 rounded-bottom-4">
-                <button type="button" class="btn btn-light border fw-bold rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button id="submitEditMaterialBtn" type="button" class="btn btn-brand px-4 fw-bold rounded-3">Сохранить</button>
-            </div>
-        </div>
-    </div>
-</div>
+                                                                                                <div id="editTestSettingsBlock" class="d-none border rounded-3 p-3 bg-light mb-3">
+                                                                                                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-gear me-1"></i> Параметры тестирования</h6>
+                                                                                                    <div class="row g-3">
+                                                                                                        <div class="col-md-6">
+                                                                                                            <label class="form-label text-muted small fw-bold">ТИП ТЕСТИРОВАНИЯ</label>
+                                                                                                            <select name="testKind" id="editTestKind"
+                                                                                                                    class="form-select form-select-sm modal-input">
+                                                                                                                <option value="0">Промежуточный</option>
+                                                                                                                <option value="1">Итоговый</option>
+                                                                                                                <option value="2">Тренажер</option>
+                                                                                                            </select>
+                                                                                                        </div>
+                                                                                                        <div class="col-md-6">
+                                                                                                            <label class="form-label text-muted small fw-bold">Минимальный балл (%)</label>
+                                                                                                            <input type="number" name="passPercentage" id="editPassPercentage"
+                                                                                                                   class="form-control form-control-sm modal-input" min="1" max="100">
+                                                                                                        </div>
+                                                                                                        <div class="col-12">
+                                                                                                            <div class="form-check form-switch">
+                                                                                                                <input class="form-check-input" type="checkbox" id="editEnableTimeLimit">
+                                                                                                                <label class="form-check-label small fw-bold text-muted"
+                                                                                                                       for="editEnableTimeLimit">Ограничение по времени</label>
+                                                                                                            </div>
+                                                                                                            <div id="editTimeLimitInputContainer" class="d-none align-items-center gap-2 mt-2">
+                                                                                                                <input type="number" name="timeLimit" id="editTimeLimit"
+                                                                                                                       class="form-control form-control-sm modal-input" style="width: 100px;" min="0">
+                                                                                                                <span class="small text-muted">минут</span>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div class="col-12">
+                                                                                                            <div class="form-check form-switch">
+                                                                                                                <input class="form-check-input" type="checkbox" name="shuffleQuestions"
+                                                                                                                       id="editShuffleQuestions" value="true">
+                                                                                                                <label class="form-check-label small fw-bold text-muted"
+                                                                                                                       for="editShuffleQuestions">Перемешать вопросы</label>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div class="col-12">
+                                                                                                            <label class="form-label text-muted small fw-bold">КОЛИЧЕСТВО ВОПРОСОВ В ТЕСТЕ (0 -
+                                                                                                                все)</label>
+                                                                                                                <input type="number" name="questionsCountToUse" id="editQuestionsCountToUse"
+                                                                                                                       class="form-control form-control-sm modal-input" min="0">
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </form>
+                                                                                            </div>
+                                                                                            <div class="modal-footer bg-light border-0 py-3 rounded-bottom-4">
+                                                                                                <button type="button" class="btn btn-light border fw-bold rounded-3"
+                                                                                                        data-bs-dismiss="modal">Отмена</button>
+                                                                                                <button id="submitEditMaterialBtn" type="button"
+                                                                                                        class="btn btn-brand px-4 fw-bold rounded-3">Сохранить</button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
 
-<!-- МОДАЛЬНОЕ ОКНО: УДАЛЕНИЕ МАТЕРИАЛА -->
-<div class="modal fade" id="deleteMaterialModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
-                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
-            </div>
-            <h5 class="fw-bold text-dark mb-2">Удалить материал?</h5>
-            <p id="deleteMaterialNameText" class="fw-bold text-danger mb-4"></p>
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button id="confirmDeleteMaterialBtn" type="button" class="btn btn-danger fw-bold w-50 rounded-3">Удалить</button>
-            </div>
-        </div>
-    </div>
-</div>
+                                                                                <!-- УДАЛЕНИЕ МАТЕРИАЛА -->
+                                                                                <div class="modal fade" id="deleteMaterialModal" tabindex="-1">
+                                                                                    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                                                                                        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+                                                                                            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                                                                                 style="width: 70px; height: 70px;">
+                                                                                                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+                                                                                            </div>
+                                                                                            <h5 class="fw-bold text-dark mb-2">Удалить материал?</h5>
+                                                                                            <p id="deleteMaterialNameText" class="fw-bold text-danger mb-4"></p>
+                                                                                            <div class="d-flex gap-2 justify-content-center">
+                                                                                                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
+                                                                                                        data-bs-dismiss="modal">Отмена</button>
+                                                                                                <button id="confirmDeleteMaterialBtn" type="button"
+                                                                                                        class="btn btn-danger fw-bold w-50 rounded-3">Удалить</button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
 
-<script>
-    // ==========================================
-    // 1. УВЕДОМЛЕНИЯ (TOASTS)
-    // ==========================================
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `custom-toast ${type}`;
-        const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
-        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem;">${message}</div>`;
-        container.appendChild(toast);
-        setTimeout(() => { toast.style.animation = 'fadeOutRight 0.3s ease-in forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
-    }
+                                                                                <script>
+                                                                                    // ==========================================
+                                                                                    // 0. ГЛОБАЛЬНЫЕ ФУНКЦИИ (УВЕДОМЛЕНИЯ И ПРЕДПРОСМОТР)
+                                                                                    // ==========================================
+                                                                                    function showToast(message, type = 'success') {
+                                                                                        const container = document.getElementById('toastContainer');
+                                                                                        const toast = document.createElement('div');
+                                                                                        toast.className = `custom-toast ${type}`;
+                                                                                        const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+                                                                                        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem;">${message}</div>`;
+                                                                                        container.appendChild(toast);
+                                                                                        setTimeout(() => { toast.style.animation = 'fadeOutRight 0.3s ease-in forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
+                                                                                    }
 
-    // ==========================================
-    // 2. УПРАВЛЕНИЕ ТЕМАМИ
-    // ==========================================
-    async function submitCreateTheme() {
-        const title = document.getElementById('newThemeTitle').value.trim();
-        if (!title) return showToast('Введите название темы!', 'danger');
+                                                                                    // ==========================================
+                                                                                    // ИНИЦИАЛИЗАЦИЯ ВИЗУАЛЬНОГО РЕДАКТОРА QUILL (РАСШИРЕННЫЙ)
+                                                                                    // ==========================================
+                                                                                    const quillOptions = {
+                                                                                        theme: 'snow',
+                                                                                        modules: {
+                                                                                            toolbar: [
+                                                                                                // Заголовки
+                                                                                                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                                                                                                // Шрифты и размеры
+                                                                                                [{ 'font': [] }],
+                                                                                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                                                                                // Стили текста
+                                                                                                ['bold', 'italic', 'underline', 'strike'],
+                                                                                                // Цвет текста и фона
+                                                                                                [{ 'color': [] }, { 'background': [] }],
+                                                                                                // Выравнивание
+                                                                                                [{ 'align': [] }],
+                                                                                                // Списки
+                                                                                                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                                                                                // Отступы
+                                                                                                [{ 'indent': '-1' }, { 'indent': '+1' }],
+                                                                                                // Цитата и код
+                                                                                                ['blockquote', 'code-block'],
+                                                                                                // Направление текста (слева направо / справа налево)
+                                                                                                [{ 'direction': 'rtl' }],
+                                                                                                // Верхний и нижний индекс (например, для формул)
+                                                                                                [{ 'script': 'sub' }, { 'script': 'super' }],
+                                                                                                // Ссылки, картинки, видео, формулы
+                                                                                                ['link', 'image', 'video', 'formula'],
+                                                                                                // Очистить форматирование
+                                                                                                ['clean']
+                                                                                            ]
+                                                                                        }
+                                                                                    };
 
-        const params = new URLSearchParams();
-        params.append('courseId', '@Model.Id');
-        params.append('title', title);
+                                                                                    const addQuill = new Quill('#addQuillEditor', quillOptions);
+                                                                                    const editQuill = new Quill('#editQuillEditor', quillOptions);
 
-        try {
-            const response = await fetch('/CourseMaterials/CreateTheme', { method: 'POST', body: params });
-            const result = await response.json();
-            if (result.success) {
-                showToast('Тема создана!', 'success');
-                setTimeout(() => window.location.reload(), 800);
-            } else { showToast(result.message, 'danger'); }
-        } catch { showToast('Ошибка сети', 'danger'); }
-    }
+                                                                                    async function togglePreview(id) {
+                                                                                        const container = document.getElementById(`preview-content-${id}`);
+                                                                                        if (container.classList.contains('expanded')) {
+                                                                                            container.classList.remove('expanded');
+                                                                                            return;
+                                                                                        }
+                                                                                        document.querySelectorAll('.preview-container.expanded').forEach(el => el.classList.remove('expanded'));
 
-    let themeIdToDelete = null;
-    function prepareDeleteTheme(id) { themeIdToDelete = id; }
-    
-    document.getElementById('confirmDeleteThemeBtn').addEventListener('click', async function() {
-        this.disabled = true;
-        try {
-            const response = await fetch(`/CourseMaterials/DeleteTheme/${themeIdToDelete}`, { method: 'POST' });
-            if ((await response.json()).success) {
-                showToast('Тема удалена. Материалы перемещены в корень.', 'success');
-                setTimeout(() => window.location.reload(), 800);
-            } else { this.disabled = false; }
-        } catch { this.disabled = false; showToast('Ошибка сети', 'danger'); }
-    });
+                                                                                        container.classList.add('expanded');
+                                                                                        container.innerHTML = '<div class="text-center p-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Загрузка...</div>';
 
-    // ==========================================
-    // 3. МАТЕРИАЛЫ: ДОБАВЛЕНИЕ
-    // ==========================================
-    document.getElementById("materialType").addEventListener("change", function () {
-        const val = this.value;
-        const textBlock = document.getElementById("textBlock");
-        const fileBlock = document.getElementById("fileBlock");
-        const fileLabel = document.getElementById("fileLabel");
-        const fileInput = document.getElementById("uploadedFileInput");
-        const testSettingsBlock = document.getElementById("testSettingsBlock");
-
-        textBlock.classList.add("d-none"); fileBlock.classList.add("d-none"); testSettingsBlock.classList.add("d-none");
-        fileInput.required = false; fileInput.value = "";
-
-        if (val === "0") { textBlock.classList.remove("d-none"); }
-        else if (val === "1" || val === "2" || val === "3") {
-            fileBlock.classList.remove("d-none"); fileInput.required = true;
-            if (val === "1") { fileLabel.innerHTML = "ВЫБЕРИТЕ PDF <span class='text-danger'>*</span>"; fileInput.accept = ".pdf"; }
-            else if (val === "2") { fileLabel.innerHTML = "ВЫБЕРИТЕ MP4 <span class='text-danger'>*</span>"; fileInput.accept = ".mp4"; }
-            else { fileLabel.innerHTML = "ВЫБЕРИТЕ КАРТИНКУ <span class='text-danger'>*</span>"; fileInput.accept = ".jpg,.jpeg,.png,.webp"; }
-        } else if (val === "4") { testSettingsBlock.classList.remove("d-none"); }
-        else if (val === "5") { textBlock.classList.remove("d-none"); fileBlock.classList.remove("d-none"); fileLabel.innerHTML = "ФАЙЛ К ЗАДАНИЮ (Необязательно)"; fileInput.accept = "*/*"; }
-    });
-
-    document.getElementById('enableTimeLimit').addEventListener('change', function () {
-        const container = document.getElementById('timeLimitInputContainer');
-        if (this.checked) container.classList.remove('d-none');
-        else container.classList.add('d-none');
-    });
-
-    document.getElementById('submitMaterialBtn').addEventListener('click', async function () {
-        const form = document.getElementById('addMaterialForm');
-        if (!form.checkValidity()) { form.reportValidity(); return; }
-        this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
-
-        try {
-            const response = await fetch('/CourseMaterials/Create', { method: 'POST', body: new FormData(form) });
-            const result = await response.json();
-            if (result.success) {
-                showToast('Материал добавлен!', 'success');
-                setTimeout(() => window.location.reload(), 800);
-            } else { showToast(result.message, 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
-        } catch { showToast('Ошибка сети', 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
-    });
-
-    // ==========================================
-    // 4. МАТЕРИАЛЫ: РЕДАКТИРОВАНИЕ И ПРОСМОТР
-    // ==========================================
-    async function prepareEditMaterial(id) {
-        const form = document.getElementById("editMaterialForm");
-        form.reset();
-        document.getElementById("editTextBlock").classList.add("d-none");
-        document.getElementById("editFileBlock").classList.add("d-none");
-        document.getElementById("editTestSettingsBlock").classList.add("d-none");
-
-        try {
-            const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
-            const data = await response.json();
-
-            document.getElementById("editMaterialId").value = data.id;
-            document.getElementById("editMaterialTitle").value = data.title;
-            document.getElementById("editMaterialThemeId").value = data.themeId || ""; 
+                                                                                        try {
+                                                                                            const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
+                                                                                            if (!response.ok) throw new Error('Ошибка сервера');
             
-            const types = ["Лекция", "PDF", "Видео", "Картинка", "Тест", "Задание"];
-            document.getElementById("editMaterialTypeLabel").value = types[data.type] || "Неизвестно";
+                                                                                            const rawData = await response.json();
+                                                                                            container.innerHTML = '';
 
-            if (data.type === 0) {
-                document.getElementById("editTextBlock").classList.remove("d-none");
-                document.getElementById("editMaterialTextContent").value = data.textContent;
-            } else if (data.type === 1 || data.type === 2 || data.type === 3) {
-                document.getElementById("editFileBlock").classList.remove("d-none");
-                document.getElementById("editUploadedFileInput").accept = data.type === 1 ? ".pdf" : data.type === 2 ? ".mp4" : ".jpg,.jpeg,.png,.webp";
-            } else if (data.type === 4) {
-                document.getElementById("editTestSettingsBlock").classList.remove("d-none");
-                document.getElementById("editTestKind").value = data.testKind;
-                document.getElementById("editPassPercentage").value = data.passPercentage;
-                document.getElementById("editQuestionsCountToUse").value = data.questionsCountToUse;
+                                                                                            const data = {};
+                                                                                            for (let key in rawData) { data[key.toLowerCase()] = rawData[key]; }
 
-                const timeLimitCheck = document.getElementById("editEnableTimeLimit");
-                const timeLimitContainer = document.getElementById("editTimeLimitInputContainer");
-                if (data.timeLimit > 0) {
-                    timeLimitCheck.checked = true; timeLimitContainer.classList.remove("d-none");
-                    document.getElementById("editTimeLimit").value = data.timeLimit;
-                } else {
-                    timeLimitCheck.checked = false; timeLimitContainer.classList.add("d-none");
-                }
-                document.getElementById("editShuffleQuestions").checked = data.shuffleQuestions;
-            } else if (data.type === 5) {
-                document.getElementById("editTextBlock").classList.remove("d-none");
-                document.getElementById("editFileBlock").classList.remove("d-none");
-                document.getElementById("editMaterialTextContent").value = data.textContent;
-                document.getElementById("editUploadedFileInput").accept = "*/*";
-            }
-        } catch { showToast('Ошибка загрузки данных.', 'danger'); }
-    }
+                                                                                            const mType = parseInt(data.type);
+                                                                                            const fileUrl = data.fileurl || "";
+                                                                                            const textContent = data.textcontent || "";
 
-    document.getElementById('submitEditMaterialBtn').addEventListener("click", async function () {
-        const form = document.getElementById("editMaterialForm");
-        this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+                                                                                            if (mType === 0) {
+                                                                                                container.innerHTML = `<div class="p-3 border bg-white rounded shadow-sm text-dark">${textContent || "Текст пуст."}</div>`;
+                                                                                            } else if (mType === 1) {
+                                                                                                container.innerHTML = fileUrl ? `<iframe src="${fileUrl}" width="100%" height="600px" style="border:none; border-radius:6px;"></iframe>` : `<div class="alert alert-warning border-0 shadow-sm">Файл не найден.</div>`;
+                                                                                            } else if (mType === 2) {
+                                                                                                container.innerHTML = fileUrl ? `<video src="${fileUrl}" controls width="100%" class="rounded shadow-sm" style="max-height:450px; background:#000;"></video>` : `<div class="alert alert-warning border-0 shadow-sm">Видео не найдено.</div>`;
+                                                                                            } else if (mType === 3) {
+                                                                                                container.innerHTML = fileUrl ? `<div class="text-center bg-white p-2 border rounded shadow-sm"><img src="${fileUrl}" class="img-fluid rounded" style="max-height:500px;" /></div>` : `<div class="alert alert-warning border-0 shadow-sm">Картинка не найдена.</div>`;
+                                                                                            } else if (mType === 4) {
+                                                                                                container.innerHTML = `<div class="alert alert-primary border-0 mb-0 small shadow-sm">Это блок тестирования. Используйте кнопку <b>"Вопросы"</b> для наполнения.</div>`;
+                                                                                            } else if (mType === 5) {
+                                                                                                container.innerHTML = `
+                                                                                                                                                                                    <div class="p-3 border bg-white rounded shadow-sm">
+                                                                                                                                                                                        <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-clipboard me-1"></i> Инструкция:</h6>
+                                                                                                                                                                                        <p class="text-dark mb-3" style="white-space: pre-line;">${textContent || "Инструкция не указана."}</p>
+                                                                                                                                                                                        ${fileUrl ? `<a href="${fileUrl}" class="btn btn-sm btn-brand fw-bold px-3 py-2 mt-1 rounded-3" download><i class="bi bi-download me-1"></i> Скачать файл задания</a>` : ""}
+                                                                                                                                                                                    </div>`;
+                                                                                            } else if (mType === 6) { // SCORM
+                                                                                                container.innerHTML = fileUrl
+                                                                                                    ? `<div class="border rounded shadow-sm bg-white overflow-hidden" style="height: 700px;">
+                                                                                                                                                                                           <iframe src="${fileUrl}" width="100%" height="100%" style="border:none;" allowfullscreen></iframe>
+                                                                                                                                                                                       </div>`
+                                                                                                    : `<div class="alert alert-warning border-0 shadow-sm">SCORM-пакет не найден. Попробуйте перезагрузить его.</div>`;
+                                                                                            } else {
+                                                                                                container.innerHTML = `<div class="alert alert-secondary border-0 shadow-sm">Неизвестный тип материала.</div>`;
+                                                                                            }
+                                                                                        } catch (err) {
+                                                                                            console.error(err);
+                                                                                            container.innerHTML = '<div class="text-danger p-3 fw-bold"><i class="bi bi-x-circle me-1"></i> Ошибка загрузки данных.</div>';
+                                                                                        }
+                                                                                    }
 
-        try {
-            const response = await fetch('/CourseMaterials/Edit', { method: 'POST', body: new FormData(form) });
-            const result = await response.json();
-            if (result.success) {
-                showToast('Изменения сохранены!', 'success');
-                setTimeout(() => window.location.reload(), 800);
-            } else { showToast(result.message, 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
-        } catch { showToast('Ошибка сети', 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
-    });
+                                                                                    // ==========================================
+                                                                                    // 1. УПРАВЛЕНИЕ ТЕМАМИ
+                                                                                    // ==========================================
+                                                                                    async function submitCreateTheme() {
+                                                                                        const title = document.getElementById('newThemeTitle').value.trim();
+                                                                                        if (!title) return showToast('Введите название темы!', 'danger');
+                                                                                        const params = new URLSearchParams(); params.append('courseId', '@Model.Id'); params.append('title', title);
+                                                                                        try {
+                                                                                            const response = await fetch('/CourseMaterials/CreateTheme', { method: 'POST', body: params });
+                                                                                            const result = await response.json();
+                                                                                            if (result.success) { showToast('Тема создана!', 'success'); setTimeout(() => window.location.reload(), 800); }
+                                                                                            else { showToast(result.message, 'danger'); }
+                                                                                        } catch { showToast('Ошибка сети', 'danger'); }
+                                                                                    }
 
-    // ==========================================
-    // 5. УДАЛЕНИЕ И СОРТИРОВКА
-    // ==========================================
-    let idToDelete = null;
-    function prepareDeleteMaterial(id, label) { idToDelete = id; document.getElementById("deleteMaterialNameText").textContent = label; }
+                                                                                    let themeIdToDelete = null;
+                                                                                    function prepareDeleteTheme(id) { themeIdToDelete = id; }
     
-    document.getElementById("confirmDeleteMaterialBtn").addEventListener("click", async function () {
-        this.disabled = true;
-        try {
-            await fetch(`/CourseMaterials/Delete/${idToDelete}`, { method: 'POST' });
-            showToast('Материал удален!', 'success');
-            setTimeout(() => window.location.reload(), 800);
-        } catch { this.disabled = false; showToast('Ошибка сети', 'danger'); }
-    });
+                                                                                    document.getElementById('confirmDeleteThemeBtn').addEventListener('click', async function () {
+                                                                                        this.disabled = true;
+                                                                                        try {
+                                                                                            const response = await fetch(`/CourseMaterials/DeleteTheme/${themeIdToDelete}`, { method: 'POST' });
+                                                                                            if ((await response.json()).success) { showToast('Тема удалена.', 'success'); setTimeout(() => window.location.reload(), 800); }
+                                                                                            else { this.disabled = false; }
+                                                                                        } catch { this.disabled = false; showToast('Ошибка сети', 'danger'); }
+                                                                                    });
 
-    async function changeOrder(id, direction) {
-        const params = new URLSearchParams(); params.append("id", id); params.append("direction", direction);
-        await fetch('/CourseMaterials/ChangeOrder', { method: 'POST', body: params }); window.location.reload();
-    }
+                                                                                    // ==========================================
+                                                                                    // 2. СОЗДАНИЕ МАТЕРИАЛА
+                                                                                    // ==========================================
+                                                                                    document.getElementById("materialType").addEventListener("change", function () {
+                                                                                        const val = this.value;
+                                                                                        const textBlock = document.getElementById("textBlock");
+                                                                                        const fileBlock = document.getElementById("fileBlock");
+                                                                                        const fileLabel = document.getElementById("fileLabel");
+                                                                                        const fileInput = document.getElementById("uploadedFileInput");
+                                                                                        const testSettingsBlock = document.getElementById("testSettingsBlock");
 
-    // ==========================================
-    // 6. ПРЕДПРОСМОТР (AJAX)
-    // ==========================================
-    async function togglePreview(id) {
-        const container = document.getElementById(`preview-content-${id}`);
-        if (container.classList.contains('expanded')) {
-            container.classList.remove('expanded'); return;
-        }
-        document.querySelectorAll('.preview-container.expanded').forEach(el => el.classList.remove('expanded'));
+                                                                                        textBlock.classList.add("d-none"); fileBlock.classList.add("d-none"); testSettingsBlock.classList.add("d-none");
+                                                                                        fileInput.required = false; fileInput.value = "";
 
-        try {
-            const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
-            const rawData = await response.json();
-            container.innerHTML = ''; 
+                                                                                        if (val === "0") {
+                                                                                            textBlock.classList.remove("d-none");
+                                                                                        }
+                                                                                        else if (val === "1" || val === "2" || val === "3") {
+                                                                                            fileBlock.classList.remove("d-none"); fileInput.required = true;
+                                                                                            if (val === "1") { fileLabel.innerHTML = "ВЫБЕРИТЕ PDF <span class='text-danger'>*</span>"; fileInput.accept = ".pdf"; }
+                                                                                            else if (val === "2") { fileLabel.innerHTML = "ВЫБЕРИТЕ ВИДЕО <span class='text-danger'>*</span> <span class='text-muted fw-normal' style='font-size: 0.8rem;'>(форматы .mp4, .webm)</span>"; fileInput.accept = "video/mp4, video/webm, .mp4, .webm"; }
+                                                                                            else { fileLabel.innerHTML = "ВЫБЕРИТЕ ИЗОБРАЖЕНИЕ <span class='text-danger'>*</span>"; fileInput.accept = ".jpg,.jpeg,.png,.webp"; }
+                                                                                        }
+                                                                                        else if (val === "4") {
+                                                                                            testSettingsBlock.classList.remove("d-none");
+                                                                                        }
+                                                                                        else if (val === "5") {
+                                                                                            textBlock.classList.remove("d-none"); fileBlock.classList.remove("d-none");
+                                                                                            fileLabel.innerHTML = "ФАЙЛ К ЗАДАНИЮ (Необязательно)"; fileInput.accept = "*/*";
+                                                                                        }
+                                                                                        else if (val === "6") { // SCORM
+                                                                                            fileBlock.classList.remove("d-none"); fileInput.required = true;
+                                                                                            fileLabel.innerHTML = "ВЫБЕРИТЕ SCORM-АРХИВ <span class='text-danger'>*</span> <span class='text-muted fw-normal' style='font-size: 0.8rem;'>(формат .zip)</span>";
+                                                                                            fileInput.accept = ".zip, application/zip";
+                                                                                        }
+                                                                                    });
 
-            const data = {};
-            for (let key in rawData) { data[key.toLowerCase()] = rawData[key]; }
+                                                                                    document.getElementById('enableTimeLimit').addEventListener('change', function () {
+                                                                                        const container = document.getElementById('timeLimitInputContainer');
+                                                                                        if (this.checked) { container.classList.remove('d-none'); container.classList.add('d-flex'); }
+                                                                                        else { container.classList.add('d-none'); container.classList.remove('d-flex'); }
+                                                                                    });
 
-            const mType = parseInt(data.type);
-            const fileUrl = data.fileurl || "";
-            const textContent = data.textcontent || "";
+                                                                                    document.getElementById('submitMaterialBtn').addEventListener('click', async function () {
+                                                                                        const form = document.getElementById('addMaterialForm');
+                                                                                        if (!form.checkValidity()) { form.reportValidity(); return; }
+        
+                                                                                        document.getElementById('addTextContentHidden').value = addQuill.root.innerHTML;
 
-            if (mType === 0) {
-                container.innerHTML = `<div class="p-3 border bg-white rounded shadow-sm text-dark">${textContent || "Текст пуст."}</div>`;
-            } else if (mType === 1) {
-                container.innerHTML = fileUrl ? `<iframe src="${fileUrl}" width="100%" height="600px" style="border:none; border-radius:6px;"></iframe>` : `<div class="alert alert-warning border-0 shadow-sm">Файл не найден.</div>`;
-            } else if (mType === 2) {
-                container.innerHTML = fileUrl ? `<video src="${fileUrl}" controls width="100%" class="rounded shadow-sm" style="max-height:450px; background:#000;"></video>` : `<div class="alert alert-warning border-0 shadow-sm">Видео не найдено.</div>`;
-            } else if (mType === 3) {
-                container.innerHTML = fileUrl ? `<div class="text-center bg-white p-2 border rounded shadow-sm"><img src="${fileUrl}" class="img-fluid rounded" style="max-height:500px;" /></div>` : `<div class="alert alert-warning border-0 shadow-sm">Картинка не найдена.</div>`;
-            } else if (mType === 5) {
-                container.innerHTML = `
-                    <div class="p-3 border bg-white rounded shadow-sm">
-                        <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-clipboard me-1"></i> Инструкция:</h6>
-                        <p class="text-dark mb-3" style="white-space: pre-line;">${textContent || "Инструкция не указана."}</p>
-                        ${fileUrl ? `<a href="${fileUrl}" class="btn btn-sm btn-brand fw-bold px-3 py-2 mt-1 rounded-3" download><i class="bi bi-download me-1"></i> Скачать файл задания</a>` : ""}
-                    </div>`;
-            } else if (mType === 4) {
-                container.innerHTML = `<div class="alert alert-primary border-0 mb-0 small shadow-sm">Это блок тестирования. Используйте кнопку <b>"Вопросы"</b> для наполнения.</div>`;
-            }
+                                                                                        if (!document.getElementById('enableTimeLimit').checked) {
+                                                                                            document.getElementById('timeLimit').value = "0";
+                                                                                        }
 
-            container.classList.add('expanded');
-        } catch (err) { 
-            container.innerHTML = '<div class="text-danger small p-2"><i class="bi bi-x-circle me-1"></i> Ошибка загрузки.</div>'; 
-        }
-    }
-</script>
+                                                                                        this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+                                                                                        try {
+                                                                                            const response = await fetch('/CourseMaterials/Create', { method: 'POST', body: new FormData(form) });
+                                                                                            const result = await response.json();
+                                                                                            if (result.success) { showToast('Материал добавлен!', 'success'); setTimeout(() => window.location.reload(), 800); }
+                                                                                            else { showToast(result.message, 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
+                                                                                        } catch { showToast('Ошибка сети', 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
+                                                                                    });
+
+                                                                                    // ==========================================
+                                                                                    // 3. РЕДАКТИРОВАНИЕ МАТЕРИАЛА
+                                                                                    // ==========================================
+                                                                                    async function prepareEditMaterial(id) {
+                                                                                        const form = document.getElementById("editMaterialForm");
+                                                                                        form.reset();
+                                                                                        document.getElementById("editTextBlock").classList.add("d-none");
+                                                                                        document.getElementById("editFileBlock").classList.add("d-none");
+                                                                                        document.getElementById("editTestSettingsBlock").classList.add("d-none");
+
+                                                                                        try {
+                                                                                            const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
+                                                                                            const data = await response.json();
+
+                                                                                            document.getElementById("editMaterialId").value = data.id;
+                                                                                            document.getElementById("editMaterialTitle").value = data.title;
+                                                                                            document.getElementById("editMaterialThemeId").value = data.themeId || "";
+            
+                                                                                            const types = ["Лекция", "PDF", "Видео", "Картинка", "Тест", "Задание", "SCORM-пакет"];
+                                                                                            document.getElementById("editMaterialTypeLabel").value = types[data.type] || "Неизвестно";
+                                                                                            if (data.type === 0) {
+                                                                                                document.getElementById("editTextBlock").classList.remove("d-none");
+                                                                                                // Очищаем и загружаем HTML в редактор
+                                                                                                editQuill.root.innerHTML = data.textContent || "";
+                                                                                            } else if (data.type === 1 || data.type === 2 || data.type === 3) {
+                                                                                                document.getElementById("editFileBlock").classList.remove("d-none");
+                                                                                                if (data.type === 1) document.getElementById("editUploadedFileInput").accept = ".pdf";
+                                                                                                else if (data.type === 2) document.getElementById("editUploadedFileInput").accept = "video/mp4, video/webm, .mp4, .webm";
+                                                                                                else document.getElementById("editUploadedFileInput").accept = ".jpg,.jpeg,.png,.webp";
+                                                                                            } else if (data.type === 4) {
+                                                                                                document.getElementById("editTestSettingsBlock").classList.remove("d-none");
+                                                                                                document.getElementById("editTestKind").value = data.testKind;
+                                                                                                document.getElementById("editPassPercentage").value = data.passPercentage;
+                                                                                                document.getElementById("editQuestionsCountToUse").value = data.questionsCountToUse;
+
+                                                                                                const timeLimitCheck = document.getElementById("editEnableTimeLimit");
+                                                                                                const timeLimitContainer = document.getElementById("editTimeLimitInputContainer");
+                                                                                                if (data.timeLimit > 0) {
+                                                                                                    timeLimitCheck.checked = true;
+                                                                                                    timeLimitContainer.classList.remove("d-none");
+                                                                                                    timeLimitContainer.classList.add("d-flex");
+                                                                                                    document.getElementById("editTimeLimit").value = data.timeLimit;
+                                                                                                } else {
+                                                                                                    timeLimitCheck.checked = false;
+                                                                                                    timeLimitContainer.classList.add("d-none");
+                                                                                                    timeLimitContainer.classList.remove("d-flex");
+                                                                                                    document.getElementById("editTimeLimit").value = "";
+                                                                                                }
+                                                                                                document.getElementById("editShuffleQuestions").checked = data.shuffleQuestions;
+                                                                                            } else if (data.type === 5) {
+                                                                                                document.getElementById("editTextBlock").classList.remove("d-none");
+                                                                                                document.getElementById("editFileBlock").classList.remove("d-none");
+                                                                                                document.getElementById("editMaterialTextContent").value = data.textContent;
+                                                                                                document.getElementById("editUploadedFileInput").accept = "*/*";
+                                                                                            } else if (data.type === 6) {
+                                                                                                document.getElementById("editFileBlock").classList.remove("d-none");
+                                                                                                document.getElementById("editUploadedFileInput").accept = ".zip, application/zip";
+                                                                                            }
+                                                                                        } catch { showToast('Ошибка загрузки данных.', 'danger'); }
+                                                                                    }
+
+                                                                                    document.getElementById('editEnableTimeLimit').addEventListener('change', function () {
+                                                                                        const container = document.getElementById('editTimeLimitInputContainer');
+                                                                                        if (this.checked) { container.classList.remove('d-none'); container.classList.add('d-flex'); }
+                                                                                        else { container.classList.add('d-none'); container.classList.remove('d-flex'); }
+                                                                                    });
+
+                                                                                    document.getElementById('submitEditMaterialBtn').addEventListener("click", async function () {
+                                                                                        const form = document.getElementById("editMaterialForm");
+        
+                                                                                        document.getElementById('editTextContentHidden').value = editQuill.root.innerHTML;
+
+                                                                                        if (!document.getElementById('editEnableTimeLimit').checked) {
+                                                                                            document.getElementById('editTimeLimit').value = "0";
+                                                                                        }
+
+                                                                                        this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+                                                                                        try {
+                                                                                            const response = await fetch('/CourseMaterials/Edit', { method: 'POST', body: new FormData(form) });
+                                                                                            const result = await response.json();
+                                                                                            if (result.success) { showToast('Изменения сохранены!', 'success'); setTimeout(() => window.location.reload(), 800); }
+                                                                                            else { showToast(result.message, 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
+                                                                                        } catch { showToast('Ошибка сети', 'danger'); this.disabled = false; this.innerHTML = 'Сохранить'; }
+                                                                                    });
+
+                                                                                    // ==========================================
+                                                                                    // 4. УДАЛЕНИЕ И СОРТИРОВКА
+                                                                                    // ==========================================
+                                                                                    let idToDelete = null;
+                                                                                    function prepareDeleteMaterial(id, label) { idToDelete = id; document.getElementById("deleteMaterialNameText").textContent = label; }
+    
+                                                                                    document.getElementById("confirmDeleteMaterialBtn").addEventListener("click", async function () {
+                                                                                        this.disabled = true;
+                                                                                        try {
+                                                                                            await fetch(`/CourseMaterials/Delete/${idToDelete}`, { method: 'POST' });
+                                                                                            showToast('Материал удален!', 'success');
+                                                                                            setTimeout(() => window.location.reload(), 800);
+                                                                                        } catch { this.disabled = false; showToast('Ошибка сети', 'danger'); }
+                                                                                    });
+
+                                                                                    async function changeOrder(id, direction) {
+                                                                                        const params = new URLSearchParams(); params.append("id", id); params.append("direction", direction);
+                                                                                        await fetch('/CourseMaterials/ChangeOrder', { method: 'POST', body: params }); window.location.reload();
+                                                                                    }
+                                                                                </script>

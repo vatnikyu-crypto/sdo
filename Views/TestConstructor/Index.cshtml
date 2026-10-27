@@ -3,9 +3,16 @@
     Layout = "_AdminLayout";
     ViewData["Title"] = $"Вопросы теста: {ViewBag.TestTitle}";
 }
+
 <style>
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-gray: #e2e8f0;
+    }
+
     .question-card {
-        border-left: 4px solid #1cc88a;
+        border-left: 4px solid var(--brand-primary);
         transition: transform 0.2s, box-shadow 0.2s;
         border-radius: 4px 12px 12px 4px;
     }
@@ -18,12 +25,13 @@
         border-radius: 6px;
         font-size: 0.9rem;
         background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--brand-gray);
+        transition: all 0.2s;
     }
     .answer-item.correct {
-        background-color: rgba(28, 200, 138, 0.1) !important;
-        border-color: #1cc88a !important;
-        color: #1cc88a !important;
+        background-color: rgba(25, 135, 84, 0.05) !important;
+        border-color: #198754 !important;
+        color: #198754 !important;
         font-weight: bold;
     }
     .hint-block {
@@ -53,34 +61,82 @@
     .border-dashed {
         border-style: dashed !important;
     }
+
+    /* Стили для уведомлений */
+    .toast-container-custom {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .custom-toast {
+        min-width: 300px;
+        max-width: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        border-left: 6px solid #ccc;
+    }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.warning { border-left-color: #F59E0B; }
+
+    @@keyframes slideInRight {
+        from { transform: translateX(120%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @@keyframes fadeOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(120%); opacity: 0; }
+    }
+    
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
 </style>
+
+<!-- Контейнер для уведомлений -->
+<div id="toastContainer" class="toast-container-custom"></div>
 
 <!-- 1. НАВИГАЦИОННАЯ ШАПКА -->
 <div class="mb-4 mt-2">
-    <a href="/CourseMaterials/Index?courseId=@ViewBag.CourseId" class="text-decoration-none text-muted small d-flex align-items-center gap-1">
-        <svg xmlns="http://w3.org" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
-        </svg>
-        Назад в конструктор курса
+    <a href="/CourseMaterials/Index?courseId=@ViewBag.CourseId" class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 fw-semibold">
+        <i class="bi bi-arrow-left"></i> Назад в конструктор курса
     </a>
-    <div class="d-flex justify-content-between align-items-end mt-2">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mt-2 gap-3">
         <div>
-            <span class="badge bg-success px-2.5 py-1 fw-bold text-uppercase mb-1" style="font-size: 0.65rem; tracking-wider: 1px;">Наполнение теста</span>
-            <h2 class="fw-bold text-dark m-0">@ViewBag.TestTitle</h2>
-            <small class="text-muted">Курс: <span class="fw-bold text-secondary">@ViewBag.CourseTitle</span></small>
+            <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                <i class="bi bi-question-circle text-primary fs-3"></i> @ViewBag.TestTitle
+            </h3>
+            <small class="text-muted fw-medium mt-1 d-block">Курс: <span class="text-dark">@ViewBag.CourseTitle</span></small>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-success px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importQuestionsModal">
-                📊 Импорт вопросов
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3" data-bs-toggle="modal" data-bs-target="#importQuestionsModal">
+                <i class="bi bi-file-earmark-arrow-up"></i> Импорт
             </button>
-            <button id="exportSelectedBtn" class="btn btn-outline-primary px-4 py-2 fw-bold shadow-sm d-none" onclick="exportSelectedQuestions()">
-                📥 Экспорт выбранных (<span class="selected-count">0</span>)
+            <button id="exportSelectedBtn" class="btn btn-outline-secondary px-3 py-2 fw-bold shadow-sm d-none rounded-3" onclick="exportSelectedQuestions()">
+                <i class="bi bi-download"></i> Экспорт (<span class="selected-count">0</span>)
             </button>
-            <button id="deleteSelectedBtn" class="btn btn-danger px-4 py-2 fw-bold shadow-sm d-none" data-bs-toggle="modal" data-bs-target="#deleteMultipleModal">
-                🗑️ Удалить выбранные (<span class="selected-count">0</span>)
+            <button id="deleteSelectedBtn" class="btn btn-danger px-3 py-2 fw-bold shadow-sm d-none rounded-3" data-bs-toggle="modal" data-bs-target="#deleteMultipleModal">
+                <i class="bi bi-trash"></i> Удалить (<span class="selected-count">0</span>)
             </button>
-            <button class="btn btn-success px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
-                ➕ Добавить вопрос
+            <button class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+                <i class="bi bi-plus-lg"></i> Добавить вопрос
             </button>
         </div>
     </div>
@@ -89,11 +145,12 @@
 <form id="exportForm" action="/TestConstructor/ExportToCsv" method="POST" style="display:none;">
     <input type="hidden" name="questionIdsJson" id="exportQuestionsJsonInput" />
 </form>
+
 @if (Model.Any())
 {
-    <div class="card p-3 bg-light border-0 mb-3 d-flex flex-row align-items-center gap-2" style="border-radius: 8px;">
-        <input type="checkbox" id="selectAllCheckbox" class="form-check-input m-0">
-        <label for="selectAllCheckbox" class="small fw-bold text-secondary m-0" style="cursor: pointer;">Выделить все вопросы на странице</label>
+    <div class="card p-3 bg-light border-0 mb-4 d-flex flex-row align-items-center gap-2" style="border-radius: 12px;">
+        <input type="checkbox" id="selectAllCheckbox" class="form-check-input m-0 shadow-none" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+        <label for="selectAllCheckbox" class="fw-bold text-secondary m-0" style="cursor: pointer; font-size: 0.9rem;">Выделить все вопросы на странице</label>
     </div>
 }
 
@@ -101,11 +158,11 @@
 <div class="d-flex flex-column gap-3 mb-5" id="questionsContainer">
     @if (!Model.Any())
     {
-        <div class="text-center py-5 bg-white border rounded-3 shadow-sm" id="emptyQuestionsBlock" style="border-radius: 12px !important;">
-            <span style="font-size: 3.5rem;">📝</span>
-            <h5 class="fw-bold mt-2 text-dark">В тесте пока нет вопросов</h5>
-            <p class="text-muted small mb-3">Слушатели не смогут пройти тестирование, пока вы не добавите хотя бы один вопрос.</p>
-            <button class="btn btn-sm btn-primary fw-bold px-3 py-2" data-bs-toggle="modal" data-bs-target="#addQuestionModal">Добавить первый вопрос</button>
+        <div class="text-center py-5 bg-white border rounded-4 shadow-sm" id="emptyQuestionsBlock">
+            <i class="bi bi-journal-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i>
+            <h5 class="fw-bold text-dark">В тесте пока нет вопросов</h5>
+            <p class="text-muted small mb-4">Слушатели не смогут пройти тестирование, пока вы не добавите хотя бы один вопрос.</p>
+            <button class="btn btn-brand fw-bold px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#addQuestionModal">Добавить первый вопрос</button>
         </div>
     }
     else
@@ -117,39 +174,58 @@
             <div class="card bg-white question-card p-4 border-0 shadow-sm question-data-row" id="question-item-@question.Id" data-id="@question.Id">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="d-flex align-items-start gap-3 flex-grow-1">
-                        <input type="checkbox" class="form-check-input user-checkbox mt-1" value="@question.Id">
+                        <input type="checkbox" class="form-check-input user-checkbox mt-1 shadow-none" value="@question.Id" style="width: 1.1rem; height: 1.1rem;">
                         <div class="w-100">
-                            <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">Вопрос #@qNum</div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.75rem;">Вопрос #@qNum</span>
+                                @if (question.IsMultipleChoice)
+                                {
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style="font-size: 0.65rem;">Множественный выбор</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25" style="font-size: 0.65rem;">Один ответ</span>
+                                }
+                            </div>
                             <h5 class="fw-bold text-dark mb-2">@question.QuestionText</h5>
                             
-                            <!-- ВЫВОД ПОДСКАЗКИ (ЕСЛИ ОНА ЕСТЬ) -->
                             @if (!string.IsNullOrWhiteSpace(question.Hint))
                             {
-                                <div class="hint-block p-2 mb-3 small">
-                                    💡 <b>Подсказка:</b> @question.Hint
+                                <div class="hint-block p-2 mb-3 small fw-medium">
+                                    <i class="bi bi-lightbulb-fill text-warning me-1"></i> <b>Комментарий к правильному ответу:</b> @question.Hint
                                 </div>
                             }
                         </div>
                     </div>
-                    <div class="d-flex gap-1 ms-3">
-                        <button class="btn btn-sm btn-light border text-secondary px-2.5 py-1.5" title="Редактировать вопрос" data-bs-toggle="modal" data-bs-target="#editQuestionModal" onclick="prepareEditQuestion(@question.Id)">✏️</button>
-                        <button class="btn btn-sm btn-outline-danger px-2.5 py-1.5" title="Удалить вопрос" data-bs-toggle="modal" data-bs-target="#deleteQuestionModal" onclick="prepareDeleteQuestion(@question.Id, 'Вопрос #@qNum')">🗑️</button>
+                    <div class="d-flex gap-2 ms-3 flex-shrink-0">
+                        <button class="btn btn-sm btn-outline-primary fw-bold px-3" title="Редактировать вопрос" data-bs-toggle="modal" data-bs-target="#editQuestionModal" onclick="prepareEditQuestion(@question.Id)">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger fw-bold px-3" title="Удалить вопрос" data-bs-toggle="modal" data-bs-target="#deleteQuestionModal" onclick="prepareDeleteQuestion(@question.Id, 'Вопрос #@qNum')">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </div>
                 </div>
                 
-                <!-- ВЫВОД ВАРИАНТОВ ОТВЕТОВ С КАРТИНКАМИ -->
-                <div class="row row-cols-1 row-cols-md-2 g-3 ps-4 mt-1">
+                <div class="row row-cols-1 row-cols-md-2 g-3 ps-md-4 mt-1">
                     @foreach (var option in question.Answers)
                     {
                         <div class="col">
                             <div class="answer-item h-100 d-flex flex-column justify-content-between @(option.IsCorrect ? "correct" : "")">
-                                <div class="mb-2">
-                                    <span class="me-1">@(option.IsCorrect ? "🔹" : "🔸")</span> @option.AnswerText
+                                <div class="mb-2 d-flex align-items-start gap-2">
+                                    @if (option.IsCorrect)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-circle text-muted mt-1"></i>
+                                    }
+                                    <span>@option.AnswerText</span>
                                 </div>
-                                <!-- КАРТИНКА ОТВЕТА (ЕСЛИ СУЩЕСТВУЕТ) -->
                                 @if (!string.IsNullOrEmpty(option.ImageUrl))
                                 {
-                                    <div class="mt-1">
+                                    <div class="mt-2">
                                         <img src="@option.ImageUrl" class="option-img-preview" alt="Иллюстрация к ответу" />
                                     </div>
                                 }
@@ -161,12 +237,15 @@
         }
     }
 </div>
+
 <!-- 3. МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ ВОПРОСА -->
 <div class="modal fade" id="addQuestionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header bg-light border-0 py-3">
-                <h5 class="modal-title fw-bold text-dark">➕ Создание вопроса (Новые возможности)</h5>
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-plus-circle text-primary"></i> Создание вопроса
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
@@ -174,61 +253,76 @@
                     <input type="hidden" name="testId" id="modalTestId" value="@ViewBag.TestId" />
                     
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ФОРМУЛИРОВКА ВОПРОСА <span class="text-danger">*</span></label>
-                        <input name="questionText" id="questionText" type="text" class="form-control fw-bold text-dark" required placeholder="Текст вопроса..." />
+                        <label class="form-label text-muted small fw-bold text-uppercase">ВОПРОС <span class="text-danger">*</span></label>
+                        <input name="questionText" id="questionText" type="text" class="form-control fw-bold text-dark" required />
                     </div>
 
-                    <!-- НОВОЕ ПОЛЕ: ВВОД ПОДСКАЗКИ -->
+                    <!-- ВЫБОР ТИПА ОТВЕТА -->
+                    <div class="mb-4 p-3 bg-light rounded-3 border">
+                        <label class="form-label text-muted small fw-bold text-uppercase mb-2">ВИД ВОПРОСА <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addQuestionType" id="addTypeSingle" value="false" checked>
+                                <label class="form-check-label fw-bold text-dark" for="addTypeSingle" style="cursor: pointer;">Один ответ</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addQuestionType" id="addTypeMultiple" value="true">
+                                <label class="form-check-label fw-bold text-dark" for="addTypeMultiple" style="cursor: pointer;">Несколько ответов</label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-4">
-                        <label class="form-label text-muted small fw-bold">ПОДСКАЗКА ОБУЧАЮЩЕМУСЯ (Необязательно)</label>
-                        <input name="hint" id="questionHint" type="text" class="form-control text-dark small" placeholder="Пояснение, которое выведется при ошибке или в тренажере..." />
+                        <label class="form-label text-muted small fw-bold text-uppercase">Комментарий к правильному ответу</label>
+                        <input name="hint" id="questionHint" type="text" class="form-control text-dark small"/>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label class="form-label text-muted small fw-bold m-0">ВАРИАНТЫ ОТВЕТОВ И ИЛЛЮСТРАЦИИ <span class="text-danger">*</span></label>
-                        <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="addNewAnswerOptionBtn">➕ Добавить вариант</button>
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-top pt-3">
+                        <label class="form-label text-muted small fw-bold m-0 text-uppercase">ОТВЕТЫ <span class="text-danger">*</span></label>
+                        <button type="button" class="btn btn-sm btn-outline-primary fw-bold rounded-3" id="addNewAnswerOptionBtn"><i class="bi bi-plus-lg"></i> Добавить</button>
                     </div>
 
-                    <!-- КОНТЕЙНЕР С ПОДДЕРЖКОЙ ЗАГРУЗКИ ИЗОБРАЖЕНИЙ ДЛЯ ОТВЕТОВ -->
                     <div class="d-flex flex-column gap-3 mb-2" id="dynamicAnswersContainer">
                         <!-- Строка 1 -->
                         <div class="input-group answer-input-row">
                             <div class="input-group-text bg-light">
-                                <input class="form-check-input mt-0 answer-correct-checkbox" type="checkbox" value="0" title="Правильный ответ" />
+                                <input class="form-check-input mt-0 answer-correct-checkbox" type="checkbox" value="0" title="Отметить как правильный" />
                             </div>
-                            <input type="text" name="answers" class="form-control" required placeholder="Вариант ответа" />
-                            <!-- Кнопка-скрепка и скрытый инпут файла картинки -->
+                            <input type="text" name="answers" class="form-control" required />
                             <label class="input-group-text btn btn-outline-secondary m-0 file-upload-btn" title="Прикрепить изображение">
-                                📂<input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
+                                <i class="bi bi-image"></i><input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
                             </label>
                         </div>
                         <!-- Строка 2 -->
                         <div class="input-group answer-input-row">
                             <div class="input-group-text bg-light">
-                                <input class="form-check-input mt-0 answer-correct-checkbox" type="checkbox" value="1" title="Правильный ответ" />
+                                <input class="form-check-input mt-0 answer-correct-checkbox" type="checkbox" value="1" title="Отметить как правильный" />
                             </div>
-                            <input type="text" name="answers" class="form-control" required placeholder="Вариант ответа" />
-                            <label class="input-group-text btn btn-outline-secondary m-0 file-upload-btn">
-                                📂<input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
+                            <input type="text" name="answers" class="form-control" required />
+                            <label class="input-group-text btn btn-outline-secondary m-0 file-upload-btn" title="Прикрепить изображение">
+                                <i class="bi bi-image"></i><input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
                             </label>
                         </div>
                     </div>
-                    <div class="form-text text-muted small mt-2">ℹ️ Нажмите на иконку папки 📂 справа от ответа, чтобы прикрепить к нему изображение. Лишние варианты можно удалять.</div>
+                    <div class="form-text text-muted small mt-2">Нажмите <i class="bi bi-image"></i> для прикрепления изображения.</div>
                 </form>
             </div>
             <div class="modal-footer bg-light border-0 py-3">
-                <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Отмена</button>
-                <button id="submitQuestionBtn" type="button" class="btn btn-success px-4 fw-bold">Сохранить вопрос</button>
+                <button type="button" class="btn btn-light border text-secondary fw-bold rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="submitQuestionBtn" type="button" class="btn btn-brand fw-bold px-4 rounded-3">Сохранить вопрос</button>
             </div>
         </div>
     </div>
 </div>
+
 <!-- 4. МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ ВОПРОСА -->
 <div class="modal fade" id="editQuestionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header bg-light border-0 py-3">
-                <h5 class="modal-title fw-bold text-dark">✏️ Изменение вопроса и вариантов</h5>
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square text-primary"></i> Изменение вопроса
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
@@ -236,45 +330,135 @@
                     <input type="hidden" name="id" id="editQuestionId" />
                     
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">ФОРМУЛИРОВКА ВОПРОСА <span class="text-danger">*</span></label>
+                        <label class="form-label text-muted small fw-bold text-uppercase">ВОПРОС <span class="text-danger">*</span></label>
                         <input name="questionText" id="editQuestionText" type="text" class="form-control fw-bold text-dark" required />
                     </div>
 
+                    <!-- ВЫБОР ТИПА ОТВЕТА -->
+                    <div class="mb-4 p-3 bg-light rounded-3 border">
+                        <label class="form-label text-muted small fw-bold text-uppercase mb-2">ВИД ВОПРОСА <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editQuestionType" id="editTypeSingle" value="false">
+                                <label class="form-check-label fw-bold text-dark" for="editTypeSingle" style="cursor: pointer;">Один правильный ответ</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editQuestionType" id="editTypeMultiple" value="true">
+                                <label class="form-check-label fw-bold text-dark" for="editTypeMultiple" style="cursor: pointer;">Несколько правильных ответов</label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-4">
-                        <label class="form-label text-muted small fw-bold">ПОДСКАЗКА ОБУЧАЮЩЕМУСЯ</label>
+                        <label class="form-label text-muted small fw-bold text-uppercase">Комментарий к правильному ответу</label>
                         <input name="hint" id="editQuestionHint" type="text" class="form-control text-dark small" />
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label class="form-label text-muted small fw-bold m-0">ВАРИАНТЫ ОТВЕТОВ <span class="text-danger">*</span></label>
-                        <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="editAddNewAnswerOptionBtn">➕ Добавить вариант</button>
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-top pt-3">
+                        <label class="form-label text-muted small fw-bold m-0 text-uppercase">ОТВЕТЫ <span class="text-danger">*</span></label>
+                        <button type="button" class="btn btn-sm btn-outline-primary fw-bold rounded-3" id="editAddNewAnswerOptionBtn"><i class="bi bi-plus-lg"></i> Добавить</button>
                     </div>
 
                     <div class="d-flex flex-column gap-3 mb-2" id="dynamicEditAnswersContainer">
-                        <!-- Заполняется динамически через JS -->
+                        <!-- JS -->
                     </div>
                 </form>
             </div>
             <div class="modal-footer bg-light border-0 py-3">
-                <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Отмена</button>
-                <button id="submitEditQuestionBtn" type="button" class="btn btn-success px-4 fw-bold">Сохранить изменения</button>
+                <button type="button" class="btn btn-light border text-secondary fw-bold rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="submitEditQuestionBtn" type="button" class="btn btn-brand fw-bold px-4 rounded-3">Сохранить изменения</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ОСТАЛЬНЫЕ УТИЛИТАРНЫЕ МОДАЛКИ (УДАЛЕНИЕ, МАССОВОЕ УДАЛЕНИЕ, ИМПОРТ) -->
-<div class="modal fade" id="deleteQuestionModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered" style="max-width: 400px;"><div class="modal-content border-0 shadow-lg" style="border-radius:12px;"><div class="modal-body p-4 text-center"><div class="text-danger mb-3"><span style="font-size:3rem;line-height:1;">⚠️</span></div><h5 class="fw-bold text-dark mb-2">Удаление вопроса</h5><p class="text-muted small mb-0">Вы действительно хотите удалить этот вопрос?</p><p id="deleteQuestionNameText" class="fw-bold text-danger mb-4"></p><div class="d-flex gap-2 justify-content-center"><button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50" data-bs-dismiss="modal">Отмена</button><button id="confirmDeleteQuestionBtn" type="button" class="btn btn-danger px-4 fw-bold w-50">Удалить</button></div></div></div></div></div>
-<div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered" style="max-width: 400px;"><div class="modal-content border-0 shadow-lg" style="border-radius:12px;"><div class="modal-body p-4 text-center"><div class="text-danger mb-3"><span style="font-size:3rem;line-height:1;">🚨</span></div><h5 class="fw-bold text-dark mb-2">Групповое удаление вопросов</h5><p class="text-muted small mb-3">Вы действительно хотите безвозвратно удалить выбранные вопросы в количестве:</p><h4 id="multipleDeleteCountDisplay" class="fw-bold text-danger mb-4">0</h4><div class="d-flex gap-2 justify-content-center"><button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50" data-bs-dismiss="modal">Отмена</button><button id="confirmMultipleDeleteBtn" type="button" class="btn btn-danger px-4 fw-bold w-50">Удалить всё</button></div></div></div></div></div>
-<div class="modal fade" id="importQuestionsModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content border-0 shadow-lg" style="border-radius:12px;"><div class="modal-header bg-light border-0 py-3"><h5 class="modal-title fw-bold text-dark">Импорт вопросов из файла .csv</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body p-4"><div id="dropZone" class="border border-2 border-dashed rounded-3 p-5 text-center bg-light" style="cursor: pointer; transition: all 0.2s; border-color: #cbd5e1 !important;"><span style="font-size: 3rem;">📄</span><h5 class="fw-bold mt-2 text-secondary" id="dropZoneText">Перетащите CSV файл сюда или кликните для выбора</h5><p class="text-muted small mb-0">Формат колонок: QuestionText;Hint;Answers;CorrectFlags</p><input type="file" id="csvFileInput" accept=".csv" class="d-none" /></div><div id="importResultBlock" class="mt-4 d-none"><div class="alert alert-success border-0 small py-2 mb-2" id="importSuccessMessage"></div><div id="importErrorsBlock" class="alert alert-danger border-0 small py-2 d-none" style="max-height: 150px; overflow-y: auto;"><h6 class="fw-bold mb-1">Ошибки импорта строки:</h6><ul id="importErrorsList" class="mb-0 ps-3"></ul></div></div></div><div class="modal-footer bg-light border-0 py-3"><button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Закрыть</button><button id="startImportBtn" type="button" class="btn btn-success px-4 fw-bold" disabled>Запустить импорт</button></div></div></div></div>
+<!-- УТИЛИТАРНЫЕ МОДАЛКИ -->
+<!-- Удаление -->
+<div class="modal fade" id="deleteQuestionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-body p-4 text-center">
+                <div class="text-danger mb-3"><i class="bi bi-exclamation-triangle-fill" style="font-size:3rem;"></i></div>
+                <h5 class="fw-bold text-dark mb-2">Удаление вопроса</h5>
+                <p class="text-muted small mb-2">Вы действительно хотите удалить этот вопрос?</p>
+                <p id="deleteQuestionNameText" class="fw-bold text-danger mb-4"></p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmDeleteQuestionBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Массовое удаление -->
+<div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-body p-4 text-center">
+                <div class="text-danger mb-3"><i class="bi bi-exclamation-octagon-fill" style="font-size:3rem;"></i></div>
+                <h5 class="fw-bold text-dark mb-2">Групповое удаление</h5>
+                <p class="text-muted small mb-3">Вы действительно хотите безвозвратно удалить выбранные вопросы в количестве:</p>
+                <h4 id="multipleDeleteCountDisplay" class="fw-bold text-danger mb-4">0</h4>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmMultipleDeleteBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить всё</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Импорт CSV -->
+<div class="modal fade" id="importQuestionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i> Импорт вопросов (.csv)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="dropZone" class="border border-2 border-dashed rounded-3 p-5 text-center bg-light" style="cursor: pointer; transition: all 0.2s; border-color: #cbd5e1 !important;">
+                    <i class="bi bi-filetype-csv text-secondary" style="font-size: 3rem;"></i>
+                    <h5 class="fw-bold mt-2 text-secondary" id="dropZoneText">Перетащите CSV файл сюда или кликните</h5>
+                    <p class="text-muted small mb-0">Формат: QuestionText;Hint;Answers;CorrectFlags</p>
+                    <input type="file" id="csvFileInput" accept=".csv" class="d-none" />
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0 py-3">
+                <button type="button" class="btn btn-light border text-secondary fw-bold rounded-3" data-bs-dismiss="modal">Закрыть</button>
+                <button id="startImportBtn" type="button" class="btn btn-brand px-4 fw-bold rounded-3" disabled>Запустить импорт</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ==========================================
+    // УВЕДОМЛЕНИЯ
+    // ==========================================
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        let iconClass = 'bi-check-circle-fill text-success';
+        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
     const questionsContainer = document.getElementById('questionsContainer');
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const exportSelectedBtn = document.getElementById('exportSelectedBtn');
     const selectedCountSpans = document.querySelectorAll('.selected-count');
 
-    // 1. УПРАВЛЕНИЕ ОТОБРАЖЕНИЕМ ПАНЕЛИ ГРУППОВЫХ ДЕЙСТВИЙ
+    // ЛОГИКА ЧЕКБОКСОВ
     function toggleBatchButtons() {
         const count = questionsContainer.querySelectorAll('.user-checkbox:checked').length;
         if (count > 0) {
@@ -302,23 +486,60 @@
         } 
     });
 
-    // 2. ФУНКЦИЯ ПРЕДПРОСМОТРА КАРТИНКИ ВНУТРИ СТРОКИ ОТВЕТА
+    // ПРЕДПРОСМОТР КАРТИНКИ
     function previewFileInRow(input) {
         const row = input.closest('.answer-input-row');
         let img = row.querySelector('.row-preview-thumb');
         if (input.files && input.files[0]) {
             if (!img) {
                 img = document.createElement('img');
-                img.className = 'row-preview-thumb ms-2';
-                img.style.cssText = 'max-width:50px; max-height:35px; object-fit:cover; border-radius:4px;';
+                img.className = 'row-preview-thumb ms-2 rounded border';
+                img.style.cssText = 'max-width:50px; max-height:35px; object-fit:cover;';
                 row.appendChild(img);
             }
             img.src = URL.createObjectURL(input.files[0]);
-            input.closest('.file-upload-btn').style.backgroundColor = '#d1e7dd'; // Зеленая подсветка скрепки
+            input.closest('.file-upload-btn').classList.replace('btn-outline-secondary', 'btn-success');
         }
     }
 
-    // 3. ДИНАМИЧЕСКИЕ СТРОКИ ДОБАВЛЕНИЯ НОВОГО ВОПРОСА
+    // ОГРАНИЧЕНИЕ ГАЛОЧЕК В ЗАВИСИМОСТИ ОТ ТИПА
+    function enforceSingleChoice(containerId, radioName) {
+        const container = document.getElementById(containerId);
+        container.addEventListener('change', function(e) {
+            if (e.target.classList.contains('answer-correct-checkbox')) {
+                const isMultiple = document.querySelector(`input[name="${radioName}"]:checked`).value === 'true';
+                
+                if (!isMultiple && e.target.checked) {
+                    // Если выбран "Один ответ", снимаем остальные галочки
+                    container.querySelectorAll('.answer-correct-checkbox').forEach(cb => {
+                        if (cb !== e.target) cb.checked = false;
+                    });
+                }
+            }
+        });
+
+        // Если пользователь переключил радиокнопку на "Один ответ", снимаем лишние галочки
+        document.querySelectorAll(`input[name="${radioName}"]`).forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'false') {
+                    const checkedBoxes = container.querySelectorAll('.answer-correct-checkbox:checked');
+                    if (checkedBoxes.length > 1) {
+                        // Оставляем только первую
+                        for (let i = 1; i < checkedBoxes.length; i++) {
+                            checkedBoxes[i].checked = false;
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // Применяем ограничение к обеим формам
+    enforceSingleChoice('dynamicAnswersContainer', 'addQuestionType');
+    enforceSingleChoice('dynamicEditAnswersContainer', 'editQuestionType');
+
+
+    // ДИНАМИЧЕСКИЕ СТРОКИ (ДОБАВЛЕНИЕ)
     const dynamicContainer = document.getElementById('dynamicAnswersContainer');
     document.getElementById('addNewAnswerOptionBtn').addEventListener('click', function () {
         const count = dynamicContainer.querySelectorAll('.answer-input-row').length;
@@ -326,17 +547,17 @@
         newRow.className = 'input-group answer-input-row';
         newRow.innerHTML = `
             <div class="input-group-text bg-light"><input class="form-check-input mt-0 answer-correct-checkbox" type="checkbox" value="${count}" /></div>
-            <input type="text" name="answers" class="form-control" required placeholder="Вариант ответа" />
+            <input type="text" name="answers" class="form-control" required/>
             <label class="input-group-text btn btn-outline-secondary m-0 file-upload-btn">
-                📂<input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
+                <i class="bi bi-image"></i><input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
             </label>
-            <button type="button" class="btn btn-outline-danger px-3 remove-answer-row-btn">❌</button>
+            <button type="button" class="btn btn-outline-danger px-3 remove-answer-row-btn"><i class="bi bi-x-lg"></i></button>
         `;
         dynamicContainer.appendChild(newRow);
     });
     
     dynamicContainer.addEventListener('click', function (e) { 
-        if (e.target.classList.contains('remove-answer-row-btn')) { 
+        if (e.target.closest('.remove-answer-row-btn')) { 
             e.target.closest('.answer-input-row').remove(); 
             reindexCheckboxes(dynamicContainer); 
         } 
@@ -349,44 +570,60 @@
         }); 
     }
 
-    // 4. AJAX-ОТПРАВКА НА БЭКЕНД ПРИ СОЗДАНИИ ВОПРОСА
+    // ОТПРАВКА СОЗДАНИЯ
     document.getElementById('submitQuestionBtn').addEventListener('click', async function () {
         const form = document.getElementById('addQuestionForm');
         const textInput = document.getElementById('questionText');
         const checkedBoxes = dynamicContainer.querySelectorAll('.answer-correct-checkbox:checked');
-        if (!textInput.value.trim() || checkedBoxes.length === 0) { alert('Заполните поля и выберите верный ответ!'); return; }
+        const isMultipleChoice = document.getElementById('addTypeMultiple').checked;
+
+        if (!textInput.value.trim() || checkedBoxes.length === 0) { 
+            showToast('Заполните формулировку и выберите правильный ответ!', 'danger'); 
+            return; 
+        }
         this.disabled = true;
 
         const formData = new FormData();
         formData.append('testId', document.getElementById('modalTestId').value);
         formData.append('questionText', textInput.value.trim());
         formData.append('hint', document.getElementById('questionHint').value.trim());
+        formData.append('isMultipleChoice', isMultipleChoice);
         
         dynamicContainer.querySelectorAll('input[name="answers"]').forEach(input => formData.append('answers', input.value.trim()));
         checkedBoxes.forEach(cb => formData.append('correctIndices', cb.value));
         
         dynamicContainer.querySelectorAll('.option-file-input').forEach(input => {
-            if (input.files.length > 0) {
-                formData.append('answerImages', input.files[0]);
-            } else {
-                formData.append('answerImages', new File([""], "empty.txt"));
-            }
+            if (input.files.length > 0) formData.append('answerImages', input.files[0]);
+            else formData.append('answerImages', new File([""], "empty.txt"));
         });
 
         const res = await fetch('/TestConstructor/Create', { method: 'POST', body: formData });
-        if ((await res.json()).success) window.location.reload(); else this.disabled = false;
+        const r = await res.json();
+        
+        if (r.success) {
+            showToast('Вопрос успешно добавлен!', 'success');
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showToast(r.message, 'danger');
+            this.disabled = false;
+        }
     });
-</script>
-<script>
-    // 1. ПОДГОТОВКА ДАННЫХ ДЛЯ МОДАЛЬНОГО ОКНА ИЗМЕНЕНИЯ ВОПРОСА
+
+
+    // ПОДГОТОВКА И ОТПРАВКА РЕДАКТИРОВАНИЯ
     const dynamicEditContainer = document.getElementById('dynamicEditAnswersContainer');
     async function prepareEditQuestion(id) {
         dynamicEditContainer.innerHTML = '';
         const res = await fetch(`/TestConstructor/GetQuestionData/${id}`);
         const data = await res.json();
+        
         document.getElementById('editQuestionId').value = data.id;
         document.getElementById('editQuestionText').value = data.text;
         document.getElementById('editQuestionHint').value = data.hint;
+
+        // Устанавливаем тип ответа
+        if (data.isMultipleChoice) document.getElementById('editTypeMultiple').checked = true;
+        else document.getElementById('editTypeSingle').checked = true;
 
         data.answers.forEach((ans, i) => {
             const row = document.createElement('div');
@@ -395,11 +632,11 @@
                 <div class="input-group-text bg-light"><input class="form-check-input mt-0 answer-correct-checkbox" type="checkbox" value="${i}" ${ans.isCorrect ? 'checked' : ''} /></div>
                 <input type="text" name="answers" class="form-control" required value="${ans.text}" />
                 <input type="hidden" name="existingImageUrls" value="${ans.imageUrl}" />
-                <label class="input-group-text btn ${ans.imageUrl ? 'btn-success' : 'btn-outline-secondary'} m-0 file-upload-btn" title="${ans.imageUrl ? 'Картинка загружена. Нажмите для замены' : 'Прикрепить картинку'}">
-                    📂<input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
+                <label class="input-group-text btn ${ans.imageUrl ? 'btn-success' : 'btn-outline-secondary'} m-0 file-upload-btn" title="${ans.imageUrl ? 'Изображение загружено' : 'Прикрепить изображение'}">
+                    <i class="bi ${ans.imageUrl ? 'bi-image-fill' : 'bi-image'}"></i><input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
                 </label>
                 ${ans.imageUrl ? `<div class="input-group-text bg-white"><img src="${ans.imageUrl}" style="max-width:30px; max-height:22px; object-fit:cover;" class="row-preview-thumb" /></div>` : ""}
-                <button type="button" class="btn btn-outline-danger px-3 remove-answer-row-btn">❌</button>
+                <button type="button" class="btn btn-outline-danger px-3 remove-answer-row-btn"><i class="bi bi-x-lg"></i></button>
             `;
             dynamicEditContainer.appendChild(row);
         });
@@ -411,67 +648,85 @@
         newRow.className = 'input-group answer-input-row';
         newRow.innerHTML = `
             <div class="input-group-text bg-light"><input class="form-check-input mt-0 answer-correct-checkbox" type="checkbox" value="${count}" /></div>
-            <input type="text" name="answers" class="form-control" required placeholder="Вариант ответа" />
+            <input type="text" name="answers" class="form-control" required />
             <input type="hidden" name="existingImageUrls" value="" />
             <label class="input-group-text btn btn-outline-secondary m-0 file-upload-btn">
-                📂<input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
+                <i class="bi bi-image"></i><input type="file" name="answerImages" class="d-none option-file-input" accept="image/*" onchange="previewFileInRow(this)" />
             </label>
-            <button type="button" class="btn btn-outline-danger px-3 remove-answer-row-btn">❌</button>
+            <button type="button" class="btn btn-outline-danger px-3 remove-answer-row-btn"><i class="bi bi-x-lg"></i></button>
         `;
         dynamicEditContainer.appendChild(newRow);
     });
     
     dynamicEditContainer.addEventListener('click', function (e) { 
-        if (e.target.classList.contains('remove-answer-row-btn')) { 
+        if (e.target.closest('.remove-answer-row-btn')) { 
             e.target.closest('.answer-input-row').remove(); 
             reindexCheckboxes(dynamicEditContainer); 
         } 
     });
 
-    // 2. AJAX ОТПРАВКА ИЗМЕНЕНИЙ НА СЕРВЕР (Edit)
+    // ОТПРАВКА ИЗМЕНЕНИЙ
     document.getElementById('submitEditQuestionBtn').addEventListener('click', async function () {
         const textInput = document.getElementById('editQuestionText');
         const checkedBoxes = dynamicEditContainer.querySelectorAll('.answer-correct-checkbox:checked');
-        if (!textInput.value.trim() || checkedBoxes.length === 0) { alert('Заполните обязательные поля!'); return; }
+        const isMultipleChoice = document.getElementById('editTypeMultiple').checked;
+
+        if (!textInput.value.trim() || checkedBoxes.length === 0) { 
+            showToast('Заполните обязательные поля!', 'danger'); 
+            return; 
+        }
         this.disabled = true;
 
         const formData = new FormData();
         formData.append('id', document.getElementById('editQuestionId').value);
         formData.append('questionText', textInput.value.trim());
         formData.append('hint', document.getElementById('editQuestionHint').value.trim());
+        formData.append('isMultipleChoice', isMultipleChoice);
 
         dynamicEditContainer.querySelectorAll('input[name="answers"]').forEach(input => formData.append('answers', input.value.trim()));
         dynamicEditContainer.querySelectorAll('input[name="existingImageUrls"]').forEach(input => formData.append('existingImageUrls', input.value));
         checkedBoxes.forEach(cb => formData.append('correctIndices', cb.value));
         
         dynamicEditContainer.querySelectorAll('.option-file-input').forEach(input => {
-            if (input.files.length > 0) {
-                formData.append('answerImages', input.files[0]);
-            } else {
-                formData.append('answerImages', new File([""], "empty.txt"));
-            }
+            if (input.files.length > 0) formData.append('answerImages', input.files[0]);
+            else formData.append('answerImages', new File([""], "empty.txt"));
         });
 
         const res = await fetch('/TestConstructor/Edit', { method: 'POST', body: formData });
-        if ((await res.json()).success) window.location.reload(); else this.disabled = false;
+        const r = await res.json();
+        
+        if (r.success) {
+            showToast('Вопрос успешно обновлен!', 'success');
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showToast(r.message, 'danger');
+            this.disabled = false;
+        }
     });
 
-    // 3. ОДИНОЧНОЕ И МАССОВОЕ УДАЛЕНИЕ ВОПРОСОВ
+    // УДАЛЕНИЕ
     let questionIdToDelete = null;
-    function prepareDeleteQuestion(id, label) { questionIdToDelete = id; document.getElementById('deleteQuestionNameText').textContent = label; }
+    function prepareDeleteQuestion(id, label) { 
+        questionIdToDelete = id; 
+        document.getElementById('deleteQuestionNameText').textContent = label; 
+    }
     
     document.getElementById('confirmDeleteQuestionBtn').addEventListener('click', async function () { 
+        this.disabled = true;
         await fetch(`/TestConstructor/Delete/${questionIdToDelete}`, { method: 'POST' }); 
-        window.location.reload(); 
+        showToast('Вопрос удален', 'success');
+        setTimeout(() => window.location.reload(), 800); 
     });
     
     document.getElementById('confirmMultipleDeleteBtn').addEventListener('click', async function () {
+        this.disabled = true;
         const ids = Array.from(questionsContainer.querySelectorAll('.user-checkbox:checked')).map(cb => parseInt(cb.value));
         await fetch('/TestConstructor/DeleteMultiple', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ids) }); 
-        window.location.reload();
+        showToast('Выбранные вопросы удалены', 'success');
+        setTimeout(() => window.location.reload(), 800);
     });
 
-    // 4. ЭКСПОРТ И ИМПОРТ ИЗ CSV ФАЙЛА
+    // ЭКСПОРТ И ИМПОРТ
     function exportSelectedQuestions() { 
         const ids = Array.from(questionsContainer.querySelectorAll('.user-checkbox:checked')).map(cb => parseInt(cb.value)); 
         document.getElementById('exportQuestionsJsonInput').value = JSON.stringify(ids); 
@@ -499,6 +754,12 @@
         fd.append('csvFile', selectedFile);
         const res = await fetch('/TestConstructor/ImportFromCsv', { method: 'POST', body: fd }); 
         const r = await res.json();
-        if (r.success) window.location.reload(); else this.disabled = false;
+        if (r.success) {
+            showToast('Импорт завершен!', 'success');
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showToast(r.message, 'danger');
+            this.disabled = false;
+        }
     });
 </script>

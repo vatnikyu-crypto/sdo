@@ -47,10 +47,9 @@ public class TestConstructorController : Controller
         return View(questions);
     }
 
-    // POST: /TestConstructor/Create
-    // Добавлен параметр string? hint и список файлов для картинок ответов
+     // POST: /TestConstructor/Create
     [HttpPost]
-    public async Task<IActionResult> Create(int testId, string questionText, string? hint, List<string> answers, List<int> correctIndices, IFormFile?[] answerImages)
+    public async Task<IActionResult> Create(int testId, string questionText, string? hint, bool isMultipleChoice, List<string> answers, List<int> correctIndices, IFormFile?[] answerImages)
     {
         if (string.IsNullOrWhiteSpace(questionText))
             return Json(new { success = false, message = "Текст вопроса не может быть пустым!" });
@@ -67,7 +66,8 @@ public class TestConstructorController : Controller
             {
                 CourseMaterialId = testId,
                 QuestionText = questionText.Trim(),
-                Hint = string.IsNullOrWhiteSpace(hint) ? null : hint.Trim() // Пишем подсказку
+                Hint = string.IsNullOrWhiteSpace(hint) ? null : hint.Trim(),
+                IsMultipleChoice = isMultipleChoice // <--- СОХРАНЯЕМ ТИП
             };
 
             _context.TestQuestions.Add(newQuestion);
@@ -76,8 +76,6 @@ public class TestConstructorController : Controller
             for (int i = 0; i < answers.Count; i++)
             {
                 string? savedImageUrl = null;
-
-                // Проверяем, загружена ли картинка для текущего индекса ответа
                 if (answerImages != null && i < answerImages.Length && answerImages[i] != null && answerImages[i]!.Length > 0)
                 {
                     savedImageUrl = await SaveOptionImageAsync(answerImages[i]!);
@@ -88,7 +86,7 @@ public class TestConstructorController : Controller
                     TestQuestionId = newQuestion.Id,
                     AnswerText = answers[i].Trim(),
                     IsCorrect = correctIndices.Contains(i),
-                    ImageUrl = savedImageUrl // Пишем путь к картинке
+                    ImageUrl = savedImageUrl
                 };
                 _context.TestAnswerOptions.Add(option);
             }
@@ -144,50 +142,45 @@ public class TestConstructorController : Controller
         {
             id = question.Id,
             text = question.QuestionText,
-            hint = question.Hint ?? "", // Отдаем подсказку на фронт
+            hint = question.Hint ?? "",
+            isMultipleChoice = question.IsMultipleChoice, // <--- ОТДАЕМ ТИП НА ФРОНТ
             answers = question.Answers.Select(a => new
             {
                 text = a.AnswerText,
                 isCorrect = a.IsCorrect,
-                imageUrl = a.ImageUrl ?? "" // Отдаем путь к картинке на фронт
+                imageUrl = a.ImageUrl ?? ""
             })
         });
     }
 
     // POST: /TestConstructor/Edit
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, string questionText, string? hint, List<string> answers, List<int> correctIndices, IFormFile?[] answerImages, List<string?> existingImageUrls)
+    public async Task<IActionResult> Edit(int id, string questionText, string? hint, bool isMultipleChoice, List<string> answers, List<int> correctIndices, IFormFile?[] answerImages, List<string?> existingImageUrls)
     {
         var question = await _context.TestQuestions.FindAsync(id);
         if (question == null) return Json(new { success = false, message = "Вопрос не найден!" });
 
         try
         {
-            // 1. Обновляем базовые поля вопроса
             question.QuestionText = questionText.Trim();
             question.Hint = string.IsNullOrWhiteSpace(hint) ? null : hint.Trim();
+            question.IsMultipleChoice = isMultipleChoice; // <--- ОБНОВЛЯЕМ ТИП
             _context.TestQuestions.Update(question);
 
-            // 2. Вытаскиваем старые варианты для очистки физических файлов
             var oldOptions = await _context.TestAnswerOptions.Where(o => o.TestQuestionId == id).ToListAsync();
 
-            // 3. Записываем новый измененный массив ответов
             for (int i = 0; i < answers.Count; i++)
             {
                 string? finalImageUrl = null;
-
-                // Проверяем, прилетела ли НОВАЯ картинка из инпута
                 if (answerImages != null && i < answerImages.Length && answerImages[i] != null && answerImages[i]!.Length > 0)
                 {
                     finalImageUrl = await SaveOptionImageAsync(answerImages[i]!);
                 }
-                // Если новой картинки нет, проверяем, осталась ли старая (при редактировании строк)
                 else if (existingImageUrls != null && i < existingImageUrls.Count && !string.IsNullOrEmpty(existingImageUrls[i]))
                 {
                     finalImageUrl = existingImageUrls[i];
                 }
 
-                // Логика удаления файлов, которые админ стер или заменил
                 if (oldOptions.Any(o => o.AnswerText == answers[i] && o.ImageUrl != finalImageUrl))
                 {
                     var fileToClear = oldOptions.FirstOrDefault(o => o.AnswerText == answers[i] && o.ImageUrl != finalImageUrl);
@@ -204,7 +197,6 @@ public class TestConstructorController : Controller
                 _context.TestAnswerOptions.Add(option);
             }
 
-            // Удаляем старые строчки опций из БД, заменяя их новыми
             _context.TestAnswerOptions.RemoveRange(oldOptions);
             await _context.SaveChangesAsync();
             return Json(new { success = true });

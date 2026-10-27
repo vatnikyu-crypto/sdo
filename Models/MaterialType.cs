@@ -7,5 +7,6 @@ public enum MaterialType
     Video,        // Видео (MP4)
     Image,        // Картинка / Схема
     Test,         // Тестирование
-    Assignment    // Задание с ручной проверкой и файлами
+    Assignment,  // Задание с ручной проверкой и файлами
+    Scorm // Scorm курс
 }

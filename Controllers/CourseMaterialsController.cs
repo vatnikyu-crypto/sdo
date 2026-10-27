@@ -6,6 +6,7 @@ using SdoApp.Data;
 using SdoApp.Models;
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -112,6 +113,16 @@ public class CourseMaterialsController : Controller
                 fileUrl = $"/uploads/materials/assignments/{uniqueFileName}";
             }
             contentOrPath = $"{fileUrl}|||{textContent ?? ""}";
+        }
+        else if (type == MaterialType.Scorm)
+        {
+            if (uploadedFile == null || uploadedFile.Length == 0) 
+                return Json(new { success = false, message = "Прикрепите ZIP-архив SCORM!" });
+            
+            if (Path.GetExtension(uploadedFile.FileName).ToLower() != ".zip") 
+                return Json(new { success = false, message = "Для SCORM требуется файл .zip!" });
+
+            contentOrPath = ExtractScormPackage(uploadedFile);
         }
 
         // Вычисляем Order внутри выбранной темы (или среди материалов без темы)
@@ -246,7 +257,7 @@ public class CourseMaterialsController : Controller
         }
     }
 
-    // GET: /CourseMaterials/GetMaterialData/5
+        // GET: /CourseMaterials/GetMaterialData/5
     [HttpGet]
     public async Task<IActionResult> GetMaterialData(int id)
     {
@@ -256,7 +267,6 @@ public class CourseMaterialsController : Controller
         string textContent = "";
         string fileUrl = "";
 
-        // Обрабатываем типы в соответствии с базой данных
         if (m.Type == MaterialType.Text)
         {
             textContent = m.ContentOrPath ?? "";
@@ -267,8 +277,12 @@ public class CourseMaterialsController : Controller
             fileUrl = parts.Length > 0 ? parts[0] : "";
             textContent = parts.Length > 1 ? parts[1] : "";
         }
-        // ВАЖНОЕ ИСПРАВЛЕНИЕ: Передаем путь к файлу для медиа-материалов!
         else if (m.Type == MaterialType.Pdf || m.Type == MaterialType.Video || m.Type == MaterialType.Image)
+        {
+            fileUrl = m.ContentOrPath ?? "";
+        }
+        // ДОБАВЛЯЕМ SCORM:
+        else if (m.Type == MaterialType.Scorm)
         {
             fileUrl = m.ContentOrPath ?? "";
         }
@@ -284,10 +298,10 @@ public class CourseMaterialsController : Controller
             shuffleQuestions = m.ShuffleQuestions,
             passPercentage = m.PassPercentage,
             testKind = (int)m.TestKind,
-            questionsCountToUse = m.QuestionsCountToUse
+            questionsCountToUse = m.QuestionsCountToUse,
+            themeId = m.ThemeId
         });
     }
-
 
     // POST: /CourseMaterials/Edit
     [HttpPost]
@@ -299,18 +313,21 @@ public class CourseMaterialsController : Controller
         if (string.IsNullOrWhiteSpace(title)) return Json(new { success = false, message = "Название обязательно!" });
 
         material.Title = title.Trim();
-        material.ThemeId = themeId; // <--- Обновляем привязку
+        material.ThemeId = themeId;
 
-        // ... (остальная логика обработки файлов и тестов остается как была) ...
-        if (material.Type == MaterialType.Text) { material.ContentOrPath = textContent ?? ""; }
+        if (material.Type == MaterialType.Text) 
+        { 
+            material.ContentOrPath = textContent ?? ""; 
+        }
         else if (material.Type == MaterialType.Pdf || material.Type == MaterialType.Video || material.Type == MaterialType.Image)
         {
             if (uploadedFile != null && uploadedFile.Length > 0)
             {
-                // Логика замены файла...
                 var extension = Path.GetExtension(uploadedFile.FileName).ToLower();
+                
+                // Проверки расширений
                 if (material.Type == MaterialType.Pdf && extension != ".pdf") return Json(new { success = false, message = "Только .pdf!" });
-                if (material.Type == MaterialType.Video && extension != ".mp4") return Json(new { success = false, message = "Только .mp4!" });
+                if (material.Type == MaterialType.Video && !new[] { ".mp4", ".webm" }.Contains(extension)) return Json(new { success = false, message = "Только .mp4 или .webm!" });
                 if (material.Type == MaterialType.Image && !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension)) return Json(new { success = false, message = "Только картинки!" });
 
                 if (!string.IsNullOrEmpty(material.ContentOrPath) && material.ContentOrPath.StartsWith("/uploads/"))
@@ -318,11 +335,16 @@ public class CourseMaterialsController : Controller
                     string oldAbsolute = Path.Combine(_env.WebRootPath, material.ContentOrPath.TrimStart('/'));
                     if (System.IO.File.Exists(oldAbsolute)) System.IO.File.Delete(oldAbsolute);
                 }
+                
                 string subFolder = material.Type == MaterialType.Pdf ? "pdfs" : material.Type == MaterialType.Video ? "videos" : "images";
                 string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", subFolder);
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                
                 string uniqueFileName = Guid.NewGuid().ToString() + extension;
-                using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create)) { await uploadedFile.CopyToAsync(fileStream); }
+                using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create)) 
+                { 
+                    await uploadedFile.CopyToAsync(fileStream); 
+                }
                 material.ContentOrPath = $"/uploads/materials/{subFolder}/{uniqueFileName}";
             }
         }
@@ -330,11 +352,14 @@ public class CourseMaterialsController : Controller
         {
             if (uploadedFile != null && uploadedFile.Length > 0)
             {
-                // Логика замены файла задания...
                 string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", "assignments");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
                 string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(uploadedFile.FileName);
-                using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create)) { await uploadedFile.CopyToAsync(fileStream); }
+                using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create)) 
+                { 
+                    await uploadedFile.CopyToAsync(fileStream); 
+                }
+                
                 string oldFile = material.ContentOrPath?.Split("|||")[0] ?? "";
                 if (!string.IsNullOrEmpty(oldFile) && oldFile.StartsWith("/uploads/"))
                 {
@@ -356,6 +381,34 @@ public class CourseMaterialsController : Controller
             material.PassPercentage = passPercentage ?? 80;
             material.TestKind = testKind;
             material.QuestionsCountToUse = questionsCountToUse ?? 0;
+        }
+        // НОВОЕ: ОБРАБОТКА SCORM
+        else if (material.Type == MaterialType.Scorm)
+        {
+            if (uploadedFile != null && uploadedFile.Length > 0)
+            {
+                var extension = Path.GetExtension(uploadedFile.FileName).ToLower();
+                if (extension != ".zip")
+                    return Json(new { success = false, message = "Для SCORM требуется файл .zip!" });
+
+                // Удаляем старую распакованную папку SCORM
+                if (!string.IsNullOrEmpty(material.ContentOrPath) && material.ContentOrPath.StartsWith("/uploads/materials/scorm/"))
+                {
+                    var parts = material.ContentOrPath.Split('/');
+                    if (parts.Length > 4) 
+                    {
+                        string oldFolderName = parts[4]; // /uploads/materials/scorm/[folderName]/index.html
+                        string oldFolderPath = Path.Combine(_env.WebRootPath, "uploads", "materials", "scorm", oldFolderName);
+                        if (Directory.Exists(oldFolderPath))
+                        {
+                            try { Directory.Delete(oldFolderPath, true); } catch { /* Игнорируем, если файл занят */ }
+                        }
+                    }
+                }
+
+                // Распаковываем новый архив (метод ExtractScormPackage мы добавили ранее)
+                material.ContentOrPath = ExtractScormPackage(uploadedFile);
+            }
         }
 
         _context.CourseMaterials.Update(material);
@@ -447,5 +500,71 @@ public class CourseMaterialsController : Controller
         ViewBag.ActiveId = activeId;
 
         return View(course); 
+    }
+
+        // Вспомогательный метод для распаковки SCORM
+    private string ExtractScormPackage(IFormFile zipFile)
+    {
+        string folderName = Guid.NewGuid().ToString();
+        string targetFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", "scorm", folderName);
+        
+        if (!Directory.Exists(targetFolder)) Directory.CreateDirectory(targetFolder);
+
+        string tempZipPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".zip");
+        
+        using (var stream = new FileStream(tempZipPath, FileMode.Create))
+        {
+            zipFile.CopyTo(stream);
+        }
+
+        try
+        {
+            // Безопасная распаковка (защита от Zip Slip)
+            using (var archive = System.IO.Compression.ZipFile.OpenRead(tempZipPath))
+            {
+                foreach (var entry in archive.Entries)
+                {
+                    string destPath = Path.Combine(targetFolder, entry.FullName);
+                    // Проверка, чтобы файлы не вылезли за пределы папки
+                    if (!destPath.StartsWith(targetFolder + Path.DirectorySeparatorChar)) continue;
+
+                    if (string.IsNullOrEmpty(entry.Name)) // Это папка
+                    {
+                        Directory.CreateDirectory(destPath);
+                    }
+                    else // Это файл
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                        entry.ExtractToFile(destPath, overwrite: true);
+                    }
+                }
+            }
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempZipPath)) System.IO.File.Delete(tempZipPath);
+        }
+
+        // Ищем стартовый файл
+        string entryPoint = "index.html"; // По умолчанию
+        
+        // Пытаемся найти imsmanifest.xml, чтобы взять точный стартовый файл
+        string manifestPath = Directory.GetFiles(targetFolder, "imsmanifest.xml", SearchOption.AllDirectories).FirstOrDefault();
+        if (manifestPath != null)
+        {
+            try
+            {
+                var doc = System.Xml.Linq.XDocument.Load(manifestPath);
+                var resource = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "resource" && e.Attribute("href") != null);
+                if (resource != null)
+                {
+                    entryPoint = resource.Attribute("href")!.Value;
+                }
+            }
+            catch { /* Если XML битый, оставляем index.html */ }
+        }
+
+        // Возвращаем путь для БД (относительно wwwroot)
+        return $"/uploads/materials/scorm/{folderName}/{entryPoint}";
     }
 }
