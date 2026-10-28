@@ -142,7 +142,7 @@
     </div>
 </div>
 
-<form id="exportForm" action="/TestConstructor/ExportToCsv" method="POST" style="display:none;">
+<form id="exportForm" action="/TestConstructor/ExportToExcel" method="POST" style="display:none;">
     <input type="hidden" name="questionIdsJson" id="exportQuestionsJsonInput" />
 </form>
 
@@ -418,11 +418,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <div id="dropZone" class="border border-2 border-dashed rounded-3 p-5 text-center bg-light" style="cursor: pointer; transition: all 0.2s; border-color: #cbd5e1 !important;">
-                    <i class="bi bi-filetype-csv text-secondary" style="font-size: 3rem;"></i>
-                    <h5 class="fw-bold mt-2 text-secondary" id="dropZoneText">Перетащите CSV файл сюда или кликните</h5>
-                    <p class="text-muted small mb-0">Формат: QuestionText;Hint;Answers;CorrectFlags</p>
-                    <input type="file" id="csvFileInput" accept=".csv" class="d-none" />
+                                <div id="dropZone" class="border border-2 border-dashed rounded-3 p-5 text-center bg-light" style="cursor: pointer; transition: all 0.2s; border-color: #cbd5e1 !important;">
+                    <i class="bi bi-file-earmark-excel text-success" style="font-size: 3rem;"></i>
+                    <h5 class="fw-bold mt-2 text-secondary" id="dropZoneText">Перетащите Excel-файл сюда или кликните</h5>
+                    <p class="text-muted small mb-0">Колонки: Вопрос, Комментарий, Тип, Ответ, Ответ верен</p>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="d-none" />
                 </div>
             </div>
             <div class="modal-footer bg-light border-0 py-3">
@@ -733,8 +733,8 @@
         document.getElementById('exportForm').submit(); 
     }
 
-    const dropZone = document.getElementById('dropZone'); 
-    const fileInput = document.getElementById('csvFileInput'); 
+        const dropZone = document.getElementById('dropZone'); 
+    const fileInput = document.getElementById('excelFileInput'); // <--- ИЗМЕНЕНО
     const startImportBtn = document.getElementById('startImportBtn'); 
     let selectedFile = null;
     
@@ -751,12 +751,13 @@
         this.disabled = true; 
         const fd = new FormData(); 
         fd.append('testId', '@ViewBag.TestId'); 
-        fd.append('csvFile', selectedFile);
-        const res = await fetch('/TestConstructor/ImportFromCsv', { method: 'POST', body: fd }); 
+        fd.append('excelFile', selectedFile); // <--- ИЗМЕНЕНО
+        // <--- ИЗМЕНЕН ПУТЬ
+        const res = await fetch('/TestConstructor/ImportFromExcel', { method: 'POST', body: fd }); 
         const r = await res.json();
         if (r.success) {
-            showToast('Импорт завершен!', 'success');
-            setTimeout(() => window.location.reload(), 800);
+            showToast(`Импорт завершен! Загружено вопросов: ${r.successCount}`, 'success');
+            setTimeout(() => window.location.reload(), 1500);
         } else {
             showToast(r.message, 'danger');
             this.disabled = false;

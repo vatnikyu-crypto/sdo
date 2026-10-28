@@ -1,0 +1,212 @@
+@model SdoApp.Models.ViewModels.TestResultViewModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = $"Результат: {Model.TestTitle}";
+
+    var dur = Model.Duration;
+    string durStr = dur.TotalHours >= 1
+        ? $"{(int)dur.TotalHours} ч {dur.Minutes} мин"
+        : dur.TotalMinutes >= 1
+            ? $"{(int)dur.TotalMinutes} мин {dur.Seconds} сек"
+            : $"{dur.Seconds} сек";
+}
+
+<style>
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-gray: #e2e8f0;
+    }
+    
+    .metric-card {
+        background: #f8fafc;
+        border: 1px solid var(--brand-gray);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .answer-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        white-space: normal;
+        text-align: left;
+        margin-bottom: 4px;
+    }
+    
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+</style>
+
+<div class="container my-4">
+    <a href="/CourseMaterials/StudentView?courseId=@Model.CourseId&groupId=@Model.GroupId" class="text-decoration-none text-muted small fw-semibold mb-3 d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Вернуться к курсу
+    </a>
+    
+    <!-- Карточка с результатом -->
+    <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
+        <div class="text-center mb-4">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                 style="width: 100px; height: 100px; @(Model.IsPassed ? "background: rgba(25,135,84,0.1);" : "background: rgba(220,53,69,0.1);")">
+                @if (Model.IsPassed)
+                {
+                    <i class="bi bi-trophy-fill" style="font-size: 3rem; color: #198754;"></i>
+                }
+                else
+                {
+                    <i class="bi bi-x-circle-fill" style="font-size: 3rem; color: #dc3545;"></i>
+                }
+            </div>
+            <h2 class="fw-bold @(Model.IsPassed ? "text-success" : "text-danger") mb-2">
+                @(Model.IsPassed ? "Тест успешно сдан!" : "Тест не сдан")
+            </h2>
+            <p class="text-muted mb-0">@Model.CourseTitle</p>
+            <h5 class="fw-bold text-dark mb-0 mt-1">@Model.TestTitle</h5>
+        </div>
+
+        <!-- Метрики -->
+        <div class="row g-3 mt-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <i class="bi bi-percent text-primary" style="font-size: 1.8rem;"></i>
+                    <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size: 0.7rem;">Результат</div>
+                    <h4 class="fw-bold m-0 mt-1 @(Model.IsPassed ? "text-success" : "text-danger")">@Model.ScorePercentage%</h4>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <i class="bi bi-bullseye text-warning" style="font-size: 1.8rem;"></i>
+                    <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size: 0.7rem;">Проходной</div>
+                    <h4 class="fw-bold text-secondary m-0 mt-1">@Model.PassPercentage%</h4>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <i class="bi bi-check-circle text-success" style="font-size: 1.8rem;"></i>
+                    <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size: 0.7rem;">Верных ответов</div>
+                    <h4 class="fw-bold m-0 mt-1">@Model.CorrectAnswers / @Model.TotalQuestions</h4>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="metric-card">
+                    <i class="bi bi-clock-history text-info" style="font-size: 1.8rem;"></i>
+                    <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size: 0.7rem;">Затрачено</div>
+                    <h4 class="fw-bold m-0 mt-1">@durStr</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- Время -->
+        <div class="bg-light border rounded-3 p-3 small text-muted mb-4 d-flex flex-wrap gap-3">
+            <div><i class="bi bi-play-circle me-1"></i><b>Начало:</b> @Model.StartedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+            @if (Model.FinishedAt.HasValue)
+            {
+                <div><i class="bi bi-stop-circle me-1"></i><b>Окончание:</b> @Model.FinishedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+            }
+        </div>
+
+        <!-- Кнопки -->
+        <div class="d-flex flex-wrap gap-2">
+            <a href="/StudentTest/DownloadResult?attemptId=@Model.AttemptId" class="btn btn-brand fw-bold rounded-3 px-4 py-2">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> Скачать протокол (Word)
+            </a>
+            <a href="/CourseMaterials/StudentView?courseId=@Model.CourseId&groupId=@Model.GroupId" class="btn btn-light border fw-bold rounded-3 px-4 py-2">
+        <i class="bi bi-arrow-left me-1"></i> Вернуться к курсу
+    </a>
+        </div>
+    </div>
+
+        <!-- Таблица вопросов -->
+    @if (Model.Questions.Any())
+    {
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
+            <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-list-check text-primary"></i> Детализация ответов
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">№</th>
+                            <th style="width: 32%;">Вопрос</th>
+                            <th style="width: 25%;">Ваш ответ</th>
+                            <th style="width: 25%;">Верный ответ</th>
+                            <th style="width: 90px;" class="text-center">Результат</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var q in Model.Questions)
+                        {
+                            <tr>
+                                <td class="fw-bold text-muted">@q.Number</td>
+                                <td>@q.QuestionText</td>
+                                <td>
+                                    @if (q.StudentAnswers.Any())
+                                    {
+                                        <div class="d-flex flex-column gap-1">
+                                            @foreach (var a in q.StudentAnswers)
+                                            {
+                                                <span class="answer-badge bg-light text-dark border">@a</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="fst-italic text-muted small">— Нет ответа</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        @foreach (var a in q.CorrectAnswers)
+                                        {
+                                            <span class="answer-badge" style="background: rgba(25,135,84,0.08); color: #198754; border: 1px solid rgba(25,135,84,0.25);">@a</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @if (q.IsCorrect)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success fs-4" title="Верно"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-x-circle-fill text-danger fs-4" title="Неверно"></i>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm p-5 text-center" style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
+            <i class="bi bi-clipboard-x text-secondary opacity-50" style="font-size: 4rem;"></i>
+            <h5 class="fw-bold text-dark mt-3 mb-2">Вы не дали ни одного ответа</h5>
+            <p class="text-muted small mb-4">
+                Изучите материалы курса и попробуйте пройти тест снова!
+            </p>
+            <a href="/CourseMaterials/StudentView?courseId=@Model.CourseId&groupId=@Model.GroupId" class="btn btn-brand fw-bold rounded-3 px-4 py-2">
+                <i class="bi bi-arrow-left me-1"></i> Вернуться к материалам курса
+            </a>
+        </div>
+    }
+</div>

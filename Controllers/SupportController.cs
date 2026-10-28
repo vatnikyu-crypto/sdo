@@ -191,7 +191,7 @@ public class SupportController : Controller
             status = (int)ticket.Status, // 0 - Открыто, 1 - Закрыто
             phone = ticket.Phone,
             studentFio = $"{ticket.Student?.LastName} {ticket.Student?.FirstName}".Trim(),
-            createdAt = ticket.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+            createdAt = ticket.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"),
             messages = ticket.Messages.OrderBy(m => m.CreatedAt).Select(m => new
             {
                 id = m.Id,
@@ -202,7 +202,7 @@ public class SupportController : Controller
                     : "🛠️ Служба техподдержки (Администратор)",
                 isMe = m.SenderId == currentUserId,
                 isAdminMessage = m.SenderId != ticket.StudentId, // Флаг, что сообщение от админа
-                createdAt = m.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+                createdAt = m.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"),
                 files = m.Files.Select(f => new { name = f.FileName, url = f.FilePath }).ToList()
             }).ToList()
         };

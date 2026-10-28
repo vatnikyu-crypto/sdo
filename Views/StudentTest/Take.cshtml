@@ -3,59 +3,125 @@
     Layout = "_StudentLayout";
     ViewData["Title"] = $"Тестирование: {ViewBag.TestTitle}";
 
-    int timeLimitMinutes = ViewBag.TimeLimit ?? 0;
     var testKind = (SdoApp.Models.TestStatus)ViewBag.TestKind;
+    int remainingSeconds = ViewBag.RemainingSeconds ?? 0;
 }
 
 <style>
-    .timer-badge {
-        position: fixed;
-        top: 70px;
-        right: 20px;
-        z-index: 1050;
-        background-color: #3a3b45;
-        color: #fff;
-        font-family: monospace;
-        font-size: 1.3rem;
-        padding: 8px 16px;
-        border-radius: 30px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-gray: #e2e8f0;
+        --brand-accent: #F59E0B;
     }
 
-    .timer-badge.danger-time {
-        background-color: #e74a3b !important;
-        animation: pulse 1s infinite;
+    /* Сайдбар */
+    .test-nav-sidebar {
+        width: 280px;
+        min-width: 280px;
+        transition: all 0.3s ease-in-out;
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+        background: #fff;
+        border: 1px solid var(--brand-gray);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     }
-
-    @@keyframes pulse {
-        0% {
-            transform: scale(1);
-        }
-
-        50% {
-            transform: scale(1.03);
-        }
-
-        100% {
-            transform: scale(1);
-        }
+    
+    .test-nav-sidebar.collapsed {
+        width: 60px;
+        min-width: 60px;
+        padding: 15px 10px;
+        overflow: hidden;
     }
-
-    .question-wizard-step {
+    
+    .test-nav-sidebar.collapsed #sidebarContent,
+    .test-nav-sidebar.collapsed .sidebar-title {
         display: none;
-        /* Все вопросы скрыты, кроме текущего */
     }
 
-    .question-wizard-step.active {
-        display: block;
+    .question-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 20px;
     }
+    
+    .test-nav-sidebar.collapsed .question-grid {
+        display: none;
+    }
+
+    .q-btn {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        border: 2px solid var(--brand-gray);
+        background: #fff;
+        color: #475569;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .q-btn:hover { border-color: var(--brand-primary); }
+    
+    /* Отвеченный вопрос */
+    .q-btn.answered {
+        background: var(--brand-primary);
+        color: white;
+        border-color: var(--brand-primary);
+    }
+
+    /* Активный (текущий) вопрос */
+    .q-btn.active {
+        border-color: var(--brand-accent);
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+    }
+
+    .timer-pill {
+        background-color: #f8fafc;
+        border: 1px solid var(--brand-gray);
+        color: var(--brand-dark);
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-family: monospace;
+        font-size: 1.2rem;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+
+    .timer-pill.danger {
+        background-color: #fee2e2;
+        border-color: #fca5a5;
+        color: #dc3545;
+        animation: pulse-red 1s infinite;
+    }
+
+    @@keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+
+    .question-wizard-step { display: none; }
+    .question-wizard-step.active { display: block; animation: fadeIn 0.3s ease; }
+    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .student-answer-label {
         display: flex;
         align-items: center;
-        padding: 14px 20px;
-        border: 2px solid #eaecf4;
-        border-radius: 10px;
+        padding: 16px 20px;
+        border: 2px solid var(--brand-gray);
+        border-radius: 12px;
         cursor: pointer;
         transition: all 0.2s;
         background: #fff;
@@ -63,170 +129,467 @@
 
     .student-answer-label:hover {
         background-color: #f8fafc;
-        border-color: #dddfeb;
+        border-color: #cbd5e1;
     }
 
-    .form-check-input:checked+.student-answer-label {
-        border-color: #4e73df;
-        background-color: rgba(78, 115, 223, 0.05);
+    .test-option-input:checked + .student-answer-label {
+        border-color: var(--brand-primary);
+        background-color: rgba(79, 88, 157, 0.05);
+        box-shadow: 0 0 0 1px var(--brand-primary);
     }
 
-    .test-option-thumbnail {
-        max-width: 150px;
-        max-height: 100px;
-        object-fit: cover;
+    .custom-indicator {
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        border: 2px solid #cbd5e1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        transition: all 0.2s;
+    }
+
+    .test-option-input[type="checkbox"] + .student-answer-label .custom-indicator {
         border-radius: 6px;
-        border: 1px solid #d1d5db;
+    }
+
+    .test-option-input:checked + .student-answer-label .custom-indicator {
+        border-color: var(--brand-primary);
+        background-color: var(--brand-primary);
+    }
+
+    .test-option-input:checked + .student-answer-label .custom-indicator::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background: white;
+        border-radius: 50%;
+    }
+    
+    .test-option-input[type="checkbox"]:checked + .student-answer-label .custom-indicator::after {
+        content: '✓';
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        background: transparent;
+        width: auto;
+        height: auto;
     }
 
     .student-hint-box {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-        color: #664d03;
-        border-radius: 4px;
+        background-color: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+        border-radius: 6px;
+    }
+
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+
+    /* Уведомления */
+    .toast-container-custom {
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .custom-toast {
+        min-width: 300px; max-width: 400px; background: white;
+        border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex; align-items: center; padding: 15px 20px;
+        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        border-left: 6px solid #ccc;
+    }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.warning { border-left-color: #F59E0B; }
+
+    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+
+    /* ========================================= */
+    /* МОБИЛЬНАЯ АДАПТАЦИЯ (ЭКРАНЫ ДО 768px)      */
+    /* ========================================= */
+    @@media (max-width: 768px) {
+        /* Ставим контент и сайдбар друг под другом */
+        .test-layout-wrapper {
+            flex-direction: column;
+        }
+
+        /* Сайдбар на всю ширину, не прилипает, уходит вниз */
+        .test-nav-sidebar {
+            width: 100% !important;
+            min-width: 100% !important;
+            position: static !important;
+            padding: 15px !important;
+            margin-top: 10px;
+            border-radius: 12px;
+        }
+
+        .test-nav-sidebar.collapsed {
+            width: 100% !important;
+            min-width: 100% !important;
+        }
+
+        /* Шапка теста (заголовок, таймер и номер вопроса) встает в столбик */
+        .test-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 15px !important;
+        }
+
+        .test-header-right {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        /* Кнопки вопросов в сайдбаре делаем поменьше, чтобы влезало больше в ряд */
+        .question-grid {
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 6px;
+        }
+
+        /* Текст вопроса чуть меньше на мобилке */
+        .question-text {
+            font-size: 1.1rem !important;
+        }
+
+        /* Кнопки "Назад" и "Далее" на всю ширину */
+        .test-nav-buttons {
+            gap: 10px;
+        }
+        .test-nav-buttons .btn {
+            flex: 1;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
     }
 </style>
 
-<!-- ПЛАВАЮЩИЙ ТАЙМЕР (ЕСЛИ ЕСТЬ ОГРАНИЧЕНИЕ) -->
-@if (timeLimitMinutes > 0)
-{
-    <div id="testTimerBadge" class="timer-badge fw-bold shadow">
-        ⏱️ <span id="timerClock">--:--</span>
-    </div>
-}
+<!-- Уведомления -->
+<div id="toastContainer" class="toast-container-custom"></div>
 
-<div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 12px;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <span class="badge bg-dark text-uppercase py-1 px-2.5 small mb-1">@testKind.ToString()</span>
-            <h3 class="fw-bold text-dark m-0">@ViewBag.TestTitle</h3>
-        </div>
-        <div class="text-muted fw-bold small">
-            Вопрос <span id="currentStepDisplay">1</span> из @Model.Count()
-        </div>
-    </div>
-
-    <!-- Линия прогресса -->
-    <div class="progress mb-4" style="height: 6px;">
-        <div id="testProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%;"></div>
-    </div>
-    <!-- КОНТЕЙНЕР ШАГОВ ТЕСТИРОВАНИЯ -->
-    <form id="testWizardForm">
-        <div id="wizardStepsContainer">
-            @{
-                int qIdx = 0;
-            }
-            @foreach (var q in Model)
-            {
-                qIdx++;
-                <div class="question-wizard-step @(qIdx == 1 ? "active" : "")" data-step="@qIdx" data-question-id="@q.Id">
-                    <h5 class="fw-bold text-dark mb-4">@q.QuestionText</h5>
-
-                    <!-- СТРОГОЕ УСЛОВИЕ: ПОДСКАЗКА ВЫВОДИТСЯ ТОЛЬКО ДЛЯ СТАТУСА "ТРЕНАЖЕР" -->
-                    @if (testKind == SdoApp.Models.TestStatus.Тренажер && !string.IsNullOrWhiteSpace(q.Hint))
+<div class="d-flex gap-4 align-items-start mb-5 test-layout-wrapper">
+    
+    <!-- ОСНОВНОЙ БЛОК С ТЕСТОМ -->
+    <div class="flex-grow-1" style="min-width: 0;">
+        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4" style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
+            
+            <!-- Шапка -->
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-3 test-header">
+                <div>
+                    <span class="badge bg-dark text-uppercase px-3 py-1 mb-2" style="letter-spacing: 0.5px;">@testKind.ToString()</span>
+                    <h3 class="fw-bold text-dark m-0 fs-4 fs-md-3">@ViewBag.TestTitle</h3>
+                </div>
+                
+                <div class="d-flex align-items-center gap-3 test-header-right">
+                    @if (remainingSeconds > 0)
                     {
-                        <div class="student-hint-box p-3 mb-4 small">
-                            💡 <b>Вспомогательная подсказка тренажера:</b> @q.Hint
+                        <div id="timerContainer" class="timer-pill shadow-sm">
+                            <i class="bi bi-clock-history"></i>
+                            <span id="countdownDisplay">--:--</span>
                         </div>
                     }
-
-                    <!-- СЕТКА ВАРИАНТОВ ОТВЕТОВ -->
-                    <div class="d-flex flex-column gap-3 mb-4">
-                        @foreach (var opt in q.Answers)
-                        {
-                            <div class="position-relative">
-                                <!-- Чекбоксы (позволяют выбирать несколько вариантов, как мы закладывали на бэкенде) -->
-                                <input type="checkbox" class="form-check-input d-none test-option-checkbox" id="opt-@opt.Id"
-                                       name="q-@q.Id" value="@opt.Id" />
-
-                                <label for="opt-@opt.Id"
-                                       class="student-answer-label d-flex justify-content-between align-items-center gap-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="border rounded-circle d-flex align-items-center justify-content-center bg-light"
-                                             style="width:24px; height:24px; min-width:24px;">✓</div>
-                                        <span class="text-dark fw-medium">@opt.AnswerText</span>
-                                    </div>
-
-                                    <!-- КАРТИНКА ВАРИАНТА ОТВЕТА (ЕСЛИ ПРИКРЕПЛЕНА АДМИНОМ) -->
-                                    @if (!string.IsNullOrEmpty(opt.ImageUrl))
-                                    {
-                                        <div>
-                                            <img src="@opt.ImageUrl" class="test-option-thumbnail shadow-sm" alt="Вариант ответа" />
-                                        </div>
-                                    }
-                                </label>
-                            </div>
-                        }
+                    <div class="text-muted fw-bold small text-end">
+                        Вопрос <span id="currentStepDisplay" class="text-dark fs-5">1</span> из @Model.Count()
                     </div>
                 </div>
-            }
+            </div>
+
+            <!-- Прогресс -->
+            <div class="progress mb-4 mb-md-5" style="height: 8px; border-radius: 4px;">
+                <div id="testProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%; transition: width 0.3s ease;"></div>
+            </div>
+
+            <!-- Вопросы -->
+            <form id="testWizardForm">
+                <div id="wizardStepsContainer">
+                    @{
+                        int qIdx = 0;
+                    }
+                    @foreach (var q in Model)
+                    {
+                        qIdx++;
+                        <div class="question-wizard-step @(qIdx == 1 ? "active" : "")" data-step="@qIdx" data-question-id="@q.Id">
+                            
+                            <div class="mb-3">
+                                @if (q.IsMultipleChoice)
+                                {
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill">
+                                        <i class="bi bi-check2-square me-1"></i> Выберите несколько правильных ответов
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">
+                                        <i class="bi bi-record-circle me-1"></i> Выберите один правильный ответ
+                                    </span>
+                                }
+                            </div>
+
+                            <h5 class="fw-bold text-dark mb-4 fs-4 question-text">@q.QuestionText</h5>
+
+                            @if (testKind == SdoApp.Models.TestStatus.Тренажер && !string.IsNullOrWhiteSpace(q.Hint))
+                            {
+                                <div class="student-hint-box p-3 mb-4 small">
+                                    <i class="bi bi-lightbulb-fill text-warning me-1"></i> <b>Вспомогательная подсказка:</b> @q.Hint
+                                </div>
+                            }
+
+                            <div class="d-flex flex-column gap-3 mb-4">
+                                @foreach (var opt in q.Answers)
+                                {
+                                    <div class="position-relative">
+                                        @if (q.IsMultipleChoice)
+                                        {
+                                            <input type="checkbox" class="form-check-input d-none test-option-input" id="opt-@opt.Id" name="q-@q.Id" value="@opt.Id" />
+                                        }
+                                        else
+                                        {
+                                            <input type="radio" class="form-check-input d-none test-option-input" id="opt-@opt.Id" name="q-@q.Id" value="@opt.Id" />
+                                        }
+
+                                        <label for="opt-@opt.Id" class="student-answer-label d-flex justify-content-between align-items-center gap-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="custom-indicator"></div>
+                                                <span class="text-dark fw-medium fs-6">@opt.AnswerText</span>
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(opt.ImageUrl))
+                                            {
+                                                <div>
+                                                    <img src="@opt.ImageUrl" class="shadow-sm rounded" style="max-width: 100px; max-height: 70px; object-fit: cover;" />
+                                                </div>
+                                            }
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </form>
         </div>
-    </form>
-</div>
-@if (ViewBag.RemainingSeconds > 0)
-{
-    <!-- 1. ЕДИНЫЙ УНИВЕРСАЛЬНЫЙ ПЛАВАЮЩИЙ ТАЙМЕР -->
-    <div id="stickyTimerWidget"
-         class="position-fixed top-0 end-0 m-4 p-3 bg-dark text-white rounded-3 shadow-lg border border-secondary d-flex align-items-center gap-2"
-         style="z-index: 1060; min-width: 140px;">
-        <span style="font-size: 1.2rem;">⏱️</span>
-        <div>
-            <small class="text-muted text-uppercase d-block fw-bold"
-                   style="font-size: 0.6rem; letter-spacing: 1px;">Осталось времени</small>
-            <span id="countdownDisplay" class="fw-bold font-monospace text-light" style="font-size: 1.2rem;">--:--</span>
+
+        <!-- Кнопки внизу по центру -->
+        <div class="d-flex justify-content-between align-items-center px-2 test-nav-buttons">
+            <button id="prevQuestionBtn" class="btn btn-light border px-4 py-2 fw-bold text-secondary rounded-3" disabled>
+                <i class="bi bi-chevron-left"></i> Назад
+            </button>
+            
+            <button id="nextQuestionBtn" class="btn btn-brand px-5 py-2 fw-bold shadow-sm rounded-3">
+                Далее <i class="bi bi-chevron-right"></i>
+            </button>
         </div>
     </div>
-}
 
-<!-- КНОПКИ НАВИГАЦИИ ПО МАСТЕРУ ТЕСТА -->
-<div class="d-flex justify-content-between align-items-center mb-5 px-4">
-    <button id="prevQuestionBtn" class="btn btn-light border px-4 fw-bold text-secondary" disabled>⬅ Назад</button>
-    <button id="nextQuestionBtn" class="btn btn-primary px-5 fw-bold shadow-sm">Далее ➡</button>
-    <button id="submitTestBtn" class="btn btn-success px-5 fw-bold shadow-sm d-none">🏁 Завершить тест</button>
+    <!-- БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ -->
+    <div class="test-nav-sidebar shadow-sm" id="testSidebar">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-dark m-0 sidebar-title"><i class="bi bi-grid-3x3-gap-fill me-1 text-primary"></i> Навигация</h6>
+            <button id="toggleSidebarBtn" class="btn btn-sm btn-light border p-1 rounded-2" title="Скрыть/Показать меню">
+                <i class="bi bi-layout-sidebar-reverse fs-5"></i>
+            </button>
+        </div>
+        
+        <div id="sidebarContent">
+            <div class="question-grid" id="questionGrid">
+                <!-- Кнопки вопросов генерируются JS -->
+            </div>
+
+            <button id="sidebarFinishBtn" class="btn btn-danger w-100 fw-bold rounded-3 py-2 shadow-sm mt-3">
+                <i class="bi bi-flag-fill me-1"></i> Завершить тест
+            </button>
+            <div class="text-muted small text-center mt-2">
+                <span class="d-inline-block bg-primary rounded-circle" style="width:10px; height:10px;"></span> — есть ответ<br>
+                <span class="d-inline-block border rounded-circle" style="width:10px; height:10px;"></span> — нет ответа
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- 2. СИНХРОНИЗИРОВАННЫЙ СКРИПТ НАВИГАЦИИ, ТАЙМЕРА И ОТПРАВКИ -->
+<!-- МОДАЛЬНОЕ ОКНО: НЕОТВЕЧЕННЫЕ ВОПРОСЫ -->
+<div class="modal fade" id="unansweredWarningModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Остались без ответа</h5>
+            <p class="text-muted small mb-3">Вы не ответили на следующие вопросы:</p>
+            <h6 id="unansweredList" class="fw-bold text-danger mb-4 fs-5" style="word-break: break-word;"></h6>
+            <p class="text-muted small mb-4">Вы действительно хотите завершить тест?</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Вернуться</button>
+                <button type="button" class="btn btn-danger fw-bold w-50 rounded-3" id="confirmFinishWithUnanswered">Всё равно сдать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: ВСЕ ОТВЕЧЕНО, ПОДТВЕРЖДЕНИЕ -->
+<div class="modal fade" id="finishTestConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+            <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="bi bi-flag-fill fs-2 text-warning"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Завершение теста</h5>
+            <p class="text-muted small mb-4">Вы ответили на все вопросы. Действительно хотите отправить ответы на проверку?</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="confirmFinishTestBtn" type="button" class="btn btn-brand fw-bold w-50 rounded-3">Завершить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let activeStep = 1;
     const totalSteps = @Model.Count();
     const steps = document.querySelectorAll('.question-wizard-step');
     const prevBtn = document.getElementById('prevQuestionBtn');
     const nextBtn = document.getElementById('nextQuestionBtn');
-    const submitBtn = document.getElementById('submitTestBtn');
     const stepDisplay = document.getElementById('currentStepDisplay');
     const progressBar = document.getElementById('testProgressBar');
+    
+    let redirectUrlAfterTest = "";
 
-    // Навигация по шагам (один вопрос на экране)
+    // 1. УВЕДОМЛЕНИЯ
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        let iconClass = 'bi-check-circle-fill text-success';
+        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+        
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // 2. ГЕНЕРАЦИЯ БОКОВОГО МЕНЮ
+    const questionGrid = document.getElementById('questionGrid');
+    for (let i = 1; i <= totalSteps; i++) {
+        const btn = document.createElement('button');
+        btn.className = `q-btn ${i === 1 ? 'active' : ''}`;
+        btn.textContent = i;
+        btn.setAttribute('data-step', i);
+        btn.addEventListener('click', () => {
+            activeStep = i;
+            updateWizardUI();
+        });
+        questionGrid.appendChild(btn);
+    }
+
+    // Сворачивание/разворачивание сайдбара
+    const sidebar = document.getElementById('testSidebar');
+    document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
+        sidebar.classList.toggle('collapsed');
+        const icon = this.querySelector('i');
+        if (sidebar.classList.contains('collapsed')) {
+            icon.className = 'bi bi-layout-sidebar-inset fs-5';
+        } else {
+            icon.className = 'bi bi-layout-sidebar-reverse fs-5';
+        }
+    });
+
+    // 3. НАВИГАЦИЯ ПО ШАГАМ
     function updateWizardUI() {
         steps.forEach(step => step.classList.remove('active'));
         document.querySelector(`.question-wizard-step[data-step="${activeStep}"]`).classList.add('active');
         stepDisplay.textContent = activeStep;
         progressBar.style.width = `${((activeStep - 1) / totalSteps) * 100}%`;
         prevBtn.disabled = activeStep === 1;
-
+        
+        // Прячем кнопку "Далее" на последнем шаге
         if (activeStep === totalSteps) {
             nextBtn.classList.add('d-none');
-            submitBtn.classList.remove('d-none');
         } else {
             nextBtn.classList.remove('d-none');
-            submitBtn.classList.add('d-none');
         }
+
+        // Обновляем активную кнопку в сайдбаре
+        document.querySelectorAll('.q-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.q-btn[data-step="${activeStep}"]`).classList.add('active');
+        
+        // Прокручиваем страницу наверх, чтобы видеть начало вопроса
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     nextBtn.addEventListener('click', () => { if (activeStep < totalSteps) { activeStep++; updateWizardUI(); } });
     prevBtn.addEventListener('click', () => { if (activeStep > 1) { activeStep--; updateWizardUI(); } });
 
-    // СБОР ОТВЕТОВ И СДАЧА НА СЕРВЕР
+    // 4. ОТСЛЕЖИВАНИЕ ОТВЕТОВ
+    document.querySelectorAll('.test-option-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const step = this.closest('.question-wizard-step');
+            const stepNum = parseInt(step.getAttribute('data-step'));
+            const isAnswered = step.querySelectorAll('.test-option-input:checked').length > 0;
+            
+            const navBtn = document.querySelector(`.q-btn[data-step="${stepNum}"]`);
+            if (isAnswered) {
+                navBtn.classList.add('answered');
+            } else {
+                navBtn.classList.remove('answered');
+            }
+        });
+    });
+
+    // 5. ПРОВЕРКА ПЕРЕД ЗАВЕРШЕНИЕМ
+    function attemptFinishTest() {
+        const unanswered = [];
+        steps.forEach((step, index) => {
+            const answered = step.querySelectorAll('.test-option-input:checked').length > 0;
+            if (!answered) {
+                unanswered.push(index + 1);
+            }
+        });
+
+        if (unanswered.length > 0) {
+            document.getElementById('unansweredList').textContent = `№ ${unanswered.join(', ')}`;
+            new bootstrap.Modal(document.getElementById('unansweredWarningModal')).show();
+        } else {
+            new bootstrap.Modal(document.getElementById('finishTestConfirmModal')).show();
+        }
+    }
+
+    // Привязка кнопки "Завершить" в сайдбаре
+    document.getElementById('sidebarFinishBtn').addEventListener('click', attemptFinishTest);
+    
+    // Кнопка "Все равно сдать" в окне предупреждения
+    document.getElementById('confirmFinishWithUnanswered').addEventListener('click', function() {
+        bootstrap.Modal.getInstance(document.getElementById('unansweredWarningModal')).hide();
+        new bootstrap.Modal(document.getElementById('finishTestConfirmModal')).show();
+    });
+
+    // 6. ОТПРАВКА РЕЗУЛЬТАТОВ
     async function sendResultsToServer() {
-        // Жесткая блокировка интерфейса от повторных кликов и дорешивания
         document.body.style.pointerEvents = "none";
         document.body.style.opacity = "0.6";
-        if (submitBtn) submitBtn.disabled = true;
+        
+        const finishModal = bootstrap.Modal.getInstance(document.getElementById('finishTestConfirmModal'));
+        if (finishModal) finishModal.hide();
 
         const answersPayload = {};
         steps.forEach(step => {
             const qId = step.getAttribute('data-question-id');
-            const checkedOptions = Array.from(step.querySelectorAll('.test-option-checkbox:checked')).map(cb => parseInt(cb.value));
+            const checkedOptions = Array.from(step.querySelectorAll('.test-option-input:checked')).map(input => parseInt(input.value));
             answersPayload[qId] = checkedOptions;
         });
 
@@ -245,59 +608,40 @@
             const result = await response.json();
 
             if (result.success) {
-                alert(`${result.message}\nВаш результат: ${result.score}% (Необходимо для сдачи: ${result.requiredScore}%)`);
-
-                // ИСПРАВЛЕНО: перенаправляем по динамическому URL, который сгенерировал C# бэкенд!
-                if (result.redirectUrl) {
-                    window.location.href = result.redirectUrl;
-                } else {
-                    window.location.href = "/CourseMaterials/StudentView?courseId=@ViewBag.CourseId&activeId=@ViewBag.TestId";
-                }
+                // Сразу редирект на страницу результатов
+                window.location.href = result.redirectUrl;
             } else {
-                alert("Ошибка: " + result.message);
-                // Если время вышло на бэкенде — возвращаем на плеер курса
+                showToast(result.message, 'danger');
+                document.body.style.pointerEvents = "auto";
+                document.body.style.opacity = "1";
+                
                 if (result.redirectUrl) {
-                    window.location.href = result.redirectUrl;
-                } else {
-                    window.location.href = "/CourseMaterials/StudentView?courseId=@ViewBag.CourseId&activeId=@ViewBag.TestId";
+                    setTimeout(() => window.location.href = result.redirectUrl, 2000);
                 }
             }
         } catch {
-            alert("Критический сбой сети при отправке пакета ответов.");
+            showToast("Критический сбой сети при отправке ответов.", 'danger');
             document.body.style.pointerEvents = "auto";
             document.body.style.opacity = "1";
-            if (submitBtn) submitBtn.disabled = false;
         }
     }
 
-    // РАБОТА С СЕРВЕРНЫМ ТАЙМЕРОМ ОБРАТНОГО ОТСЧЕТА
+    document.getElementById('confirmFinishTestBtn').addEventListener('click', sendResultsToServer);
+
+    // 7. ТАЙМЕР
     document.addEventListener("DOMContentLoaded", function () {
-        let totalSecondsLeft = parseInt("@(ViewBag.RemainingSeconds ?? 0)") || 0;
+        let totalSecondsLeft = parseInt("@remainingSeconds") || 0;
         const display = document.getElementById("countdownDisplay");
-        const widget = document.getElementById("stickyTimerWidget");
+        const timerContainer = document.getElementById("timerContainer");
 
-        // Если у теста нет лимита времени (TimeLimit == 0)
-        if (totalSecondsLeft <= 0) {
-            display.textContent = "∞";
-            display.classList.remove("text-danger");
-            display.classList.add("text-success");
-            return;
-        }
-
-        display.classList.add("text-danger");
-        widget.classList.remove("border-secondary");
-        widget.classList.add("border-danger");
-
-        async function forceSubmitTest() {
-            clearInterval(timerInterval);
-            display.textContent = "00:00";
-            alert("⏱️ Время, выделенное на тестирование, полностью истекло! Ваши текущие ответы отправляются автоматически.");
-            await sendResultsToServer();
-        }
+        if (totalSecondsLeft <= 0 || !display || !timerContainer) return;
 
         function updateTimer() {
             if (totalSecondsLeft <= 0) {
-                forceSubmitTest();
+                clearInterval(timerInterval);
+                display.textContent = "00:00";
+                showToast("Время истекло! Ответы отправляются автоматически.", 'warning');
+                setTimeout(() => { sendResultsToServer(); }, 1500);
                 return;
             }
 
@@ -309,21 +653,11 @@
             display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
             if (totalSecondsLeft < 60) {
-                widget.classList.add("bg-danger", "bg-opacity-75");
+                timerContainer.classList.add("danger");
             }
         }
 
         updateTimer();
         const timerInterval = setInterval(updateTimer, 1000);
     });
-
-    // Обработчик ручного клика по кнопке "Завершить"
-    if (submitBtn) {
-        submitBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (confirm("Вы действительно хотите завершить тестирование и отправить ответы на проверку?")) {
-                sendResultsToServer();
-            }
-        });
-    }
 </script>

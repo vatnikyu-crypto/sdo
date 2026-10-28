@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
+using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -248,10 +249,10 @@ public class TestConstructorController : Controller
     }
 
 
-    // ПОСТ: /TestConstructor/ExportToCsv
-    // Экспорт выбранных вопросов в формат CSV (теперь с поддержкой Подсказок)
+        // ПОСТ: /TestConstructor/ExportToExcel
+    // Экспорт в формате 5 колонок (каждый ответ на новой строке)
     [HttpPost]
-    public async Task<IActionResult> ExportToCsv([FromForm] string questionIdsJson)
+    public async Task<IActionResult> ExportToExcel([FromForm] string questionIdsJson)
     {
         if (string.IsNullOrEmpty(questionIdsJson)) return BadRequest("Не выбраны вопросы.");
 
@@ -263,41 +264,56 @@ public class TestConstructorController : Controller
             .Where(q => ids.Contains(q.Id))
             .ToListAsync();
 
-        var csvBuilder = new System.Text.StringBuilder();
-        // ДОБАВИЛИ КОЛОНКУ Hint В ЗАГОЛОВОК CSV
-        csvBuilder.AppendLine("QuestionText;Hint;Answers;CorrectFlags");
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Вопросы");
 
+        // Заголовки как на скриншоте
+        worksheet.Cell(1, 1).Value = "Вопрос";
+        worksheet.Cell(1, 2).Value = "Комментарий к правильному ответу";
+        worksheet.Cell(1, 3).Value = "Тип вопроса";
+        worksheet.Cell(1, 4).Value = "Ответ";
+        worksheet.Cell(1, 5).Value = "Ответ верен";
+
+        // Оформление шапки
+        var headerRange = worksheet.Range(1, 1, 1, 5);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#F0F4FF");
+        headerRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+        int row = 2;
         foreach (var q in questions)
         {
-            // Защищаем текст вопроса и подсказки от точек с запятой, ломающих CSV структуру
-            var qText = q.QuestionText.Replace(";", " ");
-            var qHint = (q.Hint ?? "").Replace(";", " ");
-
-            // Склеиваем тексты ответов через тильду '~', экранируя точку с запятой
-            var answersStr = string.Join("~", q.Answers.Select(a => a.AnswerText.Replace(";", " ")));
-            // Склеиваем флаги правильности (1 - тру, 0 - фолс) через тильду '~'
-            var flagsStr = string.Join("~", q.Answers.Select(a => a.IsCorrect ? "1" : "0"));
-
-            // Сохраняем строку в файл с новой колонкой подсказки
-            csvBuilder.AppendLine($"{qText};{qHint};{answersStr};{flagsStr}");
+            string typeStr = q.IsMultipleChoice ? "several_answers" : "one_answer";
+            
+            foreach (var ans in q.Answers)
+            {
+                worksheet.Cell(row, 1).Value = q.QuestionText;
+                worksheet.Cell(row, 2).Value = q.Hint ?? "";
+                worksheet.Cell(row, 3).Value = typeStr;
+                worksheet.Cell(row, 4).Value = ans.AnswerText;
+                worksheet.Cell(row, 5).Value = ans.IsCorrect ? "True" : "";
+                row++;
+            }
         }
 
-        var bytes = System.Text.Encoding.UTF8.GetBytes(csvBuilder.ToString());
-        // Добавляем BOM для корректного отображения кириллицы в Excel
-        var resultBytes = System.Text.Encoding.UTF8.GetPreamble().Concat(bytes).ToArray();
+        worksheet.Columns().AdjustToContents();
 
-        return File(resultBytes, "text/csv", $"export_questions_{DateTime.Now:yyyyMMddHHmmss}.csv");
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        string fileName = $"export-questions-{DateTime.Now:yyyy-MM-dd-HHmmss}.xlsx";
+        return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
 
-    // ПОСТ: /TestConstructor/ImportFromCsv
-    // Импорт вопросов из CSV файла (с поддержкой подсказок Hint)
+    // ПОСТ: /TestConstructor/ImportFromExcel
+    // Импорт из Excel с поддержкой группировки строк
     [HttpPost]
-    public async Task<IActionResult> ImportFromCsv(int testId, IFormFile csvFile)
+    public async Task<IActionResult> ImportFromExcel(int testId, IFormFile excelFile)
     {
-        if (csvFile == null || csvFile.Length == 0)
-        {
+        if (excelFile == null || excelFile.Length == 0)
             return Json(new { success = false, message = "Файл не выбран или пуст!" });
-        }
 
         int successCount = 0;
         int errorCount = 0;
@@ -305,63 +321,60 @@ public class TestConstructorController : Controller
 
         try
         {
-            using (var reader = new StreamReader(csvFile.OpenReadStream(), System.Text.Encoding.UTF8))
+            using var stream = new MemoryStream();
+            await excelFile.CopyToAsync(stream);
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheet(1);
+
+            var rows = worksheet.RowsUsed().Skip(1); // Пропускаем шапку
+            
+            TestQuestion? currentQuestion = null;
+            string lastQuestionText = "";
+            string lastHint = "";
+            string lastType = "";
+
+            foreach (var row in rows)
             {
-                // Читаем заголовок асинхронно
-                string? header = await reader.ReadLineAsync();
-                int lineNum = 1;
-                string? line;
+                string qText = row.Cell(1).GetString().Trim();
+                string hint = row.Cell(2).GetString().Trim();
+                string type = row.Cell(3).GetString().Trim();
+                string ansText = row.Cell(4).GetString().Trim();
+                string isCorrectStr = row.Cell(5).GetString().Trim().ToLower();
 
-                // Читаем строки до тех пор, пока ReadLineAsync() не вернет null
-                while ((line = await reader.ReadLineAsync()) != null)
+                if (string.IsNullOrEmpty(qText)) continue; // Пропускаем пустые строки
+
+                bool isCorrect = isCorrectStr == "true" || isCorrectStr == "1";
+
+                // Если текст вопроса, подсказка или тип изменились — это НОВЫЙ вопрос
+                if (qText != lastQuestionText || hint != lastHint || type != lastType || currentQuestion == null)
                 {
-                    lineNum++;
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-
-                    var parts = line.Split(';');
-                    // Теперь должно быть минимум 4 колонки: Текст;Подсказка;Ответы;Флаги
-                    if (parts.Length < 4)
-                    {
-                        errorCount++;
-                        errors.Add($"Строка {lineNum}: Неверный формат (не хватает колонок, должно быть 4).");
-                        continue;
-                    }
-
-                    string qText = parts[0].Trim();
-                    string qHint = parts[1].Trim();
-                    string[] answers = parts[2].Split('~');
-                    string[] flags = parts[3].Split('~');
-
-                    if (string.IsNullOrEmpty(qText) || answers.Length < 2 || answers.Length != flags.Length)
-                    {
-                        errorCount++;
-                        errors.Add($"Строка {lineNum}: Ошибка валидации данных вопроса или вариантов ответов.");
-                        continue;
-                    }
-
-                    // Создаем вопрос с поддержкой подсказки
-                    var question = new TestQuestion
+                    currentQuestion = new TestQuestion
                     {
                         CourseMaterialId = testId,
                         QuestionText = qText,
-                        Hint = string.IsNullOrWhiteSpace(qHint) ? null : qHint
+                        Hint = string.IsNullOrWhiteSpace(hint) ? null : hint,
+                        IsMultipleChoice = type == "several_answers"
                     };
-                    _context.TestQuestions.Add(question);
+                    _context.TestQuestions.Add(currentQuestion);
                     await _context.SaveChangesAsync();
-
-                    // Добавляем варианты ответов (картинки при импорте текста из CSV остаются null)
-                    for (int i = 0; i < answers.Length; i++)
-                    {
-                        _context.TestAnswerOptions.Add(new TestAnswerOption
-                        {
-                            TestQuestionId = question.Id,
-                            AnswerText = answers[i].Trim(),
-                            IsCorrect = flags[i].Trim() == "1",
-                            ImageUrl = null
-                        });
-                    }
-                    await _context.SaveChangesAsync();
+                    
+                    lastQuestionText = qText;
+                    lastHint = hint;
+                    lastType = type;
                     successCount++;
+                }
+
+                // Добавляем ответ к текущему вопросу
+                if (currentQuestion != null && !string.IsNullOrEmpty(ansText))
+                {
+                    _context.TestAnswerOptions.Add(new TestAnswerOption
+                    {
+                        TestQuestionId = currentQuestion.Id,
+                        AnswerText = ansText,
+                        IsCorrect = isCorrect,
+                        ImageUrl = null
+                    });
+                    await _context.SaveChangesAsync();
                 }
             }
 
