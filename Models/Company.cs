@@ -14,6 +14,9 @@ public class Company
     [StringLength(12, MinimumLength = 10)]
     public string Inn { get; set; } = string.Empty;
 
+    // НОВОЕ ПОЛЕ
+    public string? LogoUrl { get; set; } 
+
     // Связь: у одной компании может быть много пользователей
     public ICollection<User> Users { get; set; } = new List<User>();
 }

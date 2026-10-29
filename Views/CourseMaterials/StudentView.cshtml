@@ -11,7 +11,6 @@
         --brand-gray: #e2e8f0;
     }
 
-    /* ДВУХКОЛОНОЧНЫЙ ИНТЕРФЕЙС ОБУЧЕНИЯ */
     .course-layout {
         display: flex;
         gap: 24px;
@@ -34,19 +33,9 @@
         flex-shrink: 0;
     }
 
-    /* Красивый скроллбар */
-    .course-sidebar::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .course-sidebar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-
-    .course-sidebar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
+    .course-sidebar::-webkit-scrollbar { width: 6px; }
+    .course-sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .course-sidebar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
     .course-content-area {
         flex-grow: 1;
@@ -58,13 +47,10 @@
         transition: all 0.3s ease-in-out;
         display: flex;
         flex-direction: column;
-        min-width: 0;
+        min-width: 0; 
     }
 
-    /* --- СТИЛИ ДЛЯ ТЕМ (АККОРДЕОН) --- */
-    .theme-group {
-        border-bottom: 1px solid var(--brand-gray);
-    }
+    .theme-group { border-bottom: 1px solid var(--brand-gray); }
     
     .theme-header {
         background-color: #f8fafc;
@@ -78,22 +64,14 @@
         transition: background-color 0.2s;
     }
 
-    .theme-header:hover {
-        background-color: #f1f5f9;
-    }
-
+    .theme-header:hover { background-color: #f1f5f9; }
     .theme-header[aria-expanded="true"] {
         background-color: #f0f4ff;
         border-bottom: 1px solid var(--brand-gray);
     }
 
-    .theme-icon {
-        transition: transform 0.3s;
-        font-size: 0.8rem;
-        color: var(--brand-primary);
-    }
+    .theme-icon { transition: transform 0.3s; font-size: 0.8rem; color: var(--brand-primary); }
 
-    /* --- КНОПКИ МАТЕРИАЛОВ ВНУТРИ ТЕМЫ --- */
     .sidebar-material-btn {
         width: 100%;
         text-align: left;
@@ -117,336 +95,197 @@
         background-color: var(--brand-gray);
     }
 
-    .sidebar-material-btn:last-child {
-        border-bottom: none;
-    }
+    .sidebar-material-btn:last-child { border-bottom: none; }
+    .sidebar-material-btn:hover { background-color: #f8fafc; }
+    .sidebar-material-btn.active { background-color: rgba(79, 88, 157, 0.08); }
+    .sidebar-material-btn.active::before { background-color: var(--brand-primary); width: 3px; }
 
-    .sidebar-material-btn:hover {
-        background-color: #f8fafc;
-    }
+    .sidebar-material-btn.test-kind-0::before { background-color: #4e73df; }
+    .sidebar-material-btn.test-kind-1::before { background-color: #e74a3b; }
+    .sidebar-material-btn.test-kind-2::before { background-color: #f6c23e; }
+    .sidebar-material-btn.assignment-card::before { background-color: #36b9cc; }
+    .sidebar-material-btn.scorm-card::before { background-color: #8B5CF6; }
 
-    .sidebar-material-btn.active {
-        background-color: rgba(79, 88, 157, 0.08);
-    }
-
-    .sidebar-material-btn.active::before {
-        background-color: var(--brand-primary);
-        width: 3px;
-    }
-
-    /* Цветовые акценты */
-    .sidebar-material-btn.test-kind-0::before {
-        background-color: #4e73df;
-    }
-
-    .sidebar-material-btn.test-kind-1::before {
-        background-color: #e74a3b;
-    }
-
-    .sidebar-material-btn.test-kind-2::before {
-        background-color: #f6c23e;
-    }
-
-    .sidebar-material-btn.assignment-card::before {
-        background-color: #36b9cc;
-    }
-
-    .sidebar-material-btn.scorm-card::before {
-        background-color: #8B5CF6;
-    }
-
-    /* --- ОСТАЛЬНЫЕ СТИЛИ --- */
     #pdfViewerContainer {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        background: #f1f5f9;
-        padding: 20px;
-        border-radius: 8px;
-        max-height: 700px;
-        overflow-y: auto;
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
-        width: 100%;
+        display: flex; flex-direction: column; gap: 15px; background: #f1f5f9;
+        padding: 20px; border-radius: 8px; max-height: 700px; overflow-y: auto;
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05); width: 100%;
     }
-
     .pdf-page-canvas {
-        display: block;
-        margin: 0 auto;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        background: white;
-        max-width: 100%;
-        height: auto;
+        display: block; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background: white; max-width: 100%; height: auto;
     }
-
     .test-info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px; margin-bottom: 24px;
     }
-
     .test-info-item {
-        background: #f8fafc;
-        border: 1px solid var(--brand-gray);
-        border-radius: 8px;
-        padding: 16px;
-        text-align: center;
+        background: #f8fafc; border: 1px solid var(--brand-gray);
+        border-radius: 8px; padding: 16px; text-align: center;
     }
 
     .course-sidebar.sidebar-hidden {
-        width: 0 !important;
-        min-width: 0 !important;
-        opacity: 0;
-        visibility: hidden;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
+        width: 0 !important; min-width: 0 !important; opacity: 0; visibility: hidden;
+        padding: 0 !important; margin: 0 !important; border: none !important;
     }
 
     .fullscreen-toggle-btn {
-        background: #f8fafc;
-        border: 1px solid #d1d5db;
-        color: var(--brand-primary);
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        font-weight: bold;
-        transition: all 0.2s;
-        white-space: nowrap;
+        background: #f8fafc; border: 1px solid #d1d5db; color: var(--brand-primary);
+        border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: bold;
+        transition: all 0.2s; white-space: nowrap;
     }
+    .fullscreen-toggle-btn:hover { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
 
-    .fullscreen-toggle-btn:hover {
-        background: var(--brand-primary);
-        color: #fff;
-        border-color: var(--brand-primary);
-    }
-
-    /* ЛАЙТБОКС */
-    .image-preview-wrapper img {
-        cursor: zoom-in;
-        transition: transform 0.2s ease;
-    }
-
+    .image-preview-wrapper img { cursor: zoom-in; transition: transform 0.2s ease; }
     .fullscreen-image-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(15, 23, 42, 0.85);
-        z-index: 2000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out;
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.85); z-index: 2000;
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out;
         cursor: zoom-out;
     }
-
-    .fullscreen-image-overlay.show {
-        opacity: 1;
-        visibility: visible;
-    }
-
+    .fullscreen-image-overlay.show { opacity: 1; visibility: visible; }
     .fullscreen-image-overlay img {
-        max-width: 95%;
-        max-height: 95%;
-        object-fit: contain;
-        border-radius: 8px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        transform: scale(0.95);
-        transition: transform 0.25s ease-in-out;
+        max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transform: scale(0.95); transition: transform 0.25s ease-in-out;
     }
+    .fullscreen-image-overlay.show img { transform: scale(1); }
 
-    .fullscreen-image-overlay.show img {
-        transform: scale(1);
-    }
-
-    /* УВЕДОМЛЕНИЯ (TOASTS) */
     .toast-container-custom {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        display: flex; flex-direction: column; gap: 10px;
     }
-
     .custom-toast {
-        min-width: 300px;
-        max-width: 400px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-        display: flex;
-        align-items: center;
-        padding: 15px 20px;
+        min-width: 300px; max-width: 400px; background: white;
+        border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex; align-items: center; padding: 15px 20px;
         animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         border-left: 6px solid #ccc;
     }
-
-    .custom-toast.success {
-        border-left-color: #198754;
-    }
-
-    .custom-toast.danger {
-        border-left-color: #dc3545;
-    }
-
-    .custom-toast.warning {
-        border-left-color: #F59E0B;
-    }
-
-    @@keyframes slideInRight {
-        from {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @@keyframes fadeOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        to {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-    }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.warning { border-left-color: #F59E0B; }
+    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
     
-    /* Чат */
-    .chat-bubble-student {
-        background-color: #fff;
-        border-left: 4px solid var(--brand-primary);
-    }
-
-    .chat-bubble-teacher {
-        background-color: #f8fafc;
-        border-left: 4px solid #6c757d;
-    }
-
-    /* ПОЛНОЭКРАННЫЙ РЕЖИМ */
-    .course-content-area:fullscreen,
-    .course-content-area:-webkit-full-screen {
-        background: #fff;
-        padding: 20px !important;
-        width: 100vw;
-        height: 100vh;
-        border-radius: 0;
-        border: none;
+    /* ========================================= */
+    /* НОВЫЕ СТИЛИ ДЛЯ ЧАТА (TELEGRAM STYLE)     */
+    /* ========================================= */
+    .chat-container {
+        background-color: #f1f5f9;
+        border-radius: 12px;
+        padding: 16px;
+        max-height: 350px;
+        overflow-y: auto;
         display: flex;
         flex-direction: column;
+        gap: 12px;
+        border: 1px solid var(--brand-gray);
+        margin-bottom: 20px;
     }
 
-    .course-content-area:fullscreen #dynamicBodyContainer,
-    .course-content-area:-webkit-full-screen #dynamicBodyContainer {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
+    .chat-bubble {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        position: relative;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    .course-content-area:fullscreen iframe,
-    .course-content-area:fullscreen #pdfViewerContainer,
-    .course-content-area:fullscreen video,
-    .course-content-area:-webkit-full-screen iframe,
-    .course-content-area:-webkit-full-screen #pdfViewerContainer,
-    .course-content-area:-webkit-full-screen video {
-        flex-grow: 1;
-        height: 100% !important;
-        max-height: none !important;
-    }
-    
-    .btn-brand {
+    .chat-bubble.me {
+        align-self: flex-end;
         background-color: var(--brand-primary);
         color: white;
-        border: none;
-        transition: all 0.3s;
+        border-bottom-right-radius: 4px;
     }
 
-    .btn-brand:hover {
-        background-color: var(--brand-dark);
+    .chat-bubble.teacher {
+        align-self: flex-start;
+        background-color: #fff;
+        color: #334155;
+        border-bottom-left-radius: 4px;
+        border: 1px solid var(--brand-gray);
+    }
+
+    .chat-sender {
+        font-size: 0.7rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+        opacity: 0.8;
+    }
+
+    .chat-time {
+        font-size: 0.65rem;
+        text-align: right;
+        margin-top: 6px;
+        opacity: 0.7;
+    }
+
+    .chat-file-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .chat-bubble.me .chat-file-link {
+        background: rgba(255,255,255,0.2);
         color: white;
-        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+    .chat-bubble.me .chat-file-link:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
     }
 
-    /* ========================================= */
-    /* МОБИЛЬНАЯ АДАПТАЦИЯ (ЭКРАНЫ ДО 768px)      */
-    /* ========================================= */
+    .chat-bubble.teacher .chat-file-link {
+        background: #f8fafc;
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-gray);
+    }
+    .chat-bubble.teacher .chat-file-link:hover {
+        background: #f1f5f9;
+    }
+
+    .course-content-area:fullscreen, .course-content-area:-webkit-full-screen {
+        background: #fff; padding: 20px !important; width: 100vw; height: 100vh;
+        border-radius: 0; border: none; display: flex; flex-direction: column;
+    }
+    .course-content-area:fullscreen #dynamicBodyContainer, .course-content-area:-webkit-full-screen #dynamicBodyContainer {
+        flex-grow: 1; display: flex; flex-direction: column; height: 100%;
+    }
+    .course-content-area:fullscreen iframe, .course-content-area:fullscreen #pdfViewerContainer, .course-content-area:fullscreen video,
+    .course-content-area:-webkit-full-screen iframe, .course-content-area:-webkit-full-screen #pdfViewerContainer, .course-content-area:-webkit-full-screen video {
+        flex-grow: 1; height: 100% !important; max-height: none !important;
+    }
+    
+    .btn-brand { background-color: var(--brand-primary); color: white; border: none; transition: all 0.3s; }
+    .btn-brand:hover { background-color: var(--brand-dark); color: white; box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3); }
+
     @@media (max-width: 768px) {
-        .course-layout {
-            flex-direction: column;
-            gap: 16px;
-        }
-        
-        .course-sidebar {
-            width: 100%;
-            min-width: 100%;
-            position: static;
-            max-height: 300px;
-            margin-bottom: 0;
-        }
-
-        .course-content-area {
-            min-height: auto;
-            padding: 1rem !important;
-            width: 100%;
-        }
-
-        .d-flex.justify-content-between.align-items-center.mb-3 {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 10px;
-        }
-
-        .fullscreen-toggle-btn {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        #pdfViewerContainer {
-            padding: 10px;
-            max-height: 60vh;
-        }
-
-        .table-responsive {
-            font-size: 0.85rem;
-        }
-
-        .table-responsive .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-        }
-        
-        .p-4 {
-            padding: 1rem !important;
-        }
-
-        .chat-bubble-student,
-        .chat-bubble-teacher {
-            font-size: 0.85rem;
-        }
-        
-        .test-info-grid {
-            grid-template-columns: 1fr;
-        }
+        .course-layout { flex-direction: column; gap: 16px; }
+        .course-sidebar { width: 100%; min-width: 100%; position: static; max-height: 300px; margin-bottom: 0; }
+        .course-content-area { min-height: auto; padding: 1rem !important; width: 100%; }
+        .d-flex.justify-content-between.align-items-center.mb-3 { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+        .fullscreen-toggle-btn { width: 100%; display: flex; justify-content: center; }
+        #pdfViewerContainer { padding: 10px; max-height: 60vh; }
+        .table-responsive { font-size: 0.85rem; }
+        .table-responsive .btn { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .p-4 { padding: 1rem !important; }
+        .test-info-grid { grid-template-columns: 1fr; }
+        .chat-bubble { max-width: 95%; }
     }
 </style>
 
-<!-- Уведомления -->
 <div id="toastContainer" class="toast-container-custom"></div>
 
-<!-- PDFJS -->
 <script type="module">
     import * as pdfjsLib from '/lib/pdfjs/pdf.mjs';
     window.pdfjsLib = pdfjsLib;
@@ -454,8 +293,7 @@
 </script>
 
 <div class="mb-3 mt-2">
-    <a href="/Dashboard/Student"
-       class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 fw-semibold">
+    <a href="/Dashboard/Student" class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 fw-semibold">
         <i class="bi bi-arrow-left"></i> Назад к моим курсам
     </a>
     <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 fs-4 fs-md-3">
@@ -464,7 +302,6 @@
 </div>
 
 <div class="course-layout mb-5">
-    <!-- ЛЕВЫЙ САЙДБАР: ТЕМЫ И МАТЕРИАЛЫ -->
     <div class="course-sidebar" id="courseSidebar">
         <div class="p-3 bg-light border-bottom fw-bold text-secondary small text-uppercase tracking-wider">
             <i class="bi bi-list-ul me-1"></i> Содержание курса
@@ -483,8 +320,7 @@
                 string ariaExpanded = isFirstTheme ? "true" : "false";
 
                 <div class="theme-group">
-                    <div class="theme-header" data-bs-toggle="collapse" data-bs-target="#@collapseId"
-                         aria-expanded="@ariaExpanded">
+                    <div class="theme-header" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@ariaExpanded">
                         <span><i class="bi bi-folder2-open me-2 text-primary"></i> @theme.Title</span>
                         <i class="bi bi-chevron-down theme-icon"></i>
                     </div>
@@ -507,23 +343,14 @@
                                     customClass = $"test-kind-{(int)m.TestKind}";
                                     subLabel = $"Тест: {m.TestKind}";
                                 }
-                                else if (m.Type == SdoApp.Models.MaterialType.Assignment)
-                                {
-                                    customClass = "assignment-card";
-                                    subLabel = "Практика";
-                                }
+                                else if (m.Type == SdoApp.Models.MaterialType.Assignment) { customClass = "assignment-card"; subLabel = "Практика"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Text) { subLabel = "Лекция"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Pdf) { subLabel = "PDF-документ"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Video) { subLabel = "Видео"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Image) { subLabel = "Схема"; }
-                                else if (m.Type == SdoApp.Models.MaterialType.Scorm)
-                                {
-                                    customClass = "scorm-card"; subLabel =
-                  "SCORM-курс";
-                                }
+                                else if (m.Type == SdoApp.Models.MaterialType.Scorm) { customClass = "scorm-card"; subLabel = "SCORM-курс"; }
 
-                                <button class="sidebar-material-btn material-item-btn @customClass" data-id="@m.Id"
-                                        onclick="loadContentToRightSide(@m.Id, this)">
+                                <button class="sidebar-material-btn material-item-btn @customClass" data-id="@m.Id" onclick="loadContentToRightSide(@m.Id, this)">
                                     <span class="text-muted small fw-bold mb-1">Шаг #@globalIdx — @subLabel</span>
                                     <span class="fw-bold text-dark text-truncate w-100" style="font-size:0.9rem;">@m.Title</span>
                                 </button>
@@ -547,8 +374,7 @@
                             {
                                 globalIdx++;
                                 string subLabel = m.Type.ToString();
-                                <button class="sidebar-material-btn material-item-btn" data-id="@m.Id"
-                                        onclick="loadContentToRightSide(@m.Id, this)">
+                                <button class="sidebar-material-btn material-item-btn" data-id="@m.Id" onclick="loadContentToRightSide(@m.Id, this)">
                                     <span class="text-muted small fw-bold mb-1">Шаг #@globalIdx — @subLabel</span>
                                     <span class="fw-bold text-dark text-truncate w-100" style="font-size:0.9rem;">@m.Title</span>
                                 </button>
@@ -560,12 +386,10 @@
         </div>
     </div>
 
-    <!-- ПРАВАЯ ОБЛАСТЬ: КОНТЕНТ МАТЕРИАЛА -->
     <div class="course-content-area p-4" id="mainContentWindow">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="fw-bold text-dark m-0 fs-5" id="rightSideMaterialTitle">Загрузка...</h4>
-            <button class="fullscreen-toggle-btn shadow-sm d-flex align-items-center gap-1"
-                    onclick="toggleTheaterMode()">
+            <button class="fullscreen-toggle-btn shadow-sm d-flex align-items-center gap-1" onclick="toggleTheaterMode()">
                 <i class="bi bi-fullscreen"></i> <span>На весь экран</span>
             </button>
         </div>
@@ -579,510 +403,365 @@
     </div>
 </div>
 
-<!-- ЛАЙТБОКС -->
 <div id="imageLightboxOverlay" class="fullscreen-image-overlay" onclick="closeImageFullscreen()">
     <img id="lightboxTargetImage" src="" alt="Увеличенное изображение" />
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО СДАЧИ ПРАКТИКИ (Расширенное, с опциональным файлом) -->
-<div class="modal fade" id="submitAssignmentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
-            <div class="modal-header bg-light border-0 py-3">
-                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2 fs-6 fs-md-5">
-                    <i class="bi bi-send-fill text-primary"></i> Сдача практического задания
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="startTestConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="bi bi-play-circle-fill fs-2 text-primary"></i>
             </div>
-            <div class="modal-body p-4">
-                <form id="studentAssignmentForm" autocomplete="off" enctype="multipart/form-data">
-                    <input type="hidden" name="materialId" id="assignmentMaterialId" />
-                    
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Текст ответа /
-                            Комментарий</label>
-                            <textarea name="studentComment" class="form-control" rows="4"
-                                      placeholder="Опишите ваш ответ или оставьте комментарий преподавателю..."></textarea>
+            <h5 class="fw-bold text-dark mb-2">Запуск тестирования</h5>
+            <p class="text-muted small mb-3">Вы действительно готовы запустить тест:</p>
+            <h6 id="modalTestTitle" class="fw-bold text-dark mb-3"></h6>
+            
+            <div class="alert alert-warning small text-start border-0 mb-4">
+                <i class="bi bi-clock-history me-1"></i> <b>Внимание:</b> Если у теста есть ограничение по времени, таймер запустится сразу после нажатия кнопки «Начать».
+            </div>
+            
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="confirmStartTestBtn" type="button" class="btn btn-brand fw-bold w-50 rounded-3">Начать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. УВЕДОМЛЕНИЯ
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        let iconClass = 'bi-check-circle-fill text-success';
+        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+        
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // 2. ЗАГРУЗКА КОНТЕНТА
+    async function loadContentToRightSide(id, btnElement) {
+        document.querySelectorAll('.material-item-btn').forEach(btn => btn.classList.remove('active'));
+        if (btnElement) btnElement.classList.add('active');
+
+        const titleEl = document.getElementById('rightSideMaterialTitle');
+        const bodyContainer = document.getElementById('dynamicBodyContainer');
+
+        bodyContainer.innerHTML = '<div class="text-center text-muted my-auto py-5"><div class="spinner-border text-primary mb-2"></div><p>Загрузка данных...</p></div>';
+
+        try {
+            const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
+            const rawData = await response.json();
+
+            const data = {};
+            for (let key in rawData) { data[key.toLowerCase()] = rawData[key]; }
+
+            const mType = parseInt(data.type);
+            const fileUrl = data.fileurl || "";
+            const textContent = data.textcontent || "";
+
+            titleEl.textContent = data.title;
+
+            if (mType === 0) { // Лекция
+                bodyContainer.innerHTML = `<div class="p-4 border rounded shadow-sm text-dark bg-white" style="font-size:1.05rem; line-height:1.6;">${textContent}</div>`;
+            }
+            else if (mType === 1) { // PDF
+                bodyContainer.innerHTML = `<div id="pdfViewerContainer"><div class="text-center p-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Подготовка страниц...</div></div>`;
+                renderPdfAsScrollableImages(fileUrl);
+            }
+            else if (mType === 2) { // Видео
+                bodyContainer.innerHTML = `<div class="shadow rounded-3 overflow-hidden w-100" style="background: #000;"><video id="azimutVideoPlayer" playsinline controls src="${fileUrl}"><source src="${fileUrl}" type="video/mp4" /></video></div>`;
+                import('/lib/plyr/plyr.js').then(() => {
+                    new Plyr('#azimutVideoPlayer', {
+                        controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+                        settings: ['speed'],
+                        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
+                    });
+                });
+            }
+            else if (mType === 3) { // Картинка
+                bodyContainer.innerHTML = `<div class="text-center p-3 border rounded shadow-sm bg-white image-preview-wrapper"><img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" onclick="openImageFullscreen(this.src)" title="Кликните для увеличения" /></div>`;
+            }
+            else if (mType === 5) { // Практика
+                bodyContainer.innerHTML = `
+                    <div class="p-4 border rounded shadow-sm bg-white">
+                        <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-clipboard-check me-1"></i> Инструкция к выполнению задания:</h6>
+                        <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
+
+                        <div id="studentAssignmentArea" class="mb-4">
+                            <div class="spinner-border spinner-border-sm text-secondary"></div> Проверка статуса выполнения...
                         </div>
-                    
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold text-uppercase">Прикрепить файл
-                                (Необязательно)</label>
-                                <input type="file" name="submissionFile" class="form-control" />
-                                <div class="form-text text-muted small mt-1">Вы можете прикрепить файл, написать текстовый
-                                    ответ, или сделать и то, и другое.</div>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer bg-light border-0 py-3 flex-column flex-sm-row gap-2">
-                            <button type="button" class="btn btn-light border fw-bold text-secondary rounded-3 w-100 w-sm-auto m-0"
-                                    data-bs-dismiss="modal">Отмена</button>
-                            <button id="confirmSubmitAssignmentBtn" type="button"
-                                    class="btn btn-brand px-4 fw-bold rounded-3 w-100 w-sm-auto m-0">Отправить на проверку</button>
+
+                        <div class="d-flex gap-2 flex-column flex-sm-row" id="assignmentActionsBlock">
+                            ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold rounded-3 w-100 w-sm-auto" download><i class="bi bi-download me-1"></i> Скачать файл задания</a>` : ""}
+                            <a id="mainSubmitWorkBtn" href="/Assignments/SubmitPage?materialId=${id}&groupId=@ViewBag.GroupId" class="btn btn-warning fw-bold px-4 rounded-3 w-100 w-sm-auto d-none">
+                                <i class="bi bi-send me-1"></i> Сдать готовую работу
+                            </a>
                         </div>
                     </div>
-                </div>
-            </div>
+                `;
 
-            <!-- МОДАЛЬНОЕ ОКНО: СТАРТ ТЕСТА -->
-            <div class="modal fade" id="startTestConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
-                    <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                             style="width: 70px; height: 70px;">
-                            <i class="bi bi-play-circle-fill fs-2 text-primary"></i>
-                        </div>
-                        <h5 class="fw-bold text-dark mb-2">Запуск тестирования</h5>
-                        <p class="text-muted small mb-3">Вы действительно готовы запустить тест:</p>
-                        <h6 id="modalTestTitle" class="fw-bold text-dark mb-3"></h6>
-            
-                        <div class="alert alert-warning small text-start border-0 mb-4">
-                            <i class="bi bi-clock-history me-1"></i> <b>Внимание:</b> Если у теста есть ограничение по времени,
-                            таймер запустится сразу после нажатия кнопки «Начать».
-                        </div>
-            
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
-                                    data-bs-dismiss="modal">Отмена</button>
-                            <button id="confirmStartTestBtn" type="button"
-                                    class="btn btn-brand fw-bold w-50 rounded-3">Начать</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                // СТУЧИМСЯ В КОНТРОЛЛЕР Assignments
+                fetch(`/Assignments/GetState?materialId=${id}&groupId=@ViewBag.GroupId`)
+                    .then(res => res.json())
+                    .then(state => {
+                        const area = document.getElementById('studentAssignmentArea');
+                        const actionBtn = document.getElementById('mainSubmitWorkBtn');
 
-            <script>
-                // ==========================================
-                // 0. УВЕДОМЛЕНИЯ (TOASTS)
-                // ==========================================
-                function showToast(message, type = 'success') {
-                    const container = document.getElementById('toastContainer');
-                    const toast = document.createElement('div');
-                    toast.className = `custom-toast ${type}`;
-                    let iconClass = 'bi-check-circle-fill text-success';
-                    if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
-                    if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
-        
-                    toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
-                    container.appendChild(toast);
-        
-                    setTimeout(() => {
-                        toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-                        setTimeout(() => toast.remove(), 300);
-                    }, 3500);
-                }
-
-                // ==========================================
-                // 1. ЗАГРУЗКА КОНТЕНТА (ПРАВАЯ ЧАСТЬ)
-                // ==========================================
-                async function loadContentToRightSide(id, btnElement) {
-                    document.querySelectorAll('.material-item-btn').forEach(btn => btn.classList.remove('active'));
-                    if (btnElement) btnElement.classList.add('active');
-
-                    const titleEl = document.getElementById('rightSideMaterialTitle');
-                    const bodyContainer = document.getElementById('dynamicBodyContainer');
-
-                    bodyContainer.innerHTML = '<div class="text-center text-muted my-auto py-5"><div class="spinner-border text-primary mb-2"></div><p>Загрузка данных...</p></div>';
-
-                    try {
-                        const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
-                        const rawData = await response.json();
-
-                        const data = {};
-                        for (let key in rawData) { data[key.toLowerCase()] = rawData[key]; }
-
-                        const mType = parseInt(data.type);
-                        const fileUrl = data.fileurl || "";
-                        const textContent = data.textcontent || "";
-
-                        titleEl.textContent = data.title;
-
-                        if (mType === 0) { // Лекция
-                            bodyContainer.innerHTML = `<div class="p-4 border rounded shadow-sm text-dark bg-white" style="font-size:1.05rem; line-height:1.6;">${textContent}</div>`;
-                        }
-                        else if (mType === 1) { // PDF Документ
-                            bodyContainer.innerHTML = `<div id="pdfViewerContainer"><div class="text-center p-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Подготовка страниц...</div></div>`;
-                            renderPdfAsScrollableImages(fileUrl);
-                        }
-                        else if (mType === 2) { // Видео
-                            bodyContainer.innerHTML = `<div class="shadow rounded-3 overflow-hidden w-100" style="background: #000;"><video id="azimutVideoPlayer" playsinline controls src="${fileUrl}"><source src="${fileUrl}" type="video/mp4" /></video></div>`;
-                            import('/lib/plyr/plyr.js').then(() => {
-                                new Plyr('#azimutVideoPlayer', {
-                                    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
-                                    settings: ['speed'],
-                                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
-                                });
-                            });
-                        }
-                        else if (mType === 3) { // Картинка
-                            bodyContainer.innerHTML = `
-                                <div class="text-center p-3 border rounded shadow-sm bg-white image-preview-wrapper">
-                                    <img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" 
-                                         onclick="openImageFullscreen(this.src)" title="Кликните для увеличения" />
-                                </div>`;
-                        }
-                        else if (mType === 5) { // Практика
-                            bodyContainer.innerHTML = `
-                                <div class="p-4 border rounded shadow-sm bg-white">
-                                    <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-clipboard-check me-1"></i> Инструкция к выполнению задания:</h6>
-                                    <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
-
-                                    <div id="studentAssignmentArea" class="mb-4">
-                                        <div class="spinner-border spinner-border-sm text-secondary"></div> Проверка статуса выполнения...
-                                    </div>
-
-                                    <div class="d-flex gap-2 flex-column flex-sm-row" id="assignmentActionsBlock">
-                                        ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold rounded-3 w-100 w-sm-auto" download><i class="bi bi-download me-1"></i> Скачать файл задания</a>` : ""}
-                                        <button id="mainSubmitWorkBtn" class="btn btn-warning fw-bold px-4 rounded-3 w-100 w-sm-auto d-none" onclick="openAssignmentModal(${id})"><i class="bi bi-send me-1"></i> Сдать готовую работу</button>
-                                    </div>
-                                </div>
-                            `;
-
-                            fetch(`/CourseMaterials/GetAssignmentState?materialId=${id}&groupId=@ViewBag.GroupId`)
-                                .then(res => res.json())
-                                .then(state => {
-                                    const area = document.getElementById('studentAssignmentArea');
-                                    const actionBtn = document.getElementById('mainSubmitWorkBtn');
-
-                                    if (!state.hasSubmission) {
-                                        area.innerHTML = `<div class="alert alert-light border small text-muted">Вы еще не отправляли решение по этому практическому заданию.</div>`;
-                                        actionBtn.textContent = "Сдать готовую работу";
-                                        actionBtn.classList.remove('d-none');
-                                        return;
-                                    }
-
-                                    let chatHtml = `<div class="border rounded p-3 mb-3 bg-light small" style="max-height: 250px; overflow-y: auto;">
-                                                        <div class="fw-bold text-muted mb-2"><i class="bi bi-chat-dots-fill me-1"></i> Ваш диалог с преподавателем:</div>`;
-
-                                    state.messages.forEach(msg => {
-                                        chatHtml += `
-                                            <div class="mb-2 p-2 rounded ${msg.isStudent ? 'chat-bubble-student ms-2' : 'chat-bubble-teacher me-2'}">
-                                                <div class="d-flex justify-content-between text-muted" style="font-size:0.7rem;">
-                                                    <span><b>${msg.isStudent ? 'Вы (Слушатель)' : 'Преподаватель'}</b></span>
-                                                    <span>${msg.date}</span>
-                                                </div>
-                                                <div class="mt-1 text-dark">${msg.text}</div>
-                                                ${msg.file ? `<div class="mt-1"><a href="${msg.file}" class="text-decoration-none text-primary fw-bold" download><i class="bi bi-paperclip"></i> Отправленный_файл</a></div>` : ''}
-                                            </div>`;
-                                    });
-                                    chatHtml += `</div>`;
-
-                                    if (state.status === "OnReview") {
-                                        area.innerHTML = chatHtml + `<div class="alert alert-info border small m-0 fw-bold"><i class="bi bi-hourglass-split me-1"></i> Работа успешно доставлена и ожидает проверки преподавателем.</div>`;
-                                        actionBtn.classList.add('d-none');
-                                    }
-                                    else if (state.status === "NeedFix") {
-                                        area.innerHTML = chatHtml + `<div class="alert alert-warning border small m-0"><i class="bi bi-arrow-counterclockwise me-1"></i> <b>Задание возвращено на доработку!</b> Изучите комментарий преподавателя выше и пришлите исправленный вариант.</div>`;
-                                        actionBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise me-1"></i> Отправить исправленный вариант';
-                                        actionBtn.classList.remove('d-none');
-                                    }
-                                    else if (state.status === "Completed") {
-                                        area.innerHTML = chatHtml + `
-                                            <div class="alert alert-success border d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 m-0">
-                                                <span><i class="bi bi-check-circle-fill me-1"></i> <b>Проверка завершена!</b> Задание закрыто для редактирования.</span>
-                                                <h4 class="m-0 fw-bold bg-white text-success px-3 py-1 rounded border shadow-sm text-center">Балл: ${state.grade}</h4>
-                                            </div>`;
-                                        actionBtn.classList.add('d-none');
-                                    }
-                                });
-                        }
-                        else if (mType === 4) { // Тестирование
-                            const kinds = ["Промежуточное тестирование", "Итоговый экзамен курса", "Обучающий тренажер"];
-                            const currentKindText = kinds[data.testkind] || "Тестирование";
-                            const headerColors = ["#4e73df", "#e74a3b", "#f6c23e"];
-                            const currentColor = headerColors[data.testkind] || "#4e73df";
-
-                            bodyContainer.innerHTML = `
-                                <div class="card border-0 mb-0">
-                                    <div class="p-3 p-md-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, ${currentColor} 0%, #3a3b45 100%);">
-                                        <span class="badge bg-white text-dark fw-bold text-uppercase mb-2" style="font-size:0.7rem;">Контроль знаний</span>
-                                        <p class="lead small opacity-75 mt-1 mb-0">${currentKindText}</p>
-                                    </div>
-
-                                    <h5 class="fw-bold text-dark mb-3 fs-6 fs-md-5"><i class="bi bi-sliders me-1"></i> Параметры и регламент прохождения:</h5>
-                                    <div class="test-info-grid mb-4">
-                                        <div class="test-info-item">
-                                            <i class="bi bi-clock-history fs-4 text-primary"></i>
-                                            <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Время</div>
-                                            <h5 class="fw-bold text-dark m-0 mt-1 fs-6 fs-md-5">${data.timelimit > 0 ? `${data.timelimit} мин.` : "Без лимита"}</h5>
-                                        </div>
-                                        <div class="test-info-item">
-                                            <i class="bi bi-trophy fs-4 text-success"></i>
-                                            <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Порог</div>
-                                            <h5 class="fw-bold text-success m-0 mt-1 fs-6 fs-md-5">${data.passpercentage}% верных</h5>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-clock-history me-1"></i> Ваши предыдущие попытки:</h6>
-                                    <div class="table-responsive bg-white border rounded mb-4 shadow-sm">
-                                        <table class="table table-hover table-striped mb-0 text-dark align-middle small" style="min-width: 400px;">
-                                            <thead class="table-light text-secondary fw-bold">
-                                                <tr>
-                                                    <th>Дата старта</th>
-                                                    <th>Результат</th>
-                                                    <th>Статус</th>
-                                                    <th class="text-center">Действие</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="testAttemptsTableBody">
-                                                <tr><td colspan="4" class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Загрузка...</td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div class="text-center mt-2" id="testActionContainer"></div>
-                                </div>
-                            `;
-
-                            fetch(`/StudentTest/GetTestState?materialId=${id}&groupId=@ViewBag.GroupId`)
-                                .then(res => res.json())
-                                .then(state => {
-                                    const tbody = document.getElementById('testAttemptsTableBody');
-                                    const actionContainer = document.getElementById('testActionContainer');
-
-                                    if (!state.success) {
-                                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Не удалось загрузить историю.</td></tr>`;
-                                        return;
-                                    }
-
-                                    if (state.history.length === 0) {
-                                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Вы еще не проходили этот тест.</td></tr>`;
-                                    } else {
-                                        let rowsHtml = "";
-                                        state.history.forEach(item => {
-                                            let badgeClass = "bg-secondary";
-                                            if (item.statusEnum === "Passed") badgeClass = "bg-success";
-                                            if (item.statusEnum === "Failed") badgeClass = "bg-danger";
-                                            if (item.statusEnum === "InProgress") badgeClass = "bg-info text-dark";
-
-                                            rowsHtml += `
-                                                <tr>
-                                                    <td class="fw-mono text-nowrap" style="font-size:0.75rem;">${item.date}</td>
-                                                    <td class="fw-bold" style="font-size:0.75rem;">${item.statusEnum === "InProgress" ? "—" : item.score}</td>
-                                                    <td><span class="badge ${badgeClass}" style="font-size:0.65rem;">${item.status}</span></td>
-                                                    <td class="text-center">
-                                                        <div class="d-flex gap-1 justify-content-center flex-wrap">
-                                                            <a href="/StudentTest/Result?attemptId=${item.id}" class="btn btn-xs btn-outline-primary fw-bold py-0.5 px-2" style="font-size: 0.75rem;" title="Подробнее">
-                                                                <i class="bi bi-eye"></i>
-                                                            </a>
-                                                            <a href="/StudentTest/DownloadResult?attemptId=${item.id}" class="btn btn-xs btn-outline-success fw-bold py-0.5 px-2" style="font-size: 0.75rem;" title="Скачать">
-                                                                <i class="bi bi-download"></i>
-                                                            </a>
-                                                        </div>
-                                                    </td>
-                                                </tr>`;
-                                        });
-                                        tbody.innerHTML = rowsHtml;
-                                    }
-
-                                    const cleanTitle = data.title.replace(/'/g, "\\'");
-                                    if (state.canContinue) {
-                                        actionContainer.innerHTML = `
-                                            <button onclick="confirmAndStartTest(${id}, '${cleanTitle}')" class="btn btn-primary fw-bold px-4 py-3 shadow-sm border-0 d-inline-flex align-items-center gap-2 w-100 justify-content-center" style="border-radius:30px; font-size:1rem; background: linear-gradient(45deg, #4e73df, #224abe);">
-                                                <i class="bi bi-play-fill fs-5"></i> ПРОДОЛЖИТЬ ТЕСТ
-                                            </button>
-                                            ${state.remainingSeconds > 0 ? `<small class="text-danger d-block mt-2 fw-bold"><i class="bi bi-hourglass-split"></i> Таймер тикает на сервере!</small>` : ""}
-                                        `;
-                                    } else {
-                                        actionContainer.innerHTML = `
-                                            <button onclick="confirmAndStartTest(${id}, '${cleanTitle}')" class="btn btn-success fw-bold px-4 py-3 shadow shadow-sm d-inline-flex align-items-center gap-2 w-100 justify-content-center" style="border-radius:30px; font-size:1rem;">
-                                                <i class="bi bi-rocket-takeoff fs-5"></i> ЗАПУСТИТЬ ТЕСТ
-                                            </button>
-                                        `;
-                                    }
-                                });
-                        }
-                        else if (mType === 6) { // SCORM
-                            bodyContainer.innerHTML = `
-                                <div class="shadow rounded-3 overflow-hidden w-100 bg-white flex-grow-1" style="min-height: 70vh;">
-                                    <iframe src="${fileUrl}" width="100%" height="100%" style="border:none; min-height: 70vh;" allowfullscreen></iframe>
-                                </div>`;
-                        }
-                    } catch (err) {
-                        bodyContainer.innerHTML = '<div class="alert alert-danger m-3"><i class="bi bi-exclamation-triangle-fill me-2"></i> Не удалось отобразить контент элемента.</div>';
-                    }
-                }
-
-                // ==========================================
-                // 2. ОТРИСОВКА PDF
-                // ==========================================
-                async function renderPdfAsScrollableImages(pdfUrl) {
-                    const viewerContainer = document.getElementById('pdfViewerContainer');
-                    if (!pdfUrl) {
-                        viewerContainer.innerHTML = '<div class="alert alert-warning m-2">Файл документа отсутствует.</div>';
-                        return;
-                    }
-
-                    try {
-                        const absoluteUrl = window.location.origin + pdfUrl;
-                        const loadingTask = pdfjsLib.getDocument({
-                            url: absoluteUrl, disableRange: true, disableAutoFetch: true, withCredentials: true
-                        });
-
-                        const pdf = await loadingTask.promise;
-                        viewerContainer.innerHTML = '';
-
-                        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                            const page = await pdf.getPage(pageNum);
-                            const viewport = page.getViewport({ scale: 1.5 });
-                            const canvas = document.createElement('canvas');
-                            canvas.className = 'pdf-page-canvas mb-3 shadow-sm';
-                            canvas.height = viewport.height;
-                            canvas.width = viewport.width;
-                            viewerContainer.appendChild(canvas);
-                            const context = canvas.getContext('2d');
-                            await page.render({ canvasContext: context, viewport: viewport }).promise;
-                        }
-                    } catch (error) {
-                        console.error("Критическая ошибка рендера PDF.mjs:", error);
-                        viewerContainer.innerHTML = '<div class="alert alert-danger m-2"><i class="bi bi-exclamation-triangle-fill me-2"></i> Ошибка отрисовки документа.</div>';
-                    }
-                }
-
-                // ==========================================
-                // 3. АВТОЗАГРУЗКА ПЕРВОГО МАТЕРИАЛА
-                // ==========================================
-                document.addEventListener("DOMContentLoaded", function () {
-                    const activeIdFromServer = parseInt("@(ViewBag.ActiveId ?? 0)") || 0;
-
-                    if (activeIdFromServer > 0) {
-                        const targetBtn = document.querySelector(`.material-item-btn[data-id="${activeIdFromServer}"]`);
-                        if (targetBtn) {
-                            const parentCollapse = targetBtn.closest('.collapse');
-                            if (parentCollapse && !parentCollapse.classList.contains('show')) {
-                                new bootstrap.Collapse(parentCollapse, { toggle: true });
-                            }
-                            targetBtn.click();
-                            targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (!state.hasSubmission) {
+                            area.innerHTML = `<div class="alert alert-light border small text-muted">Вы еще не отправляли решение по этому практическому заданию.</div>`;
+                            actionBtn.textContent = "Сдать готовую работу";
+                            actionBtn.classList.remove('d-none');
                             return;
                         }
-                    }
-        
-                    const firstBtn = document.querySelector('.material-item-btn');
-                    if (firstBtn) {
-                        firstBtn.click();
-                    } else {
-                        document.getElementById('mainContentWindow').innerHTML =
-                            '<div class="text-center text-muted my-auto py-5"><h5>В программе курса пока нет материалов.</h5></div>';
-                    }
-                });
 
-                // ==========================================
-                // 4. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-                // ==========================================
-                function openAssignmentModal(id) {
-                    document.getElementById("assignmentMaterialId").value = id;
-                    new bootstrap.Modal(document.getElementById('submitAssignmentModal')).show();
-                }
-
-                // ОБРАБОТЧИК СДАЧИ ПРАКТИКИ С ПРОВЕРКОЙ (ФАЙЛ ИЛИ ТЕКСТ) И ОШИБОК JSON
-                document.getElementById("confirmSubmitAssignmentBtn").addEventListener("click", async function () {
-                    const button = this;
-                    const form = document.getElementById('studentAssignmentForm');
-                    const materialId = document.getElementById("assignmentMaterialId").value;
-
-                    if (!form.checkValidity()) { form.reportValidity(); return; }
-        
-                    const comment = form.querySelector('textarea[name="studentComment"]').value.trim();
-                    const file = form.querySelector('input[name="submissionFile"]').files[0];
-        
-                    // Проверяем, что введен хотя бы текст или прикреплен файл
-                    if (!comment && !file) {
-                        showToast("Пожалуйста, напишите ответ или прикрепите файл!", "warning");
-                        return;
-                    }
-
-                    button.disabled = true;
-                    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Отправка...';
-
-                    const formData = new FormData(form);
-                    formData.append("groupId", "@ViewBag.GroupId");
-
-                    try {
-                        const response = await fetch('/CourseMaterials/SubmitAssignment', {
-                            method: 'POST',
-                            body: formData,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        // ГЕНЕРАЦИЯ КРАСИВОГО ЧАТА
+                        let chatHtml = `<div class="chat-container">`;
+                        state.messages.forEach(msg => {
+                            const bubbleClass = msg.isStudent ? 'me' : 'teacher';
+                            const senderName = msg.isStudent ? 'Вы' : 'Преподаватель';
+                            
+                            chatHtml += `
+                                <div class="chat-bubble ${bubbleClass}">
+                                    <div class="chat-sender">${senderName}</div>
+                                    <div>${msg.text}</div>
+                                    ${msg.file ? `
+                                        <a href="${msg.file}" class="chat-file-link" download>
+                                            <i class="bi bi-paperclip"></i> Скачать файл
+                                        </a>` : ''}
+                                    <div class="chat-time">${msg.date}</div>
+                                </div>`;
                         });
+                        chatHtml += `</div>`;
 
-                        // Проверка, что сервер вернул именно JSON, а не HTML (страницу ошибки 500/413)
-                        const contentType = response.headers.get("content-type");
-                        if (!contentType || !contentType.includes("application/json")) {
-                            throw new Error(`Сервер вернул ошибку (${response.status}). Возможно, файл слишком большой.`);
+                        if (state.status === "OnReview") {
+                            area.innerHTML = chatHtml + `<div class="alert alert-info border small m-0 fw-bold"><i class="bi bi-hourglass-split me-1"></i> Работа ожидает проверки преподавателем.</div>`;
+                            actionBtn.classList.add('d-none');
+                        }
+                        else if (state.status === "NeedFix") {
+                            area.innerHTML = chatHtml + `<div class="alert alert-warning border small m-0"><i class="bi bi-arrow-counterclockwise me-1"></i> <b>Задание возвращено на доработку!</b> Пришлите исправленный вариант.</div>`;
+                            actionBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise me-1"></i> Отправить исправленный вариант';
+                            actionBtn.classList.remove('d-none');
+                        }
+                        else if (state.status === "Completed") {
+                            area.innerHTML = chatHtml + `<div class="alert alert-success border d-flex justify-content-between align-items-center m-0"><span><i class="bi bi-check-circle-fill me-1"></i> <b>Проверка завершена!</b></span><h4 class="m-0 fw-bold text-success">Балл: ${state.grade}</h4></div>`;
+                            actionBtn.classList.add('d-none');
+                        }
+                    });
+            }
+            else if (mType === 4) { // Тест
+                const kinds = ["Промежуточное тестирование", "Итоговый экзамен курса", "Обучающий тренажер"];
+                const currentKindText = kinds[data.testkind] || "Тестирование";
+                const headerColors = ["#4e73df", "#e74a3b", "#f6c23e"];
+                const currentColor = headerColors[data.testkind] || "#4e73df";
+
+                bodyContainer.innerHTML = `
+                    <div class="card border-0 mb-0">
+                        <div class="p-3 p-md-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, ${currentColor} 0%, #3a3b45 100%);">
+                            <span class="badge bg-white text-dark fw-bold text-uppercase mb-2" style="font-size:0.7rem;">Контроль знаний</span>
+                            <p class="lead small opacity-75 mt-1 mb-0">${currentKindText}</p>
+                        </div>
+
+                        <h5 class="fw-bold text-dark mb-3 fs-6 fs-md-5"><i class="bi bi-sliders me-1"></i> Параметры:</h5>
+                        <div class="test-info-grid mb-4">
+                            <div class="test-info-item">
+                                <i class="bi bi-clock-history fs-4 text-primary"></i>
+                                <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Время</div>
+                                <h5 class="fw-bold text-dark m-0 mt-1 fs-6 fs-md-5">${data.timelimit > 0 ? `${data.timelimit} мин.` : "Без лимита"}</h5>
+                            </div>
+                            <div class="test-info-item">
+                                <i class="bi bi-trophy fs-4 text-success"></i>
+                                <div class="text-muted small fw-bold text-uppercase mt-1" style="font-size:0.65rem;">Порог</div>
+                                <h5 class="fw-bold text-success m-0 mt-1 fs-6 fs-md-5">${data.passpercentage}% верных</h5>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-clock-history me-1"></i> Ваши предыдущие попытки:</h6>
+                        <div class="table-responsive bg-white border rounded mb-4 shadow-sm">
+                            <table class="table table-hover table-striped mb-0 text-dark align-middle small" style="min-width: 400px;">
+                                <thead class="table-light text-secondary fw-bold">
+                                    <tr>
+                                        <th>Дата старта</th>
+                                        <th>Результат</th>
+                                        <th>Статус</th>
+                                        <th class="text-center">Действие</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="testAttemptsTableBody">
+                                    <tr><td colspan="4" class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Загрузка...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="text-center mt-2" id="testActionContainer"></div>
+                    </div>
+                `;
+
+                fetch(`/StudentTest/GetTestState?materialId=${id}&groupId=@ViewBag.GroupId`)
+                    .then(res => res.json())
+                    .then(state => {
+                        const tbody = document.getElementById('testAttemptsTableBody');
+                        const actionContainer = document.getElementById('testActionContainer');
+
+                        if (!state.success) {
+                            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Не удалось загрузить историю.</td></tr>`;
+                            return;
                         }
 
-                        const result = await response.json();
-
-                        if (result.success) {
-                            showToast("Работа успешно отправлена на проверку!", "success");
-                            form.reset();
-                            bootstrap.Modal.getInstance(document.getElementById('submitAssignmentModal')).hide();
-                            document.querySelector(`.material-item-btn[data-id="${materialId}"]`).click();
+                        if (state.history.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Вы еще не проходили этот тест.</td></tr>`;
                         } else {
-                            showToast("Ошибка: " + result.message, "danger");
+                            let rowsHtml = "";
+                            state.history.forEach(item => {
+                                let badgeClass = "bg-secondary";
+                                if (item.statusEnum === "Passed") badgeClass = "bg-success";
+                                if (item.statusEnum === "Failed") badgeClass = "bg-danger";
+                                if (item.statusEnum === "InProgress") badgeClass = "bg-info text-dark";
+
+                                rowsHtml += `
+                                    <tr>
+                                        <td class="fw-mono text-nowrap" style="font-size:0.75rem;">${item.date}</td>
+                                        <td class="fw-bold" style="font-size:0.75rem;">${item.statusEnum === "InProgress" ? "—" : item.score}</td>
+                                        <td><span class="badge ${badgeClass}" style="font-size:0.65rem;">${item.status}</span></td>
+                                        <td class="text-center">
+                                            <div class="d-flex gap-1 justify-content-center flex-wrap">
+                                                <a href="/StudentTest/Result?attemptId=${item.id}" class="btn btn-xs btn-outline-primary fw-bold py-0.5 px-2" style="font-size: 0.75rem;" title="Подробнее"><i class="bi bi-eye"></i></a>
+                                                <a href="/StudentTest/DownloadResult?attemptId=${item.id}" class="btn btn-xs btn-outline-success fw-bold py-0.5 px-2" style="font-size: 0.75rem;" title="Скачать"><i class="bi bi-download"></i></a>
+                                            </div>
+                                        </td>
+                                    </tr>`;
+                            });
+                            tbody.innerHTML = rowsHtml;
                         }
-                    } catch (error) {
-                        showToast("Не удалось отправить. " + error.message, "danger");
-                        console.error("Ошибка отправки:", error);
-                    } finally {
-                        button.disabled = false;
-                        button.innerHTML = 'Отправить на проверку';
-                    }
-                });
 
-                let testToStartId = 0;
+                        const cleanTitle = data.title.replace(/'/g, "\\'");
+                        if (state.canContinue) {
+                            actionContainer.innerHTML = `<button onclick="confirmAndStartTest(${id}, '${cleanTitle}')" class="btn btn-primary fw-bold px-4 py-3 shadow-sm border-0 d-inline-flex align-items-center gap-2 w-100 justify-content-center" style="border-radius:30px; font-size:1rem; background: linear-gradient(45deg, #4e73df, #224abe);"><i class="bi bi-play-fill fs-5"></i> ПРОДОЛЖИТЬ ТЕСТ</button>${state.remainingSeconds > 0 ? `<small class="text-danger d-block mt-2 fw-bold"><i class="bi bi-hourglass-split"></i> Таймер тикает на сервере!</small>` : ""}`;
+                        } else {
+                            actionContainer.innerHTML = `<button onclick="confirmAndStartTest(${id}, '${cleanTitle}')" class="btn btn-success fw-bold px-4 py-3 shadow shadow-sm d-inline-flex align-items-center gap-2 w-100 justify-content-center" style="border-radius:30px; font-size:1rem;"><i class="bi bi-rocket-takeoff fs-5"></i> ЗАПУСТИТЬ ТЕСТ</button>`;
+                        }
+                    });
+            }
+            else if (mType === 6) { // SCORM
+                bodyContainer.innerHTML = `<div class="shadow rounded-3 overflow-hidden w-100 bg-white flex-grow-1" style="min-height: 70vh;"><iframe src="${fileUrl}" width="100%" height="100%" style="border:none; min-height: 70vh;" allowfullscreen></iframe></div>`;
+            }
+        } catch (err) {
+            bodyContainer.innerHTML = '<div class="alert alert-danger m-3"><i class="bi bi-exclamation-triangle-fill me-2"></i> Не удалось отобразить контент элемента.</div>';
+        }
+    }
 
-                function confirmAndStartTest(testId, testTitle) {
-                    testToStartId = testId;
-                    document.getElementById('modalTestTitle').textContent = `«${testTitle}»`;
-                    new bootstrap.Modal(document.getElementById('startTestConfirmModal')).show();
+    // 3. PDF
+    async function renderPdfAsScrollableImages(pdfUrl) {
+        const viewerContainer = document.getElementById('pdfViewerContainer');
+        if (!pdfUrl) {
+            viewerContainer.innerHTML = '<div class="alert alert-warning m-2">Файл документа отсутствует.</div>';
+            return;
+        }
+
+        try {
+            const absoluteUrl = window.location.origin + pdfUrl;
+            const loadingTask = pdfjsLib.getDocument({ url: absoluteUrl, disableRange: true, disableAutoFetch: true, withCredentials: true });
+
+            const pdf = await loadingTask.promise;
+            viewerContainer.innerHTML = '';
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdf-page-canvas mb-3 shadow-sm';
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                viewerContainer.appendChild(canvas);
+                const context = canvas.getContext('2d');
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+            }
+        } catch (error) {
+            console.error("Ошибка PDF:", error);
+            viewerContainer.innerHTML = '<div class="alert alert-danger m-2"><i class="bi bi-exclamation-triangle-fill me-2"></i> Ошибка отрисовки документа.</div>';
+        }
+    }
+
+    // 4. АВТОЗАГРУЗКА
+    document.addEventListener("DOMContentLoaded", function () {
+        const activeIdFromServer = parseInt("@(ViewBag.ActiveId ?? 0)") || 0;
+
+        if (activeIdFromServer > 0) {
+            const targetBtn = document.querySelector(`.material-item-btn[data-id="${activeIdFromServer}"]`);
+            if (targetBtn) {
+                const parentCollapse = targetBtn.closest('.collapse');
+                if (parentCollapse && !parentCollapse.classList.contains('show')) {
+                    new bootstrap.Collapse(parentCollapse, { toggle: true });
                 }
-
-                document.getElementById('confirmStartTestBtn').addEventListener('click', function () {
-                    if (testToStartId > 0) {
-                        window.location.href = `/StudentTest/Take?testId=${testToStartId}&groupId=@ViewBag.GroupId`;
-                    }
-                });
-
-                function toggleTheaterMode() {
-                    const contentArea = document.querySelector('.course-content-area');
+                targetBtn.click();
+                targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
         
-                    if (!document.fullscreenElement) {
-                        if (contentArea.requestFullscreen) contentArea.requestFullscreen();
-                        else if (contentArea.webkitRequestFullscreen) contentArea.webkitRequestFullscreen();
-                        else if (contentArea.msRequestFullscreen) contentArea.msRequestFullscreen();
-                    } else {
-                        if (document.exitFullscreen) document.exitFullscreen();
-                        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-                        else if (document.msExitFullscreen) document.msExitFullscreen();
-                    }
-                }
+        const firstBtn = document.querySelector('.material-item-btn');
+        if (firstBtn) {
+            firstBtn.click();
+        } else {
+            document.getElementById('mainContentWindow').innerHTML = '<div class="text-center text-muted my-auto py-5"><h5>В программе курса пока нет материалов.</h5></div>';
+        }
+    });
 
-                function updateFullscreenButton() {
-                    const toggleBtn = document.querySelector('.fullscreen-toggle-btn');
-                    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-                        toggleBtn.innerHTML = '<i class="bi bi-fullscreen-exit"></i> <span>Свернуть</span>';
-                        toggleBtn.classList.remove('btn-outline-secondary');
-                        toggleBtn.classList.add('btn-primary');
-                    } else {
-                        toggleBtn.innerHTML = '<i class="bi bi-fullscreen"></i> <span>На весь экран</span>';
-                        toggleBtn.classList.remove('btn-primary');
-                        toggleBtn.classList.add('btn-outline-secondary');
-                    }
-                }
+    // 5. ТЕСТЫ И FULLSCREEN
+    let testToStartId = 0;
 
-                document.addEventListener('fullscreenchange', updateFullscreenButton);
-                document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-                document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+    function confirmAndStartTest(testId, testTitle) {
+        testToStartId = testId;
+        document.getElementById('modalTestTitle').textContent = `«${testTitle}»`;
+        new bootstrap.Modal(document.getElementById('startTestConfirmModal')).show();
+    }
 
-                function openImageFullscreen(src) {
-                    document.getElementById('imageLightboxOverlay').classList.add('show');
-                    document.getElementById('lightboxTargetImage').src = src;
-                    document.body.style.overflow = 'hidden';
-                }
+    document.getElementById('confirmStartTestBtn').addEventListener('click', function () {
+        if (testToStartId > 0) {
+            window.location.href = `/StudentTest/Take?testId=${testToStartId}&groupId=@ViewBag.GroupId`;
+        }
+    });
 
-                function closeImageFullscreen() {
-                    document.getElementById('imageLightboxOverlay').classList.remove('show');
-                    document.body.style.overflow = '';
-                }
-            </script>
+    function toggleTheaterMode() {
+        const contentArea = document.querySelector('.course-content-area');
+        if (!document.fullscreenElement) {
+            if (contentArea.requestFullscreen) contentArea.requestFullscreen();
+            else if (contentArea.webkitRequestFullscreen) contentArea.webkitRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+    }
+
+    function updateFullscreenButton() {
+        const toggleBtn = document.querySelector('.fullscreen-toggle-btn');
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+            toggleBtn.innerHTML = '<i class="bi bi-fullscreen-exit"></i> <span>Свернуть</span>';
+        } else {
+            toggleBtn.innerHTML = '<i class="bi bi-fullscreen"></i> <span>На весь экран</span>';
+        }
+    }
+
+    document.addEventListener('fullscreenchange', updateFullscreenButton);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+
+    function openImageFullscreen(src) {
+        document.getElementById('imageLightboxOverlay').classList.add('show');
+        document.getElementById('lightboxTargetImage').src = src;
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageFullscreen() {
+        document.getElementById('imageLightboxOverlay').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+</script>

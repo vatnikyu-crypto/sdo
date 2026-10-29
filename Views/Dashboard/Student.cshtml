@@ -185,8 +185,17 @@
         <p class="small opacity-75 m-0">Ниже представлены ваши доступные учебные программы.</p>
     </div>
     
-    <div class="logo-circle mx-auto mx-md-0">
-        <img src="~/logo.png" alt="Логотип" onerror="this.style.display='none'">
+    <!-- БЛОК С ЛОГОТИПОМ КОМПАНИИ -->
+    <div class="logo-circle mx-auto mx-md-0 shadow-sm" title="@ViewBag.CompanyName" style="overflow: hidden;">
+        @if (!string.IsNullOrEmpty(ViewBag.CompanyLogoUrl as string))
+        {
+            <img src="@ViewBag.CompanyLogoUrl" alt="Логотип компании" style="width: 90%; height: 90%; object-fit: contain;" />
+        }
+        else
+        {
+            <!-- Заглушка, если логотипа нет -->
+            <i class="bi bi-building text-secondary" style="font-size: 2rem;"></i>
+        }
     </div>
 </div>
 

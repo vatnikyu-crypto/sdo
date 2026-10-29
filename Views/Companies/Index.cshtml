@@ -26,7 +26,7 @@
     }
     
     .table-custom td {
-        padding: 15px 12px;
+        padding: 12px;
         vertical-align: middle;
         border-bottom: 1px solid #f1f3f5;
     }
@@ -37,6 +37,28 @@
     
     .table-custom tbody tr:hover {
         background-color: #f8f9fa;
+    }
+
+    /* Стили для логотипов */
+    .company-logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 8px;
+        border: 1px solid var(--brand-gray);
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .company-logo-placeholder {
+        width: 48px;
+        height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px dashed var(--brand-gray);
+        background-color: #f8fafc;
     }
 
     /* Стили кнопок действий */
@@ -109,16 +131,10 @@
     .copy-toast.show { opacity: 1; }
 
     /* Пагинация */
-    .pagination .page-item.active .page-link {
-        background-color: var(--brand-primary);
-        border-color: var(--brand-primary);
-        color: white;
-    }
-        /* === ПАГИНАЦИЯ (явные контрастные стили) === */
-    #groupPaginationButtons {
+    #paginationButtons {
         gap: 4px;
     }
-    #groupPaginationButtons .page-link {
+    #paginationButtons .page-link {
         color: #4F589D !important;
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
@@ -129,18 +145,18 @@
         margin: 0 2px;
         transition: all 0.2s;
     }
-    #groupPaginationButtons .page-link:hover {
+    #paginationButtons .page-link:hover {
         background-color: #f0f4ff !important;
         color: #3b4382 !important;
         border-color: #4F589D !important;
     }
-    #groupPaginationButtons .page-item.active .page-link {
+    #paginationButtons .page-item.active .page-link {
         background-color: #4F589D !important;
         border-color: #4F589D !important;
         color: #ffffff !important;
         box-shadow: 0 2px 8px rgba(79, 88, 157, 0.35);
     }
-    #groupPaginationButtons .page-item.disabled .page-link {
+    #paginationButtons .page-item.disabled .page-link {
         color: #cbd5e1 !important;
         background-color: #f8f9fa !important;
         border-color: #e2e8f0 !important;
@@ -160,44 +176,22 @@
         box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
     }
 
-    /* ========================================= */
-    /* СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ (TOASTS) */
-    /* ========================================= */
+    /* Уведомления */
     .toast-container-custom {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        display: flex; flex-direction: column; gap: 10px;
     }
-
     .custom-toast {
-        min-width: 300px;
-        max-width: 400px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        padding: 15px 20px;
+        min-width: 300px; max-width: 400px; background: white;
+        border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex; align-items: center; padding: 15px 20px;
         animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         border-left: 6px solid #ccc;
     }
-
     .custom-toast.success { border-left-color: #198754; }
     .custom-toast.danger { border-left-color: #dc3545; }
-
-    @@keyframes slideInRight {
-        from { transform: translateX(120%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-
-    @@keyframes fadeOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(120%); opacity: 0; }
-    }
+    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
 </style>
 
 <!-- Контейнер для уведомлений -->
@@ -209,8 +203,7 @@
         <h3 class="fw-bold text-dark m-0">Справочник компаний</h3>
     </div>
     <a href="/Companies/Create" class="btn btn-brand px-4 py-2 fw-bold d-flex align-items-center gap-2 rounded-3">
-        <i class="bi bi-plus-lg"></i>
-        Добавить компанию
+        <i class="bi bi-plus-lg"></i> Добавить компанию
     </a>
 </div>
 
@@ -239,6 +232,8 @@
         <table class="table table-custom table-hover m-0">
             <thead class="bg-light">
                 <tr>
+                    <!-- НОВЫЙ СТОЛБЕЦ ДЛЯ ЛОГОТИПА -->
+                    <th style="width: 80px;" class="text-center">Лого</th>
                     <th>Наименование компании</th>
                     <th>ИНН</th>
                     <th class="text-center">Кол-во слушателей</th>
@@ -249,7 +244,8 @@
                 @if (!Model.Any())
                 {
                     <tr id="emptyRow">
-                        <td colspan="4" class="text-center py-5 text-muted">
+                        <!-- ИЗМЕНЕН COLSPAN НА 5 -->
+                        <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-building fs-1 d-block mb-2 text-secondary opacity-50"></i>
                             В справочнике пока нет ни одной организации.
                         </td>
@@ -260,12 +256,24 @@
                     @foreach (var company in Model)
                     {
                         <tr id="company-row-@company.Id" class="company-data-row" data-id="@company.Id">
+                            <!-- НОВАЯ ЯЧЕЙКА С ЛОГОТИПОМ -->
+                            <td class="text-center">
+                                @if (!string.IsNullOrEmpty(company.LogoUrl))
+                                {
+                                    <img src="@company.LogoUrl" alt="Логотип" class="company-logo" />
+                                }
+                                else
+                                {
+                                    <div class="company-logo-placeholder">
+                                        <i class="bi bi-building text-secondary opacity-50 fs-5"></i>
+                                    </div>
+                                }
+                            </td>
                             <td>
                                 <div class="fw-bold text-dark company-name mb-1">@company.Name</div>
                                 <span class="text-muted small">ID: #@company.Id</span>
                             </td>
                             <td>
-                                <!-- ИНН с интерактивным клик-копированием -->
                                 <div class="badge copy-clickable company-inn" 
                                       onclick="copyText(this, '@company.Inn')" title="Кликните, чтобы скопировать">
                                     <i class="bi bi-files text-muted"></i>
@@ -342,30 +350,19 @@
 
 <!-- 7. JAVASCRIPT -->
 <script>
-    // ==========================================
-    // ФУНКЦИЯ УВЕДОМЛЕНИЙ (TOASTS)
-    // ==========================================
     function showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
-        
         toast.className = `custom-toast ${type}`;
         const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
-        
-        toast.innerHTML = `
-            <i class="bi ${iconClass} fs-4 me-3"></i>
-            <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
-        `;
-        
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
         container.appendChild(toast);
-        
         setTimeout(() => {
             toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
             setTimeout(() => toast.remove(), 300);
         }, 3500);
     }
 
-    // Функция копирования ИНН в буфер обмена
     function copyText(element, textToCopy) {
         navigator.clipboard.writeText(textToCopy).then(() => {
             const toast = element.querySelector('.copy-toast');
@@ -383,12 +380,10 @@
 
     let pageSize = parseInt(pageSizeSelect.value);
 
-    // Функция: Живой поиск + постраничный вывод (пагинация)
     function updatePagination() {
         const rows = Array.from(tableBody.querySelectorAll('.company-data-row'));
         const searchText = searchInput.value.trim().toLowerCase();
 
-        // Фильтрация живым поиском (по имени или ИНН)
         let filteredRows = rows;
         if (searchText.length > 0) {
             filteredRows = rows.filter(row => {
@@ -426,7 +421,6 @@
         const paginationContainer = document.getElementById('paginationButtons');
         paginationContainer.innerHTML = '';
 
-        // Стрелка назад
         const prevLi = document.createElement('li');
         prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
         prevLi.innerHTML = `<span class="page-link"><i class="bi bi-chevron-left"></i></span>`;
@@ -435,7 +429,6 @@
         }
         paginationContainer.appendChild(prevLi);
 
-        // Цифры страниц
         for (let i = 1; i <= totalPages; i++) {
             const li = document.createElement('li');
             li.className = `page-item ${currentPage === i ? 'active' : ''}`;
@@ -444,7 +437,6 @@
             paginationContainer.appendChild(li);
         }
 
-        // Стрелка вперед
         const nextLi = document.createElement('li');
         nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
         nextLi.innerHTML = `<span class="page-link"><i class="bi bi-chevron-right"></i></span>`;
@@ -465,7 +457,6 @@
         updatePagination();
     });
 
-    // --- ЛОГИКА АСИНХРОННОГО AJAX-УДАЛЕНИЯ ОРГАНИЗАЦИИ ---
     let companyIdToDelete = null;
 
     function prepareDeleteCompany(id, companyName) {
@@ -498,13 +489,12 @@
                         row.remove();
                         const rows = tableBody.querySelectorAll('.company-data-row');
                         if (rows.length === 0) {
-                            tableBody.innerHTML = `<tr id="emptyRow"><td colspan="4" class="text-center py-5 text-muted"><i class="bi bi-building fs-1 d-block mb-2 text-secondary opacity-50"></i>В справочнике пока нет ни одной организации.</td></tr>`;
+                            tableBody.innerHTML = `<tr id="emptyRow"><td colspan="5" class="text-center py-5 text-muted"><i class="bi bi-building fs-1 d-block mb-2 text-secondary opacity-50"></i>В справочнике пока нет ни одной организации.</td></tr>`;
                         }
                         updatePagination();
                     }, 300);
                 }
             } else {
-                // Показываем красную плашку с ошибкой (например, если есть привязанные студенты)
                 document.querySelector('#deleteCompanyModal [data-bs-dismiss="modal"]').click();
                 showToast(result.message, 'danger');
             }

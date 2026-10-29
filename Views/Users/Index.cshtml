@@ -12,7 +12,6 @@
         --brand-gray: #e2e8f0;
     }
 
-    /* Стили таблицы */
     .table-custom th {
         font-weight: 600;
         color: #6c757d;
@@ -29,15 +28,9 @@
         border-bottom: 1px solid #f1f3f5;
     }
 
-    .table-custom tbody tr {
-        transition: all 0.2s;
-    }
+    .table-custom tbody tr { transition: all 0.2s; }
+    .table-custom tbody tr:hover { background-color: #f8f9fa; }
 
-    .table-custom tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    /* Кнопки действий */
     .btn-action {
         width: 32px;
         height: 32px;
@@ -49,186 +42,40 @@
         transition: all 0.2s;
     }
 
-    .btn-action-download {
-        background-color: #f0fdf4;
-        color: #198754;
-        border: 1px solid #d1e7dd;
-    }
+    .btn-action-download { background-color: #f0fdf4; color: #198754; border: 1px solid #d1e7dd; }
+    .btn-action-download:hover { background-color: #198754; color: white; border-color: #198754; }
+    .btn-action-edit { background-color: #f0f4ff; color: var(--brand-primary); border: 1px solid #dce4ff; }
+    .btn-action-edit:hover { background-color: var(--brand-primary); color: white; border-color: var(--brand-primary); }
+    .btn-action-delete { background-color: #fff0f0; color: #dc3545; border: 1px solid #ffd6d6; }
+    .btn-action-delete:hover { background-color: #dc3545; color: white; border-color: #dc3545; }
 
-    .btn-action-download:hover {
-        background-color: #198754;
-        color: white;
-        border-color: #198754;
-    }
+    .btn-brand { background-color: var(--brand-primary); color: white; border: none; transition: all 0.3s; }
+    .btn-brand:hover { background-color: var(--brand-dark); color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3); }
 
-    .btn-action-edit {
-        background-color: #f0f4ff;
-        color: var(--brand-primary);
-        border: 1px solid #dce4ff;
-    }
+    #paginationButtons .page-link { color: var(--brand-primary); border-radius: 6px; margin: 0 2px; border: 1px solid #dee2e6; font-weight: 600; }
+    #paginationButtons .page-item.active .page-link { background-color: var(--brand-primary); border-color: var(--brand-primary); color: white; }
 
-    .btn-action-edit:hover {
-        background-color: var(--brand-primary);
-        color: white;
-        border-color: var(--brand-primary);
-    }
+    .copy-clickable { cursor: pointer; position: relative; transition: all 0.2s; border-radius: 4px; }
+    .copy-clickable:hover { background-color: #f1f5f9; }
+    .copy-toast { position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background-color: var(--brand-dark); color: #fff; padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; }
+    .copy-toast.show { opacity: 1; }
 
-    .btn-action-delete {
-        background-color: #fff0f0;
-        color: #dc3545;
-        border: 1px solid #ffd6d6;
-    }
+    .fade-out { opacity: 0; transition: opacity 0.3s ease; }
 
-    .btn-action-delete:hover {
-        background-color: #dc3545;
-        color: white;
-        border-color: #dc3545;
-    }
+    #dropZone { transition: all 0.2s; border-color: #cbd5e1 !important; }
+    #dropZone:hover { background-color: #f1f5f9; border-color: var(--brand-primary) !important; }
 
-    /* Фирменные кнопки */
-    .btn-brand {
-        background-color: var(--brand-primary);
-        color: white;
-        border: none;
-        transition: all 0.3s;
-    }
-
-    .btn-brand:hover {
-        background-color: var(--brand-dark);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
-    }
-
-    /* Пагинация */
-    #paginationButtons .page-link {
-        color: var(--brand-primary);
-        border-radius: 6px;
-        margin: 0 2px;
-        border: 1px solid #dee2e6;
-        font-weight: 600;
-    }
-
-    #paginationButtons .page-item.active .page-link {
-        background-color: var(--brand-primary);
-        border-color: var(--brand-primary);
-        color: white;
-    }
-
-    /* Копирование текста */
-    .copy-clickable {
-        cursor: pointer;
-        position: relative;
-        transition: all 0.2s;
-        border-radius: 4px;
-    }
-
-    .copy-clickable:hover {
-        background-color: #f1f5f9;
-    }
-
-    .copy-toast {
-        position: absolute;
-        bottom: 110%;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: var(--brand-dark);
-        color: #fff;
-        padding: 4px 8px;
-        font-size: 0.7rem;
-        border-radius: 4px;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s;
-        z-index: 10;
-    }
-
-    .copy-toast.show {
-        opacity: 1;
-    }
-
-    .fade-out {
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    /* Зона Drag and Drop */
-    #dropZone {
-        transition: all 0.2s;
-        border-color: #cbd5e1 !important;
-    }
-
-    #dropZone:hover {
-        background-color: #f1f5f9;
-        border-color: var(--brand-primary) !important;
-    }
-
-    /* Пуш-уведомления (Toasts) */
-    .toast-container-custom {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .custom-toast {
-        min-width: 300px;
-        max-width: 400px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-        display: flex;
-        align-items: center;
-        padding: 15px 20px;
-        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        border-left: 6px solid #ccc;
-    }
-
-    .custom-toast.success {
-        border-left-color: #198754;
-    }
-
-    .custom-toast.danger {
-        border-left-color: #dc3545;
-    }
-
-    .custom-toast.warning {
-        border-left-color: #F59E0B;
-    }
-
-    @@keyframes slideInRight {
-        from {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @@keyframes fadeOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        to {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-    }
+    .toast-container-custom { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .custom-toast { min-width: 300px; max-width: 400px; background: white; border-radius: 10px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15); display: flex; align-items: center; padding: 15px 20px; animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-left: 6px solid #ccc; }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.warning { border-left-color: #F59E0B; }
+    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
 </style>
 
-<!-- Контейнер для уведомлений -->
 <div id="toastContainer" class="toast-container-custom"></div>
 
-<!-- 1. ШАПКА -->
 <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
     <div>
         <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
@@ -237,23 +84,18 @@
         <small class="text-muted mt-1 d-block">Управление учетными записями слушателей курсов</small>
     </div>
     <div class="d-flex gap-2">
-        <button class="btn btn-outline-success px-4 py-2 fw-bold rounded-3 d-flex align-items-center gap-2 shadow-sm"
-                data-bs-toggle="modal" data-bs-target="#importExcelModal">
+        <button class="btn btn-outline-success px-4 py-2 fw-bold rounded-3 d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#importExcelModal">
             <i class="bi bi-file-earmark-spreadsheet"></i> Импорт из файла
         </button>
-        
-        <button id="deleteSelectedBtn" class="btn btn-danger px-4 py-2 fw-bold rounded-3 shadow-sm d-none"
-                data-bs-toggle="modal" data-bs-target="#deleteMultipleModal">
+        <button id="deleteSelectedBtn" class="btn btn-danger px-4 py-2 fw-bold rounded-3 shadow-sm d-none" data-bs-toggle="modal" data-bs-target="#deleteMultipleModal">
             <i class="bi bi-trash3 me-1"></i> Удалить выбранные (<span id="selectedCount">0</span>)
         </button>
-        
         <a href="/Users/Create" class="btn btn-brand px-4 py-2 fw-bold d-flex align-items-center gap-2 rounded-3">
             <i class="bi bi-person-plus-fill"></i> Добавить пользователя
         </a>
     </div>
 </div>
 
-<!-- 2. ИНСТРУМЕНТЫ ФИЛЬТРАЦИИ -->
 <div class="row g-3 align-items-center mb-3">
     <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
         <span>Показать по:</span>
@@ -266,13 +108,11 @@
     <div class="col-sm ms-auto" style="max-width: 400px;">
         <div class="input-group input-group-sm rounded-3 overflow-hidden border">
             <span class="input-group-text bg-white text-muted border-0"><i class="bi bi-search"></i></span>
-            <input type="text" id="userTableSearchInput" class="form-control border-0 shadow-none"
-                   placeholder="Поиск по Фамилии, СНИЛС или Дате (ДД.ММ.ГГГГ)..." autocomplete="off" />
+            <input type="text" id="userTableSearchInput" class="form-control border-0 shadow-none" placeholder="Поиск по Фамилии, СНИЛС или Дате..." autocomplete="off" />
         </div>
     </div>
 </div>
 
-<!-- 3. ТАБЛИЦА -->
 <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
     <div class="table-responsive">
         <table class="table table-custom table-hover m-0">
@@ -307,591 +147,500 @@
                                 <input type="checkbox" class="form-check-input user-checkbox shadow-none" value="@student.Id">
                             </td>
                             <td>
-                                <!-- Добавлен класс user-fullname для корректного поиска -->
-                                <div class="fw-bold text-dark user-fullname">@student.LastName @student.FirstName
-                                    @student.MiddleName</div>
-                                    <span class="text-muted small">Пол: @student.Gender |
-                                        @(student.BirthDate?.ToString("dd.MM.yyyy") ?? "—")</span>
-                                    </td>
-                                    <td>
-                                        <div class="mb-1">
-                                            <span class="text-muted small fw-bold me-1" style="font-size: 0.7rem;">ЛОГИН:</span>
-                                            <span class="badge bg-light text-primary border fw-mono copy-clickable"
-                                                  onclick="copyText(this, '@student.Login')">
-                                                @student.Login <span class="copy-toast">Скопировано!</span>
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span class="text-muted small fw-bold me-1" style="font-size: 0.7rem;">ПАРОЛЬ:</span>
-                                            <span class="badge bg-light text-secondary border fw-mono copy-clickable"
-                                                  onclick="copyText(this, '@student.Password')">
-                                                •••••••• <span class="copy-toast">Скопировано!</span>
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="small fw-bold text-secondary">
-                                            @(student.Company != null ? student.Company.Name : "Физ. лицо")
-                                        </div>
-                                        @if (!string.IsNullOrWhiteSpace(student.Position))
-                                        {
-                                            <div class="text-muted small">@student.Position</div>
-                                        }
-                                        @if (!string.IsNullOrWhiteSpace(student.Department))
-                                        {
-                                            <div class="text-muted small">@student.Department</div>
-                                        }
-                                    </td>
-                                    <td class="text-muted small">@(string.IsNullOrEmpty(student.Snils) ? "—" : student.Snils)</td>
-                                    <td class="text-end pe-4">
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <button type="button" class="btn btn-action btn-action-download download-access-btn"
-                                                    data-id="@student.Id"
-                                                    data-fio="@($"{student.LastName}_{student.FirstName}_{student.MiddleName}".TrimEnd('_'))"
-                                                    title="Скачать данные (.xlsx)">
-                                                <i class="bi bi-download"></i>
-                                            </button>
-                                            <a href="/Users/Edit/@student.Id" class="btn btn-action btn-action-edit"
-                                               title="Редактировать">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <button class="btn btn-action btn-action-delete" title="Удалить" data-bs-toggle="modal"
-                                                    data-bs-target="#deleteConfirmModal"
-                                                    onclick="prepareDelete(@student.Id, '@student.LastName @student.FirstName')">
-                                                <i class="bi bi-trash3"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 4. ПАГИНАЦИЯ -->
-        <div class="d-flex justify-content-between align-items-center px-1 mb-5">
-            <div id="paginationInfo" class="small text-muted fw-bold">Показано 0-0 из 0 записей</div>
-            <nav>
-                <ul id="paginationButtons" class="pagination pagination-sm m-0">
-                    <!-- Генерируется JS -->
-                </ul>
-            </nav>
-        </div>
-
-        <!-- МОДАЛЬНОЕ ОКНО: ОДИНОЧНОЕ УДАЛЕНИЕ -->
-        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-                <div class="modal-content border-0 shadow-lg rounded-4">
-                    <div class="modal-body p-4 text-center">
-                        <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                             style="width: 70px; height: 70px;">
-                            <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
-                        </div>
-                        <h5 class="fw-bold text-dark mb-2">Удаление слушателя</h5>
-                        <p class="text-muted small mb-2">Вы действительно хотите удалить пользователя</p>
-                        <p id="deleteUserName" class="fw-bold text-dark mb-4 fs-5"></p>
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
-                                    data-bs-dismiss="modal">Отмена</button>
-                            <button id="confirmDeleteBtn" type="button"
-                                    class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- МОДАЛЬНОЕ ОКНО: ИМПОРТ -->
-        <div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content border-0 shadow-lg rounded-4">
-                    <div class="modal-header bg-light border-0 py-3 rounded-top-4">
-                        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-                            <i class="bi bi-file-earmark-spreadsheet text-success"></i> Импорт слушателей из файла
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <!-- Внутри <div class="modal-body p-4"> модалки importExcelModal -->
-                        <div class="mb-4 text-center">
-                            <a href="/Users/DownloadTemplate" class="btn btn-sm btn-outline-primary fw-bold rounded-3 px-3">
-                                <i class="bi bi-download me-1"></i> Скачать шаблон (.xlsx)
-                            </a>
-                        </div>
-
-                        <div id="dropZone"
-                             class="border border-2 border-dashed rounded-4 p-5 text-center bg-light cursor-pointer">
-                            <i class="bi bi-cloud-arrow-up text-primary opacity-50" style="font-size: 3rem;"></i>
-                            <h5 class="fw-bold mt-3 text-dark" id="dropZoneText">Перетащите Excel файл сюда или кликните для
-                                выбора</h5>
-                                <p class="text-muted small mb-0">Поддерживаются только файлы .xlsx</p>
-                                <input type="file" id="excelFileInput" accept=".xlsx" class="d-none" />
-                            </div>
-
-                            <div id="importResultBlock" class="mt-4 d-none">
-                                <div class="alert alert-success border-0 small py-2 mb-2 rounded-3" id="importSuccessMessage"></div>
-                                <div id="importErrorsBlock" class="alert alert-danger border-0 small py-2 d-none rounded-3"
-                                     style="max-height: 150px; overflow-y: auto;">
-                                    <h6 class="fw-bold mb-1">Ошибки импорта:</h6>
-                                    <ul id="importErrorsList" class="mb-0 ps-3"></ul>
+                                <div class="fw-bold text-dark user-fullname mb-1">@student.LastName @student.FirstName @student.MiddleName</div>
+                                <span class="text-muted small d-block mb-1">Пол: @student.Gender | @(student.BirthDate?.ToString("dd.MM.yyyy") ?? "—")</span>
+                                @if (student.IsPrivacyAccepted && student.PrivacyAcceptedAt.HasValue)
+                                {
+                                    <span class="small fw-bold text-success d-block" title="Согласие получено" style="font-size: 0.75rem;">
+                                        <i class="bi bi-shield-check me-1"></i> Согласие: @student.PrivacyAcceptedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="small fw-bold text-danger d-block" title="Пользователь не давал согласие" style="font-size: 0.75rem;">
+                                        <i class="bi bi-shield-x me-1"></i> Нет согласия с политикой
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <div class="mb-1">
+                                    <span class="text-muted small fw-bold me-1" style="font-size: 0.7rem;">ЛОГИН:</span>
+                                    <span class="badge bg-light text-primary border fw-mono copy-clickable" onclick="copyText(this, '@student.Login')">
+                                        @student.Login <span class="copy-toast">Скопировано!</span>
+                                    </span>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light border-0 py-3 rounded-bottom-4">
-                            <button type="button" class="btn btn-light fw-bold border text-secondary rounded-3"
-                                    data-bs-dismiss="modal">Закрыть</button>
-                            <button id="startImportBtn" type="button" class="btn btn-success px-4 fw-bold rounded-3"
-                                    disabled>Запустить импорт</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- МОДАЛЬНОЕ ОКНО: МАССОВОЕ УДАЛЕНИЕ -->
-            <div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-                    <div class="modal-content border-0 shadow-lg rounded-4">
-                        <div class="modal-body p-4 text-center">
-                            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                                 style="width: 70px; height: 70px;">
-                                <i class="bi bi-exclamation-octagon-fill fs-2 text-danger"></i>
-                            </div>
-                            <h5 class="fw-bold text-dark mb-2">Групповое удаление</h5>
-                            <p class="text-muted small mb-3">Вы действительно хотите безвозвратно удалить выбранных пользователей в
-                                количестве:</p>
-                                <h4 id="multipleDeleteCountDisplay" class="fw-bold text-danger mb-4">0</h4>
-                                <div class="d-flex gap-2 justify-content-center">
-                                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
-                                            data-bs-dismiss="modal">Отмена</button>
-                                    <button id="confirmMultipleDeleteBtn" type="button"
-                                            class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить всё</button>
+                                <div>
+                                    <span class="text-muted small fw-bold me-1" style="font-size: 0.7rem;">ПАРОЛЬ:</span>
+                                    <span class="badge bg-light text-secondary border fw-mono copy-clickable" onclick="copyText(this, '@student.Password')">
+                                        •••••••• <span class="copy-toast">Скопировано!</span>
+                                    </span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                @section Scripts {
-                    <script>
-                        // ==========================================
-                        // 1. УВЕДОМЛЕНИЯ (TOASTS)
-                        // ==========================================
-                        function showToast(message, type = 'success') {
-                            const container = document.getElementById('toastContainer');
-                            const toast = document.createElement('div');
-                            toast.className = `custom-toast ${type}`;
-                            let iconClass = 'bi-check-circle-fill text-success';
-                            if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
-                            if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
-                            toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
-                            container.appendChild(toast);
-                            setTimeout(() => {
-                                toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-                                setTimeout(() => toast.remove(), 300);
-                            }, 4000);
-                        }
-
-                        // Копирование текста
-                        function copyText(element, textToCopy) {
-                            navigator.clipboard.writeText(textToCopy).then(() => {
-                                const toast = element.querySelector('.copy-toast');
-                                if (toast) {
-                                    toast.classList.add('show');
-                                    setTimeout(() => { toast.classList.remove('show'); }, 1200);
-                                }
-                            }).catch(err => console.error(err));
-                        }
-
-                        // ==========================================
-                        // 2. ПАГИНАЦИЯ И ПОИСК
-                        // ==========================================
-                        let currentPage = 1;
-                        const tableBody = document.getElementById('usersTableBody');
-                        const pageSizeSelect = document.getElementById('pageSizeSelect');
-                        const searchInput = document.getElementById('userTableSearchInput');
-                        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-                        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-                        const selectedCountSpan = document.getElementById('selectedCount');
-
-                        let pageSize = parseInt(pageSizeSelect.value);
-
-                        function updatePagination() {
-                            const rows = Array.from(tableBody.querySelectorAll('.user-data-row'));
-                            const searchText = searchInput.value.trim().toLowerCase();
-
-                            let filteredRows = rows;
-                            if (searchText.length > 0) {
-                                filteredRows = rows.filter(row => {
-                                    const fullName = row.querySelector('.user-fullname')?.textContent?.toLowerCase() ?? "";
-                                    const rowText = row.textContent?.toLowerCase() ?? "";
-                                    return fullName.includes(searchText) || rowText.includes(searchText);
-                                });
-                            }
-
-                            const totalRows = filteredRows.length;
-
-                            if (totalRows === 0) {
-                                rows.forEach(row => {
-                                    row.style.display = 'none';
-                                    const cb = row.querySelector('.user-checkbox');
-                                    if (cb) cb.checked = false;
-                                });
-                                document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 записей';
-                                document.getElementById('paginationButtons').innerHTML = '';
-                                selectAllCheckbox.checked = false;
-                                toggleDeleteButton();
-                                return;
-                            }
-
-                            const totalPages = Math.ceil(totalRows / pageSize);
-                            if (currentPage > totalPages) currentPage = totalPages;
-                            if (currentPage < 1) currentPage = 1;
-
-                            const startIndex = (currentPage - 1) * pageSize;
-                            const endIndex = Math.min(startIndex + pageSize, totalRows);
-
-                            rows.forEach(row => {
-                                row.style.display = 'none';
-                                const cb = row.querySelector('.user-checkbox');
-                                if (cb) cb.checked = false;
-                            });
-
-                            filteredRows.forEach((row, index) => {
-                                if (index >= startIndex && index < endIndex) {
-                                    row.style.display = '';
-                                }
-                            });
-
-                            document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} записей`;
-
-                            const paginationContainer = document.getElementById('paginationButtons');
-                            paginationContainer.innerHTML = '';
-
-                            const prevLi = document.createElement('li');
-                            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-                            prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
-                            if (currentPage > 1) {
-                                prevLi.addEventListener('click', () => { currentPage--; updatePagination(); });
-                            }
-                            paginationContainer.appendChild(prevLi);
-
-                            for (let i = 1; i <= totalPages; i++) {
-                                const li = document.createElement('li');
-                                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-                                li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
-                                li.addEventListener('click', () => { currentPage = i; updatePagination(); });
-                                paginationContainer.appendChild(li);
-                            }
-
-                            const nextLi = document.createElement('li');
-                            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-                            nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
-                            if (currentPage < totalPages) {
-                                nextLi.addEventListener('click', () => { currentPage++; updatePagination(); });
-                            }
-                            paginationContainer.appendChild(nextLi);
-
-                            updateSelectAllState();
-                            toggleDeleteButton();
-                        }
-
-                        searchInput.addEventListener('input', function () {
-                            currentPage = 1;
-                            updatePagination();
-                        });
-
-                        function toggleDeleteButton() {
-                            const checkedBoxes = tableBody.querySelectorAll('.user-checkbox:checked');
-                            const count = checkedBoxes.length;
-                            if (count > 0) {
-                                deleteSelectedBtn.classList.remove('d-none');
-                                selectedCountSpan.textContent = count;
-                                document.getElementById('multipleDeleteCountDisplay').textContent = count;
-                            } else {
-                                deleteSelectedBtn.classList.add('d-none');
-                            }
-                        }
-
-                        function updateSelectAllState() {
-                            const visibleCheckboxes = Array.from(tableBody.querySelectorAll('.user-data-row'))
-                                .filter(row => row.style.display !== 'none')
-                                .map(row => row.querySelector('.user-checkbox'));
-
-                            if (visibleCheckboxes.length === 0) {
-                                selectAllCheckbox.checked = false;
-                                return;
-                            }
-                            const allChecked = visibleCheckboxes.every(cb => cb.checked);
-                            selectAllCheckbox.checked = allChecked;
-                        }
-
-                        selectAllCheckbox.addEventListener('change', function () {
-                            const isChecked = this.checked;
-                            Array.from(tableBody.querySelectorAll('.user-data-row'))
-                                .filter(row => row.style.display !== 'none')
-                                .forEach(row => {
-                                    const cb = row.querySelector('.user-checkbox');
-                                    if (cb) cb.checked = isChecked;
-                                });
-                            toggleDeleteButton();
-                        });
-
-                        tableBody.addEventListener('change', function (e) {
-                            if (e.target.classList.contains('user-checkbox')) {
-                                updateSelectAllState();
-                                toggleDeleteButton();
-                            }
-                        });
-
-                        pageSizeSelect.addEventListener('change', function () {
-                            pageSize = parseInt(this.value);
-                            currentPage = 1;
-                            updatePagination();
-                        });
-
-                        // ==========================================
-                        // 3. УДАЛЕНИЕ (ОДИНОЧНОЕ)
-                        // ==========================================
-                        let userIdToDelete = null;
-                        function prepareDelete(id, fullName) {
-                            userIdToDelete = id;
-                            document.getElementById('deleteUserName').textContent = fullName;
-                        }
-
-                        document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
-                            if (!userIdToDelete) return;
-                            this.disabled = true;
-                            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-                            try {
-                                const response = await fetch(`/Users/Delete/${userIdToDelete}`, { method: 'POST' });
-                                const result = await response.json();
-                                if (result.success) {
-                                    document.querySelector('#deleteConfirmModal [data-bs-dismiss="modal"]').click();
-                                    showToast('Пользователь успешно удален', 'success');
-                                    const row = document.getElementById(`user-row-${userIdToDelete}`);
-                                    if (row) {
-                                        row.classList.add('fade-out');
-                                        setTimeout(() => { row.remove(); checkTableEmpty(); updatePagination(); }, 300);
-                                    }
-                                } else {
-                                    showToast(result.message, 'danger');
-                                    this.disabled = false;
-                                    this.textContent = 'Удалить';
-                                }
-                            } catch (error) {
-                                showToast('Ошибка сети', 'danger');
-                                this.disabled = false;
-                                this.textContent = 'Удалить';
-                            }
-                        });
-
-                        // ==========================================
-                        // 4. МАССОВОЕ УДАЛЕНИЕ
-                        // ==========================================
-                        document.getElementById('confirmMultipleDeleteBtn').addEventListener('click', async function () {
-                            const checkedBoxes = tableBody.querySelectorAll('.user-checkbox:checked');
-                            const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-                            if (idsToDelete.length === 0) return;
-
-                            this.disabled = true;
-                            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-                            try {
-                                const response = await fetch('/Users/DeleteMultiple', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(idsToDelete)
-                                });
-                                const result = await response.json();
-
-                                if (result.success) {
-                                    document.querySelector('#deleteMultipleModal [data-bs-dismiss="modal"]').click();
-                                    showToast('Выбранные пользователи успешно удалены', 'success');
-                                    idsToDelete.forEach(id => {
-                                        const row = document.getElementById(`user-row-${id}`);
-                                        if (row) row.classList.add('fade-out');
-                                    });
-                                    setTimeout(() => {
-                                        idsToDelete.forEach(id => {
-                                            const row = document.getElementById(`user-row-${id}`);
-                                            if (row) row.remove();
-                                        });
-                                        checkTableEmpty();
-                                        updatePagination();
-                                    }, 300);
-                                } else {
-                                    showToast(result.message, 'danger');
-                                    this.disabled = false;
-                                    this.textContent = 'Удалить всё';
-                                }
-                            } catch (error) {
-                                showToast('Ошибка сети при массовом удалении', 'danger');
-                                this.disabled = false;
-                                this.textContent = 'Удалить всё';
-                            }
-                        });
-
-                        function checkTableEmpty() {
-                            const rows = tableBody.querySelectorAll('.user-data-row');
-                            if (rows.length === 0) {
-                                tableBody.innerHTML = `<tr id="emptyRow"><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-person-x fs-1 d-block mb-2 text-secondary opacity-50"></i>В базе данных пока нет ни одного обучающегося.</td></tr>`;
-                            }
-                        }
-
-                        // ==========================================
-                        // 5. ИМПОРТ (DRAG AND DROP)
-                        // ==========================================
-                        const dropZone = document.getElementById('dropZone');
-                        const fileInput = document.getElementById('excelFileInput');
-                        const dropZoneText = document.getElementById('dropZoneText');
-                        const startImportBtn = document.getElementById('startImportBtn');
-                        let selectedFile = null;
-
-                        dropZone.addEventListener('click', () => fileInput.click());
-
-                        fileInput.addEventListener('change', function () {
-                            if (this.files.length > 0) handleFileSelection(this.files[0]);
-                        });
-
-                        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = '#e2e8f0'; });
-                        dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = '#f8fafc'; });
-                        dropZone.addEventListener('drop', (e) => {
-                            e.preventDefault();
-                            dropZone.style.backgroundColor = '#f8fafc';
-                            if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files[0]);
-                        });
-
-                        function handleFileSelection(file) {
-                            // Меняем проверку с .csv на .xlsx
-                            if (!file.name.endsWith('.xlsx')) {
-                                showToast('Пожалуйста, выберите файл формата Excel (.xlsx)', 'warning');
-                                return;
-                            }
-                            selectedFile = file;
-                            dropZoneText.textContent = `Выбран файл: ${file.name} (${(file.size / 1024).toFixed(1)} КБ)`;
-                            dropZone.style.borderColor = '#198754';
-                            startImportBtn.disabled = false;
-                        }
-
-                        startImportBtn.addEventListener('click', async function () {
-                            if (!selectedFile) return;
-                            this.disabled = true;
-                            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Импорт...';
-
-                            const formData = new FormData();
-                            formData.append('excelFile', selectedFile);
-
-                            try {
-                                const response = await fetch('/Users/Import', { method: 'POST', body: formData });
-                                const result = await response.json();
-
-                                if (result.success) {
-                                    document.getElementById('importResultBlock').classList.remove('d-none');
-                                    document.getElementById('importSuccessMessage').textContent = `Успешно импортировано: ${result.successCount}. Ошибок: ${result.errorCount}.`;
-                    
-                                    const errorsBlock = document.getElementById('importErrorsBlock');
-                                    const errorsList = document.getElementById('importErrorsList');
-                                    errorsList.innerHTML = '';
-
-                                    if (result.errorCount > 0) {
-                                        errorsBlock.classList.remove('d-none');
-                                        result.errors.forEach(err => {
-                                            const li = document.createElement('li');
-                                            li.textContent = err;
-                                            errorsList.appendChild(li);
-                                        });
-                                        showToast('Импорт завершен с ошибками. Проверьте список.', 'warning');
-                                        this.textContent = 'Импорт завершен с ошибками';
-                                    } else {
-                                        errorsBlock.classList.add('d-none');
-                                        showToast('Все данные успешно импортированы!', 'success');
-                                        setTimeout(() => { window.location.reload(); }, 1500);
-                                    }
-                                    selectedFile = null;
-                                    dropZoneText.textContent = 'Перетащите CSV файл сюда или кликните для выбора';
-                                } else {
-                                    showToast('Ошибка: ' + result.message, 'danger');
-                                    this.disabled = false;
-                                    this.textContent = 'Запустить импорт';
-                                }
-                            } catch (error) {
-                                showToast('Ошибка при отправке файла на сервер.', 'danger');
-                                this.disabled = false;
-                                this.textContent = 'Запустить импорт';
-                            }
-                        });
-
-                        document.addEventListener("DOMContentLoaded", function () {
-                            updatePagination();
-                        });
-
-                                                // ==========================================
-                        // СКАЧИВАНИЕ КАРТОЧКИ ДОСТУПА (AJAX)
-                        // ==========================================
-                        document.querySelectorAll('.download-access-btn').forEach(btn => {
-                            btn.addEventListener('click', async function () {
-                                if (this.disabled) return;
-
-                                const studentId = this.getAttribute('data-id');
-                                const fio = this.getAttribute('data-fio'); // Получаем ФИО из HTML
-                                const originalHtml = this.innerHTML;
-
-                                // Блокируем кнопку и показываем спиннер
-                                this.disabled = true;
-                                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-
-                                try {
-                                    const response = await fetch(`/Users/DownloadAccessCard/${studentId}`);
-                    
-                                    if (response.ok) {
-                                        const blob = await response.blob();
-                        
-                                        // Формируем запасное имя файла
-                                        let filename = `Доступ_${fio}.xlsx`;
-                                        
-                                        // Пытаемся достать имя из заголовков (если сервер его прислал)
-                                        const disposition = response.headers.get('Content-Disposition');
-                                        if (disposition) {
-                                            // Ищем filename* (правильное русское имя)
-                                            let matchStar = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
-                                            if (matchStar && matchStar[1]) {
-                                                filename = decodeURIComponent(matchStar[1].replace(/['"]/g, '').trim());
-                                            } else {
-                                                // Если не нашли filename*, ищем обычный filename
-                                                let match = disposition.match(/filename\s*=\s*"?([^";]+)"?/i);
-                                                if (match && match[1]) {
-                                                    filename = decodeURIComponent(match[1].replace(/['"]/g, '').trim());
-                                                }
-                                            }
-                                        }
-
-                                        // Скачиваем файл
-                                        const url = window.URL.createObjectURL(blob);
-                                        const a = document.createElement('a');
-                                        a.style.display = 'none';
-                                        a.href = url;
-                                        a.download = filename;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        window.URL.revokeObjectURL(url);
-                                        a.remove();
-
-                                        showToast('Карточка доступа успешно скачана', 'success');
-                                    } else {
-                                        showToast('Не удалось сформировать файл', 'danger');
-                                    }
-                                } catch (err) {
-                                    console.error(err);
-                                    showToast('Ошибка сети при скачивании', 'danger');
-                                } finally {
-                                    // Возвращаем кнопку в исходное состояние
-                                    this.disabled = false;
-                                    this.innerHTML = originalHtml;
-                                }
-                            });
-                        });
-                    </script>
+                            </td>
+                            <td>
+                                <div class="small fw-bold text-secondary">@(student.Company != null ? student.Company.Name : "Физ. лицо")</div>
+                                @if (!string.IsNullOrWhiteSpace(student.Position)) { <div class="text-muted small">@student.Position</div> }
+                                @if (!string.IsNullOrWhiteSpace(student.Department)) { <div class="text-muted small">@student.Department</div> }
+                            </td>
+                            <td class="text-muted small">@(string.IsNullOrEmpty(student.Snils) ? "—" : student.Snils)</td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-action btn-action-download download-access-btn" data-id="@student.Id" data-fio="@($"{student.LastName}_{student.FirstName}_{student.MiddleName}".TrimEnd('_'))" title="Скачать данные (.xlsx)">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+                                    <a href="/Users/Edit/@student.Id" class="btn btn-action btn-action-edit" title="Редактировать">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <button class="btn btn-action btn-action-delete" title="Удалить" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" onclick="prepareDelete(@student.Id, '@student.LastName @student.FirstName')">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center px-1 mb-5">
+    <div id="paginationInfo" class="small text-muted fw-bold">Показано 0-0 из 0 записей</div>
+    <nav><ul id="paginationButtons" class="pagination pagination-sm m-0"></ul></nav>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: УДАЛЕНИЕ -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body p-4 text-center">
+                <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                    <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Удаление слушателя</h5>
+                <p class="text-muted small mb-2">Вы действительно хотите удалить пользователя</p>
+                <p id="deleteUserName" class="fw-bold text-dark mb-4 fs-5"></p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmDeleteBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: ИМПОРТ -->
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-light border-0 py-3 rounded-top-4">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-spreadsheet text-success"></i> Импорт слушателей
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4 text-center">
+                    <a href="/Users/DownloadTemplate" class="btn btn-sm btn-outline-primary fw-bold rounded-3 px-3">
+                        <i class="bi bi-download me-1"></i> Скачать шаблон (.xlsx)
+                    </a>
+                </div>
+                <div id="dropZone" class="border border-2 border-dashed rounded-4 p-5 text-center bg-light cursor-pointer">
+                    <i class="bi bi-cloud-arrow-up text-primary opacity-50" style="font-size: 3rem;"></i>
+                    <h5 class="fw-bold mt-3 text-dark" id="dropZoneText">Перетащите Excel файл сюда</h5>
+                    <p class="text-muted small mb-0">Только файлы .xlsx</p>
+                    <input type="file" id="excelFileInput" accept=".xlsx" class="d-none" />
+                </div>
+                <div id="importResultBlock" class="mt-4 d-none">
+                    <div class="alert alert-success border-0 small py-2 mb-2 rounded-3" id="importSuccessMessage"></div>
+                    <div id="importErrorsBlock" class="alert alert-danger border-0 small py-2 d-none rounded-3" style="max-height: 150px; overflow-y: auto;">
+                        <h6 class="fw-bold mb-1">Ошибки:</h6>
+                        <ul id="importErrorsList" class="mb-0 ps-3"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0 py-3 rounded-bottom-4">
+                <button type="button" class="btn btn-light fw-bold border text-secondary rounded-3" data-bs-dismiss="modal">Закрыть</button>
+                <button id="startImportBtn" type="button" class="btn btn-success px-4 fw-bold rounded-3" disabled>Запустить импорт</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: МАССОВОЕ УДАЛЕНИЕ -->
+<div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body p-4 text-center">
+                <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                    <i class="bi bi-exclamation-octagon-fill fs-2 text-danger"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Групповое удаление</h5>
+                <p class="text-muted small mb-3">Вы действительно хотите удалить выбранных пользователей в количестве:</p>
+                <h4 id="multipleDeleteCountDisplay" class="fw-bold text-danger mb-4">0</h4>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmMultipleDeleteBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить всё</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: ДЕТАЛИ ПОЛЬЗОВАТЕЛЯ -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-person-badge text-primary"></i> Карточка слушателя
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="userDetailsModalBody">
+                <div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>
+            </div>
+            <div class="modal-footer bg-light border-0 py-3">
+                <button type="button" class="btn btn-light border fw-bold text-secondary rounded-3 px-4" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- НОВОЕ МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ ОТЧИСЛЕНИЯ -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2" id="confirmModalTitle">Подтверждение</h5>
+            <p class="text-muted small mb-4" id="confirmModalText">Вы уверены?</p>
+            
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="confirmModalBtn" type="button" class="btn btn-danger fw-bold w-50 rounded-3">Да, отчислить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 1. УВЕДОМЛЕНИЯ
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `custom-toast ${type}`;
+            let iconClass = 'bi-check-circle-fill text-success';
+            if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+            if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+            toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function copyText(element, textToCopy) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const toast = element.querySelector('.copy-toast');
+                if (toast) {
+                    toast.classList.add('show');
+                    setTimeout(() => { toast.classList.remove('show'); }, 1200);
+                }
+            }).catch(err => console.error(err));
+        }
+
+        // 2. ПАГИНАЦИЯ И ПОИСК
+        let currentPage = 1;
+        const tableBody = document.getElementById('usersTableBody');
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        const searchInput = document.getElementById('userTableSearchInput');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        let pageSize = parseInt(pageSizeSelect.value);
+
+        function updatePagination() {
+            const rows = Array.from(tableBody.querySelectorAll('.user-data-row'));
+            const searchText = searchInput.value.trim().toLowerCase();
+            let filteredRows = rows;
+
+            if (searchText.length > 0) {
+                filteredRows = rows.filter(row => {
+                    const fullName = row.querySelector('.user-fullname')?.textContent?.toLowerCase() ?? "";
+                    const rowText = row.textContent?.toLowerCase() ?? "";
+                    return fullName.includes(searchText) || rowText.includes(searchText);
+                });
+            }
+
+            const totalRows = filteredRows.length;
+
+            if (totalRows === 0) {
+                rows.forEach(row => { row.style.display = 'none'; const cb = row.querySelector('.user-checkbox'); if (cb) cb.checked = false; });
+                document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 записей';
+                document.getElementById('paginationButtons').innerHTML = '';
+                selectAllCheckbox.checked = false;
+                toggleDeleteButton();
+                return;
+            }
+
+            const totalPages = Math.ceil(totalRows / pageSize);
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalRows);
+
+            rows.forEach(row => { row.style.display = 'none'; const cb = row.querySelector('.user-checkbox'); if (cb) cb.checked = false; });
+            filteredRows.forEach((row, index) => { if (index >= startIndex && index < endIndex) row.style.display = ''; });
+
+            document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} записей`;
+
+            const paginationContainer = document.getElementById('paginationButtons');
+            paginationContainer.innerHTML = '';
+
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
+            if (currentPage > 1) prevLi.addEventListener('click', () => { currentPage--; updatePagination(); });
+            paginationContainer.appendChild(prevLi);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+                li.addEventListener('click', () => { currentPage = i; updatePagination(); });
+                paginationContainer.appendChild(li);
+            }
+
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
+            if (currentPage < totalPages) nextLi.addEventListener('click', () => { currentPage++; updatePagination(); });
+            paginationContainer.appendChild(nextLi);
+
+            updateSelectAllState();
+            toggleDeleteButton();
+        }
+
+        searchInput.addEventListener('input', () => { currentPage = 1; updatePagination(); });
+        pageSizeSelect.addEventListener('change', function() { pageSize = parseInt(this.value); currentPage = 1; updatePagination(); });
+
+        function toggleDeleteButton() {
+            const checkedBoxes = tableBody.querySelectorAll('.user-checkbox:checked');
+            const count = checkedBoxes.length;
+            if (count > 0) {
+                deleteSelectedBtn.classList.remove('d-none');
+                selectedCountSpan.textContent = count;
+                document.getElementById('multipleDeleteCountDisplay').textContent = count;
+            } else {
+                deleteSelectedBtn.classList.add('d-none');
+            }
+        }
+
+        function updateSelectAllState() {
+            const visibleCheckboxes = Array.from(tableBody.querySelectorAll('.user-data-row')).filter(row => row.style.display !== 'none').map(row => row.querySelector('.user-checkbox'));
+            if (visibleCheckboxes.length === 0) { selectAllCheckbox.checked = false; return; }
+            selectAllCheckbox.checked = visibleCheckboxes.every(cb => cb.checked);
+        }
+
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            Array.from(tableBody.querySelectorAll('.user-data-row')).filter(row => row.style.display !== 'none').forEach(row => { const cb = row.querySelector('.user-checkbox'); if (cb) cb.checked = isChecked; });
+            toggleDeleteButton();
+        });
+
+        tableBody.addEventListener('change', function(e) {
+            if (e.target.classList.contains('user-checkbox')) { updateSelectAllState(); toggleDeleteButton(); }
+        });
+
+        // 3. УДАЛЕНИЕ
+        let userIdToDelete = null;
+        function prepareDelete(id, fullName) { userIdToDelete = id; document.getElementById('deleteUserName').textContent = fullName; }
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            if (!userIdToDelete) return;
+            this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            try {
+                const response = await fetch(`/Users/Delete/${userIdToDelete}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    document.querySelector('#deleteConfirmModal [data-bs-dismiss="modal"]').click();
+                    showToast('Пользователь успешно удален', 'success');
+                    const row = document.getElementById(`user-row-${userIdToDelete}`);
+                    if (row) { row.classList.add('fade-out'); setTimeout(() => { row.remove(); checkTableEmpty(); updatePagination(); }, 300); }
+                } else { showToast(result.message, 'danger'); this.disabled = false; this.textContent = 'Удалить'; }
+            } catch (error) { showToast('Ошибка сети', 'danger'); this.disabled = false; this.textContent = 'Удалить'; }
+        });
+
+        document.getElementById('confirmMultipleDeleteBtn').addEventListener('click', async function() {
+            const checkedBoxes = tableBody.querySelectorAll('.user-checkbox:checked');
+            const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+            if (idsToDelete.length === 0) return;
+            this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            try {
+                const response = await fetch('/Users/DeleteMultiple', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(idsToDelete) });
+                const result = await response.json();
+                if (result.success) {
+                    document.querySelector('#deleteMultipleModal [data-bs-dismiss="modal"]').click();
+                    showToast('Выбранные пользователи удалены', 'success');
+                    idsToDelete.forEach(id => { const row = document.getElementById(`user-row-${id}`); if (row) row.classList.add('fade-out'); });
+                    setTimeout(() => {
+                        idsToDelete.forEach(id => { const row = document.getElementById(`user-row-${id}`); if (row) row.remove(); });
+                        checkTableEmpty(); updatePagination();
+                    }, 300);
+                } else { showToast(result.message, 'danger'); this.disabled = false; this.textContent = 'Удалить всё'; }
+            } catch (error) { showToast('Ошибка сети', 'danger'); this.disabled = false; this.textContent = 'Удалить всё'; }
+        });
+
+        function checkTableEmpty() {
+            if (tableBody.querySelectorAll('.user-data-row').length === 0) {
+                tableBody.innerHTML = `<tr id="emptyRow"><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-person-x fs-1 d-block mb-2 text-secondary opacity-50"></i>В базе данных пока нет ни одного обучающегося.</td></tr>`;
+            }
+        }
+
+        // 4. ИМПОРТ
+        const dropZone = document.getElementById('dropZone'); const fileInput = document.getElementById('excelFileInput'); const dropZoneText = document.getElementById('dropZoneText'); const startImportBtn = document.getElementById('startImportBtn'); let selectedFile = null;
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', function() { if (this.files.length > 0) handleFileSelection(this.files[0]); });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = '#e2e8f0'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = '#f8fafc'; });
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.style.backgroundColor = '#f8fafc'; if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files[0]); });
+        function handleFileSelection(file) {
+            if (!file.name.endsWith('.xlsx')) { showToast('Пожалуйста, выберите файл формата Excel (.xlsx)', 'warning'); return; }
+            selectedFile = file; dropZoneText.textContent = `Выбран файл: ${file.name} (${(file.size / 1024).toFixed(1)} КБ)`; dropZone.style.borderColor = '#198754'; startImportBtn.disabled = false;
+        }
+        startImportBtn.addEventListener('click', async function() {
+            if (!selectedFile) return;
+            this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Импорт...';
+            const formData = new FormData(); formData.append('excelFile', selectedFile);
+            try {
+                const response = await fetch('/Users/Import', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('importResultBlock').classList.remove('d-none');
+                    document.getElementById('importSuccessMessage').textContent = `Успешно: ${result.successCount}. Ошибок: ${result.errorCount}.`;
+                    const errorsBlock = document.getElementById('importErrorsBlock'); const errorsList = document.getElementById('importErrorsList'); errorsList.innerHTML = '';
+                    if (result.errorCount > 0) {
+                        errorsBlock.classList.remove('d-none');
+                        result.errors.forEach(err => { const li = document.createElement('li'); li.textContent = err; errorsList.appendChild(li); });
+                        showToast('Импорт завершен с ошибками.', 'warning'); this.textContent = 'Импорт завершен с ошибками';
+                    } else {
+                        errorsBlock.classList.add('d-none'); showToast('Данные успешно импортированы!', 'success'); setTimeout(() => { window.location.reload(); }, 1500);
+                    }
+                    selectedFile = null; dropZoneText.textContent = 'Перетащите Excel файл сюда';
+                } else { showToast('Ошибка: ' + result.message, 'danger'); this.disabled = false; this.textContent = 'Запустить импорт'; }
+            } catch (error) { showToast('Ошибка при отправке файла.', 'danger'); this.disabled = false; this.textContent = 'Запустить импорт'; }
+        });
+
+        // СКАЧИВАНИЕ КАРТОЧКИ ДОСТУПА
+        document.querySelectorAll('.download-access-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                if (this.disabled) return;
+                const studentId = this.getAttribute('data-id'); const fio = this.getAttribute('data-fio'); const originalHtml = this.innerHTML;
+                this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                try {
+                    const response = await fetch(`/Users/DownloadAccessCard/${studentId}`);
+                    if (response.ok) {
+                        const blob = await response.blob(); let filename = `Доступ_${fio}.xlsx`;
+                        const disposition = response.headers.get('Content-Disposition');
+                        if (disposition) {
+                            let matchStar = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+                            if (matchStar && matchStar[1]) filename = decodeURIComponent(matchStar[1].replace(/['"]/g, '').trim());
+                            else { let match = disposition.match(/filename\s*=\s*"?([^";]+)"?/i); if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, '').trim()); }
+                        }
+                        const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = filename; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove();
+                        showToast('Карточка доступа скачана', 'success');
+                    } else { showToast('Не удалось сформировать файл', 'danger'); }
+                } catch (err) { showToast('Ошибка сети', 'danger'); } finally { this.disabled = false; this.innerHTML = originalHtml; }
+            });
+        });
+
+        // 5. КАРТОЧКА ПОЛЬЗОВАТЕЛЯ (ГРУППЫ И КУРСЫ)
+        const userDetailsModal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+        const detailsModalBody = document.getElementById('userDetailsModalBody');
+        const confirmActionModal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
+        const confirmModalText = document.getElementById('confirmModalText');
+        const confirmModalBtn = document.getElementById('confirmModalBtn');
+        let pendingAction = null;
+
+        tableBody.addEventListener('click', async function(e) {
+            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('.copy-clickable')) return;
+
+                    const row = e.target.closest('.user-data-row');
+                    if (!row) return;
+
+                    const userId = row.getAttribute('data-id');
+            detailsModalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+            userDetailsModal.show();
+            try {
+                const response = await fetch(`/Users/Details/${userId}`);
+                const html = await response.text();
+                detailsModalBody.innerHTML = html;
+                bindDetailsModalEvents(userId);
+            } catch (err) { detailsModalBody.innerHTML = '<div class="alert alert-danger">Не удалось загрузить данные</div>'; }
+        });
+
+        function bindDetailsModalEvents(studentId) {
+            // Отчисление из группы
+            detailsModalBody.querySelectorAll('.remove-group-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const groupId = this.getAttribute('data-group-id');
+                    confirmModalText.innerHTML = "Вы уверены, что хотите отчислить слушателя из этой группы?<br><small class='text-danger mt-2 d-block'>Он также потеряет доступ ко всем курсам этой группы.</small>";
+                    
+                    pendingAction = async () => {
+                        const formData = new FormData();
+                        formData.append('studentId', studentId);
+                        formData.append('groupId', groupId);
+                        const response = await fetch('/Users/RemoveFromGroup', { method: 'POST', body: formData });
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast('Слушатель отчислен из группы', 'success');
+                            const res = await fetch(`/Users/Details/${studentId}`);
+                            detailsModalBody.innerHTML = await res.text();
+                            bindDetailsModalEvents(studentId);
+                        } else { showToast(result.message, 'danger'); }
+                    };
+                    confirmActionModal.show();
+                });
+            });
+
+            // Отчисление с курса
+            detailsModalBody.querySelectorAll('.remove-course-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const configId = this.getAttribute('data-config-id');
+                    confirmModalText.textContent = "Отчислить слушателя с этого курса? Он больше не увидит его в списке своих курсов.";
+                    
+                    pendingAction = async () => {
+                        const formData = new FormData();
+                        formData.append('studentId', studentId);
+                        formData.append('configId', configId);
+                        const response = await fetch('/Users/RemoveFromCourse', { method: 'POST', body: formData });
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast('Слушатель отчислен с курса', 'success');
+                            const res = await fetch(`/Users/Details/${studentId}`);
+                            detailsModalBody.innerHTML = await res.text();
+                            bindDetailsModalEvents(studentId);
+                        } else { showToast(result.message, 'danger'); }
+                    };
+                    confirmActionModal.show();
+                });
+            });
+        }
+
+        // Обработчик кнопки "Да" в модалке подтверждения
+        confirmModalBtn.addEventListener('click', async function() {
+            if (!pendingAction) return;
+            confirmActionModal.hide();
+            await pendingAction();
+            pendingAction = null;
+        });
+
+        document.addEventListener("DOMContentLoaded", function() { updatePagination(); });
+    </script>
+}

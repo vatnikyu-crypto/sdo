@@ -39,6 +39,13 @@ public class DashboardController : Controller
         if (userIdClaim == null) return RedirectToAction("Login", "Auth");
         int studentId = int.Parse(userIdClaim);
 
+        var student = await _context.Users
+           .Include(u => u.Company)
+           .FirstOrDefaultAsync(u => u.Id == studentId);
+
+        ViewBag.CompanyLogoUrl = student?.Company?.LogoUrl;
+        ViewBag.CompanyName = student?.Company?.Name ?? "Компания не указана";
+
         var myGroupIds = await _context.GroupStudents
             .Where(gs => gs.StudentId == studentId)
             .Select(gs => gs.GroupId)

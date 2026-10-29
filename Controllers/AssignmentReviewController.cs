@@ -14,10 +14,12 @@ namespace SdoApp.Controllers;
 public class AssignmentReviewController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
-    public AssignmentReviewController(AppDbContext context)
+    public AssignmentReviewController(AppDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
     }
 
     [HttpGet]
@@ -34,8 +36,8 @@ public class AssignmentReviewController : Controller
         return View(submissions);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Review(int submissionId, string reviewText, int? grade)
+        [HttpPost]
+    public async Task<IActionResult> Review(int submissionId, string reviewText, int? grade, IFormFile? adminFile) // <--- ДОБАВЛЕН adminFile
     {
         var submission = await _context.StudentSubmissions.FindAsync(submissionId);
         if (submission == null)
@@ -53,44 +55,71 @@ public class AssignmentReviewController : Controller
             return Json(new { success = false, message = "Оценка должна быть в диапазоне от 2 до 5!" });
         }
 
-        int currentAdminId = 2; 
+        int currentAdminId = 2; // Замени на реальный ID админа
 
-        var chatMessage = new SubmissionMessage
+        try
         {
-            StudentSubmissionId = submission.Id,
-            AuthorId = currentAdminId,
-            TextContent = reviewText.Trim(),
-            FilePath = null,
-            CreatedAt = DateTime.UtcNow
-        };
-        _context.SubmissionMessages.Add(chatMessage);
+            string savedFilePath = null;
 
-        if (grade.HasValue)
-        {
-            submission.Grade = grade;
-            submission.Status = SubmissionStatus.Completed;
-        }
-        else
-        {
-            submission.Grade = null;
-            submission.Status = SubmissionStatus.NeedFix;
-        }
-
-        submission.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        // 3. Если проставили итоговую оценку, пересчитываем прогресс курса
-        if (submission.Status == SubmissionStatus.Completed)
-        {
-            var material = await _context.CourseMaterials.FindAsync(submission.CourseMaterialId);
-            if (material != null)
+            // СОХРАНЯЕМ ФАЙЛ АДМИНА, ЕСЛИ ОН ЕСТЬ
+            if (adminFile != null && adminFile.Length > 0)
             {
-                // ВАЖНО: Передаем submission.GroupId!
-                await GradeService.RecalculateCourseProgressAsync(_context, submission.StudentId, material.CourseId, submission.GroupId);
-            }
-        }
+                string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "submissions", "admin_replies");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-        return Json(new { success = true });
+                string extension = Path.GetExtension(adminFile.FileName).ToLower();
+                string uniqueFileName = Guid.NewGuid().ToString() + extension;
+                string fileSavePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(fileSavePath, FileMode.Create))
+                {
+                    await adminFile.CopyToAsync(fileStream);
+                }
+                savedFilePath = $"/uploads/submissions/admin_replies/{uniqueFileName}";
+            }
+
+            // 1. Добавляем рецензию преподавателя в чат
+            var chatMessage = new SubmissionMessage
+            {
+                StudentSubmissionId = submission.Id,
+                AuthorId = currentAdminId,
+                TextContent = reviewText.Trim(),
+                FilePath = savedFilePath, // <--- ПРИКРЕПЛЯЕМ ФАЙЛ К СООБЩЕНИЮ
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.SubmissionMessages.Add(chatMessage);
+
+            // 2. Меняем глобальный статус
+            if (grade.HasValue)
+            {
+                submission.Grade = grade;
+                submission.Status = SubmissionStatus.Completed; 
+            }
+            else
+            {
+                submission.Grade = null;
+                submission.Status = SubmissionStatus.NeedFix; 
+            }
+
+            submission.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            // 3. Пересчитываем прогресс, если задание закрыто
+            if (submission.Status == SubmissionStatus.Completed)
+            {
+                var material = await _context.CourseMaterials.FindAsync(submission.CourseMaterialId);
+                if (material != null)
+                {
+                    await GradeService.RecalculateCourseProgressAsync(_context, submission.StudentId, material.CourseId, submission.GroupId);
+                }
+            }
+
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Ошибка сервера: {ex.Message}" });
+        }
     }
 
     [HttpGet]

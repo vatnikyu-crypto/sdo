@@ -1,0 +1,40 @@
+@{
+    Layout = null; // Отключаем вообще все стили и меню
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Тест отправки</title>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+    <h2>Тестовая отправка файла</h2>
+    
+    <!-- Самая обычная HTML форма, без JS -->
+    <form method="post" enctype="multipart/form-data">
+        
+        <div style="margin-bottom: 10px;">
+            <label>Material ID (введи 1):</label><br>
+            <input type="number" name="materialId" value="1" required />
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label>Group ID (введи 1):</label><br>
+            <input type="number" name="groupId" value="1" required />
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label>Текст ответа:</label><br>
+            <input type="text" name="studentComment" placeholder="Пиши сюда..." />
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label>Прикрепить файл (если надо):</label><br>
+            <input type="file" name="submissionFile" />
+        </div>
+
+        <button type="submit" style="padding: 10px 20px; cursor: pointer;">ОТПРАВИТЬ НА СЕРВЕР</button>
+    </form>
+</body>
+</html>

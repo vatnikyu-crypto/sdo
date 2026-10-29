@@ -1,0 +1,137 @@
+@model SdoApp.Models.ViewModels.AssignmentSubmitViewModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Сдача задания";
+}
+
+<style>
+    .instruction-box {
+        background-color: #f8fafc;
+        border-left: 4px solid var(--brand-primary);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        color: #334155;
+    }
+    
+    /* Стили для красивого вывода HTML из Quill */
+    .instruction-box p { margin-bottom: 10px; }
+    .instruction-box ul, .instruction-box ol { margin-bottom: 10px; padding-left: 20px; }
+    .instruction-box strong { font-weight: 700; }
+    
+    .file-download-card {
+        background: #fff;
+        border: 1px solid var(--brand-gray);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        transition: all 0.2s;
+    }
+    .file-download-card:hover {
+        border-color: var(--brand-primary);
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.08);
+    }
+</style>
+
+<div class="container mt-4 mb-5" style="max-width: 850px;">
+    
+    <!-- Шапка -->
+    <div class="mb-4">
+        <a href="/CourseMaterials/StudentView?courseId=@Model.CourseId&groupId=@Model.GroupId&activeId=@Model.MaterialId" class="text-decoration-none text-muted small fw-semibold mb-2 d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i> Назад к курсу
+        </a>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill">Практическое задание</span>
+            <span class="text-muted small fw-bold">Курс: @Model.CourseTitle</span>
+        </div>
+        <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+            <i class="bi bi-clipboard-check text-primary"></i> @Model.Title
+        </h3>
+    </div>
+
+    <!-- Сообщения об ошибке (если есть) -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger shadow-sm border-0 rounded-3 d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill fs-5"></i> 
+            <div>@TempData["ErrorMessage"]</div>
+        </div>
+    }
+
+    <!-- Основной блок -->
+    <div class="card border-0 shadow-sm" style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
+        <div class="card-body p-4 p-md-5">
+            
+            <!-- Инструкция (Выводим Html.Raw) -->
+            @if (!string.IsNullOrWhiteSpace(Model.Instruction))
+            {
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle text-primary"></i> Инструкция к выполнению
+                </h6>
+                <div class="instruction-box shadow-sm">
+                    @Html.Raw(Model.Instruction)
+                </div>
+            }
+
+            <!-- Прикрепленный файл (если есть) -->
+            @if (!string.IsNullOrEmpty(Model.AttachmentUrl))
+            {
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-paperclip text-primary"></i> Файл с заданием
+                </h6>
+                <div class="file-download-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-file-earmark-arrow-down text-primary fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Материал для ознакомления</div>
+                            <div class="text-muted small">Нажмите, чтобы скачать</div>
+                        </div>
+                    </div>
+                    <a href="@Model.AttachmentUrl" download class="btn btn-outline-primary fw-bold rounded-3 px-3">
+                        <i class="bi bi-download me-1"></i> Скачать
+                    </a>
+                </div>
+            }
+
+            <hr class="my-4 text-secondary opacity-25">
+
+            <!-- Форма сдачи -->
+            <form asp-action="SubmitPage" asp-controller="Assignments" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="MaterialId" />
+                <input type="hidden" asp-for="GroupId" />
+                <input type="hidden" asp-for="CourseId" />
+                <input type="hidden" asp-for="Title" />
+                <input type="hidden" asp-for="CourseTitle" />
+                <input type="hidden" asp-for="Instruction" />
+                <input type="hidden" asp-for="AttachmentUrl" />
+
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pencil-square text-primary me-1"></i> Ваш ответ</h6>
+
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Текст ответа / Комментарий</label>
+                    <textarea asp-for="StudentComment" class="form-control" rows="5" placeholder="Опишите ваш ответ или оставьте комментарий преподавателю..." style="background-color: #f8fafc;"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Прикрепить файл решения (Необязательно)</label>
+                    <input asp-for="SubmissionFile" type="file" class="form-control" style="background-color: #f8fafc;" />
+                    <div class="form-text text-muted small mt-1">Вы можете прикрепить файл, написать текстовый ответ, или сделать и то, и другое.</div>
+                </div>
+
+                <div class="d-flex gap-3 pt-3 border-top mt-4">
+                    <button type="submit" class="btn btn-brand px-4 py-2 fw-bold shadow-sm rounded-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-send-fill"></i> Отправить на проверку
+                    </button>
+                    <a href="/CourseMaterials/StudentView?courseId=@Model.CourseId&groupId=@Model.GroupId&activeId=@Model.MaterialId" class="btn btn-light border px-4 py-2 fw-bold text-secondary rounded-3">
+                        Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

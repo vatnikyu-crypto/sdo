@@ -15,6 +15,7 @@ using MiniExcelLibs.Attributes;
 using System.Data;
 using MiniExcelLibs.OpenXml;
 using ClosedXML.Excel;
+using SdoApp.Models.ViewModels;
 
 namespace SdoApp.Controllers;
 
@@ -643,6 +644,147 @@ public class UsersController : Controller
     }
 
 
+        // GET: /Users/Details/5
+    [HttpGet]
+    public async Task<IActionResult> Details(int id)
+    {
+        var user = await _context.Users
+            .Include(u => u.Company)
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        if (user == null) return NotFound();
+
+        var groupIds = await _context.GroupStudents
+            .Where(gs => gs.StudentId == id)
+            .Select(gs => gs.GroupId)
+            .ToListAsync();
+
+        var groups = await _context.Groups
+            .Where(g => groupIds.Contains(g.Id))
+            .ToListAsync();
+
+        var configs = await _context.GroupCourseConfigs
+            .Include(gcc => gcc.Course)
+            .Where(gcc => groupIds.Contains(gcc.GroupId))
+            .ToListAsync();
+
+        var viewModel = new UserDetailsViewModel
+        {
+            User = user,
+            Groups = groups.Select(g => new GroupWithCoursesViewModel
+            {
+                Group = g,
+                Courses = configs
+                    .Where(c => c.GroupId == g.Id)
+                    // ФИЛЬТР: оставляем только те курсы, на которые он записан
+                    .Where(c => 
+                    {
+                        // Если поле null (курс только создан), считаем что доступен всем
+                        if (c.AllowedStudentIds == null) return true; 
+                        
+                        // Если поле пустое, значит доступ никому не выдан
+                        if (string.IsNullOrWhiteSpace(c.AllowedStudentIds)) return false; 
+
+                        var ids = c.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+                        return ids.Contains(id); 
+                    })
+                    .Select(c => new CourseAccessViewModel
+                    {
+                        Course = c.Course!,
+                        GroupConfigId = c.Id,
+                        IsAllowed = true // Уже отфильтровали, поэтому всегда true
+                    }).ToList()
+            })
+            .Where(g => g.Courses.Any()) // Прячем группы, в которых нет доступных курсов
+            .ToList()
+        };
+
+        return PartialView("_UserDetailsModal", viewModel);
+    }
+
+    // POST: /Users/RemoveFromGroup
+    [HttpPost]
+    public async Task<IActionResult> RemoveFromGroup(int studentId, int groupId)
+    {
+        try
+        {
+            // 1. Удаляем из группы
+            var groupStudent = await _context.GroupStudents
+                .FirstOrDefaultAsync(gs => gs.StudentId == studentId && gs.GroupId == groupId);
+
+            if (groupStudent != null)
+            {
+                _context.GroupStudents.Remove(groupStudent);
+            }
+
+            // 2. Заодно чистим студента из AllowedStudentIds всех курсов этой группы (чтобы не оставлять мусор)
+            var configs = await _context.GroupCourseConfigs
+                .Where(gcc => gcc.GroupId == groupId && !string.IsNullOrWhiteSpace(gcc.AllowedStudentIds))
+                .ToListAsync();
+
+            foreach (var config in configs)
+            {
+                var ids = config.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+                if (ids.Contains(studentId))
+                {
+                    ids.Remove(studentId);
+                    config.AllowedStudentIds = string.Join(",", ids);
+                    _context.GroupCourseConfigs.Update(config);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // POST: /Users/RemoveFromCourse
+    [HttpPost]
+    public async Task<IActionResult> RemoveFromCourse(int studentId, int configId)
+    {
+        try
+        {
+            var config = await _context.GroupCourseConfigs
+                .FirstOrDefaultAsync(c => c.Id == configId);
+
+            if (config == null) return Json(new { success = false, message = "Курс не найден" });
+
+            List<int> allowedIds;
+            if (string.IsNullOrWhiteSpace(config.AllowedStudentIds))
+            {
+                // Если список был пуст (значит, допущены все студенты группы), 
+                // нужно собрать всех студентов группы, кроме отчисляемого, и записать в AllowedStudentIds
+                var allStudentIds = await _context.GroupStudents
+                    .Where(gs => gs.GroupId == config.GroupId)
+                    .Select(gs => gs.StudentId)
+                    .ToListAsync();
+
+                allowedIds = allStudentIds.Where(sid => sid != studentId).ToList();
+            }
+            else
+            {
+                // Если список уже был, просто убираем оттуда студента
+                allowedIds = config.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse).ToList();
+                allowedIds.Remove(studentId);
+            }
+
+            config.AllowedStudentIds = string.Join(",", allowedIds);
+            _context.GroupCourseConfigs.Update(config);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     private string Transliterate(string text)
     {
         var russianToConvert = new Dictionary<string, string>
@@ -664,7 +806,9 @@ public class UsersController : Controller
         return sb.ToString();
     }
 
-        // GET: /Users/DownloadAccessCard/5
+
+
+    // GET: /Users/DownloadAccessCard/5
     // Генерация и скачивание Excel-карточки доступа для одного студента (в стиле групповых доступов)
     [HttpGet]
     public async Task<IActionResult> DownloadAccessCard(int id)
@@ -683,7 +827,7 @@ public class UsersController : Controller
             var worksheet = workbook.Worksheets.Add("Доступы");
 
             // --- ФОРМИРУЕМ ШАПКУ (Точь-в-точь как в групповом файле) ---
-            
+
             // Строка 1
             worksheet.Cell(1, 1).Value = "Данные для входа в систему https://sdo.dpo-energo.ru для слушателя организации";
             worksheet.Range(1, 1, 1, 8).Merge();
@@ -712,7 +856,7 @@ public class UsersController : Controller
             }
 
             // --- ЗАПОЛНЯЕМ ДАННЫЕ СТУДЕНТА (Строка 4) ---
-            
+
             string escapedLogin = Uri.EscapeDataString(student.Login ?? "");
             string escapedPassword = Uri.EscapeDataString(student.Password ?? "");
 
@@ -746,7 +890,7 @@ public class UsersController : Controller
             using (var memoryStream = new MemoryStream())
             {
                 workbook.SaveAs(memoryStream);
-                
+
                 string fileName = $"Доступ_{student.LastName}_{student.FirstName}__{student.MiddleName}.xlsx";
 
                 // Правильное кодирование русского имени файла (RFC 5987)
@@ -760,4 +904,6 @@ public class UsersController : Controller
             }
         }
     }
+
+
 }

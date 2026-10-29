@@ -11,7 +11,6 @@
         --brand-gray: #e2e8f0;
     }
 
-    /* Общие стили для карточек */
     .card-custom {
         background: white;
         border-radius: 12px;
@@ -19,7 +18,6 @@
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     }
     
-    /* Стили полей ввода */
     .form-control,
     .form-select {
         border-radius: 8px;
@@ -34,7 +32,6 @@
         box-shadow: 0 0 0 0.2rem rgba(79, 88, 157, 0.15);
     }
 
-    /* Стили для кнопок */
     .btn-brand {
         background-color: var(--brand-primary);
         color: white;
@@ -47,7 +44,6 @@
         color: white;
     }
 
-    /* Стили таблиц внутри карточек */
     .table-custom th {
         font-weight: 600;
         color: #6c757d;
@@ -60,9 +56,7 @@
         font-size: 0.85rem;
     }
 
-    /* ========================================= */
-    /* СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ (TOASTS) */
-    /* ========================================= */
+    /* Пуш-уведомления (Toasts) */
     .toast-container-custom {
         position: fixed;
         top: 20px;
@@ -86,40 +80,20 @@
         border-left: 6px solid #ccc;
     }
 
-    .custom-toast.success {
-        border-left-color: #198754;
-    }
-
-    .custom-toast.danger {
-        border-left-color: #dc3545;
-    }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
 
     @@keyframes slideInRight {
-        from {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(120%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
 
     @@keyframes fadeOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        to {
-            transform: translateX(120%);
-            opacity: 0;
-        }
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(120%); opacity: 0; }
     }
 </style>
 
-<!-- Контейнер для уведомлений -->
 <div id="toastContainer" class="toast-container-custom"></div>
 
 <!-- 1. НАВИГАЦИОННАЯ ШАПКА -->
@@ -130,643 +104,646 @@
         </a>
         <span class="badge bg-primary px-2 py-1 fw-bold text-uppercase mb-1">Редактирование группы</span>
         <h2 class="fw-bold text-dark m-0">Группа № <span id="headerGroupNumber">@ViewBag.GroupNumber</span></h2>
-        <p class="text-muted small mb-0">Наименование: <span class="fw-bold text-secondary"
-                                                                 id="headerGroupTitle">@ViewBag.GroupTitle</span></p>
+        <p class="text-muted small mb-0">Наименование: <span class="fw-bold text-secondary" id="headerGroupTitle">@ViewBag.GroupTitle</span></p>
+    </div>
+    <div>
+        <button type="button" id="downloadAccessesBtn" class="btn btn-success fw-bold px-3 py-2 shadow-sm d-inline-flex align-items-center gap-2 rounded-3">
+            <i class="bi bi-file-earmark-excel"></i> Скачать доступы (Excel)
+        </button>
+    </div>
+</div>
+
+<!-- 2. КАРТОЧКА НАСТРОЕК ГРУППЫ -->
+<div class="card-custom p-4 mb-4 border-start border-4 border-primary">
+    <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-sliders text-primary"></i> Основные параметры группы
+    </h5>
+    <form id="groupSettingsForm">
+        <div class="row g-3">
+            <div class="col-md-6 col-lg-2">
+                <label class="form-label text-muted small fw-bold">НОМЕР ГРУППЫ</label>
+                <input type="text" id="editGroupNumber" class="form-control fw-bold" value="@ViewBag.GroupNumber" required>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ</label>
+                <input type="text" id="editGroupTitle" class="form-control" value="@ViewBag.GroupTitle" required>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label text-muted small fw-bold">НАЧАЛО ОБУЧЕНИЯ</label>
+                <input type="date" id="editGroupStartDate" class="form-control" value="@ViewBag.StartDate" required>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label text-muted small fw-bold">ОКОНЧАНИЕ</label>
+                <input type="date" id="editGroupEndDate" class="form-control" value="@ViewBag.EndDate" required>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label text-muted small fw-bold">ДОСТУП К МАТЕРИАЛАМ</label>
+                <input type="date" id="editGroupMaterialAccessDate" class="form-control" value="@ViewBag.MaterialAccessDate">
+            </div>
         </div>
-    
-        <div>
-            <button type="button" id="downloadAccessesBtn"
-                    class="btn btn-success fw-bold px-3 py-2 shadow-sm d-inline-flex align-items-center gap-2 rounded-3">
-                <i class="bi bi-file-earmark-excel"></i> Скачать доступы (Excel)
+        <div class="mt-3 text-end">
+            <button type="button" id="saveGroupSettingsBtn" class="btn btn-brand fw-bold px-4 rounded-3">
+                <i class="bi bi-check-lg me-1"></i> Сохранить настройки группы
             </button>
         </div>
-    </div>
+    </form>
+</div>
 
-    <!-- 2. КАРТОЧКА НАСТРОЕК ГРУППЫ -->
-    <div class="card-custom p-4 mb-4 border-start border-4 border-primary">
-        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
-            <i class="bi bi-sliders text-primary"></i> Основные параметры группы
-        </h5>
-        <form id="groupSettingsForm">
-            <div class="row g-3">
-                <div class="col-md-6 col-lg-2">
-                    <label class="form-label text-muted small fw-bold">НОМЕР ГРУППЫ</label>
-                    <input type="text" id="editGroupNumber" class="form-control fw-bold" value="@ViewBag.GroupNumber"
-                           required>
-                </div>
-            
-                <div class="col-md-6 col-lg-4">
-                    <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ</label>
-                    <input type="text" id="editGroupTitle" class="form-control" value="@ViewBag.GroupTitle" required>
-                </div>
+<!-- 3. ЭТАП 1: ФОРМИРОВАНИЕ КОСТЯКА ГРУППЫ -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card-custom p-4 h-100">
+            <h5 class="fw-bold text-dark mb-1"><i class="bi bi-people text-secondary"></i> Состав слушателей потока</h5>
+            <p class="text-muted small mb-3">Начните вводить фамилию сотрудника для добавления</p>
 
-                <div class="col-lg-2">
-                    <label class="form-label text-muted small fw-bold">НАЧАЛО ОБУЧЕНИЯ</label>
-                    <input type="date" id="editGroupStartDate" class="form-control" value="@ViewBag.StartDate" required>
-                </div>
-                <div class="col-lg-2">
-                    <label class="form-label text-muted small fw-bold">ОКОНЧАНИЕ</label>
-                    <input type="date" id="editGroupEndDate" class="form-control" value="@ViewBag.EndDate" required>
-                </div>
-                <div class="col-lg-2">
-                    <label class="form-label text-muted small fw-bold">ДОСТУП К МАТЕРИАЛАМ</label>
-                    <input type="date" id="editGroupMaterialAccessDate" class="form-control"
-                           value="@ViewBag.MaterialAccessDate">
-                </div>
-            </div>
-        
-            <div class="mt-3 text-end">
-                <button type="button" id="saveGroupSettingsBtn" class="btn btn-brand fw-bold px-4 rounded-3">
-                    <i class="bi bi-check-lg me-1"></i> Сохранить настройки группы
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- 3. ЭТАП 1: ФОРМИРОВАНИЕ КОСТЯКА ГРУППЫ -->
-    <div class="row g-4 mb-4">
-        <!-- ЛЕВАЯ КОЛОНКА: СЛУШАТЕЛИ ГРУППЫ -->
-        <div class="col-lg-7">
-            <div class="card-custom p-4 h-100">
-                <h5 class="fw-bold text-dark mb-1"><i class="bi bi-people text-secondary"></i> Состав слушателей потока</h5>
-                <p class="text-muted small mb-3">Начните вводить фамилию сотрудника для добавления</p>
-
-                <div class="mb-4">
-                    <select id="studentSelect" placeholder="🔍 Введите фамилию или имя..."></select>
-                </div>
-
-                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
-                    <table class="table table-sm table-hover align-middle m-0 table-custom" id="selectedStudentsTable">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ФИО Слушателя</th>
-                                <th>Организация / Должность</th>
-                                <th style="width: 50px;" class="text-end">Искл.</th>
-                            </tr>
-                        </thead>
-                        <tbody id="skeletonStudentsBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ПРАВАЯ КОЛОНКА: КУРСЫ ГРУППЫ -->
-        <div class="col-lg-5">
-            <div class="card-custom p-4 h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <h5 class="fw-bold text-dark mb-1"><i class="bi bi-journal-bookmark text-secondary"></i> Учебные
-                        программы</h5>
-                        <p class="text-muted small mb-3">Выберите курс для привязки к группе</p>
-
-                        <div class="mb-4">
-                            <select id="courseSelectInput" placeholder="🔍 Введите название курса для поиска...">
-                                <option value="">Введите название курса...</option>
-                                @foreach (var c in ViewBag.AllAvailableCourses)
-                                {
-                                    <option value="@c.Id">📚 @c.Title</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
-                            <table class="table table-sm table-hover align-middle m-0 table-custom" id="selectedCoursesTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Название курса</th>
-                                        <th style="width: 50px;" class="text-end">Искл.</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="skeletonCoursesBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 pt-3 border-top text-end">
-                        <button id="saveSkeletonBtn" class="btn btn-brand w-100 fw-bold py-2 shadow-sm rounded-3">
-                            <i class="bi bi-save me-1"></i> Сохранить костяк группы
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 4. БЛОК ОРГАНИЗАЦИЙ -->
-        <div class="card-custom p-4 mb-5">
-            <h5 class="fw-bold text-dark mb-1"><i class="bi bi-buildings text-secondary"></i> Привязанные организации</h5>
-            <p class="text-muted small mb-3">Начните вводить наименование или ИНН компании для привязки</p>
-
-            <div class="mb-3">
-                <select id="companySelect" placeholder="🔍 Введите название или ИНН..."></select>
+            <div class="mb-4">
+                <select id="studentSelect" placeholder="Введите фамилию или имя..."></select>
             </div>
 
-            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
-                <table class="table table-sm table-hover align-middle m-0 table-custom" id="selectedCompaniesTable">
+            <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                <table class="table table-sm table-hover align-middle m-0 table-custom" id="selectedStudentsTable">
                     <thead class="table-light">
                         <tr>
-                            <th>Наименование организации</th>
-                            <th style="width: 150px;">ИНН</th>
+                            <th>ФИО Слушателя</th>
+                            <th>Организация / Должность</th>
                             <th style="width: 50px;" class="text-end">Искл.</th>
                         </tr>
                     </thead>
-                    <tbody id="skeletonCompaniesBody"></tbody>
+                    <tbody id="skeletonStudentsBody"></tbody>
                 </table>
             </div>
         </div>
+    </div>
 
-        <!-- 5. ЭТАП 2: ТОНКАЯ НАСТРОЙКА КУРСОВ (АККОРДЕОНЫ) -->
-        <div class="mb-3">
-            <h4 class="fw-bold text-dark m-0"><i class="bi bi-gear text-secondary"></i> Настройка курсов и допусков</h4>
-            <p class="text-muted small">Введите протоколы и настройте доступ к каждому курсу отдельно</p>
+    <div class="col-lg-5">
+        <div class="card-custom p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h5 class="fw-bold text-dark mb-1"><i class="bi bi-journal-bookmark text-secondary"></i> Учебные программы</h5>
+                <p class="text-muted small mb-3">Выберите курс для привязки к группе</p>
+
+                <div class="mb-4">
+                    <select id="courseSelectInput" placeholder="Введите название курса для поиска...">
+                        <option value="">Введите название курса...</option>
+                        @foreach (var c in ViewBag.AllAvailableCourses)
+                        {
+                            <option value="@c.Id"> @c.Title</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                    <table class="table table-sm table-hover align-middle m-0 table-custom" id="selectedCoursesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Название курса</th>
+                                <th style="width: 50px;" class="text-end">Искл.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="skeletonCoursesBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-top text-end">
+                <button id="saveSkeletonBtn" class="btn btn-brand w-100 fw-bold py-2 shadow-sm rounded-3">
+                    <i class="bi bi-save me-1"></i> Сохранить костяк группы
+                </button>
+            </div>
         </div>
+    </div>
+</div>
 
-        <div class="d-flex flex-column gap-3 mb-5" id="courseConfigsAccordionContainer">
-            <!-- Сюда JavaScript будет динамически выводить аккордеоны -->
+<!-- 4. БЛОК ОРГАНИЗАЦИЙ -->
+<div class="card-custom p-4 mb-5">
+    <h5 class="fw-bold text-dark mb-1"><i class="bi bi-buildings text-secondary"></i> Привязанные организации</h5>
+    <p class="text-muted small mb-3">Начните вводить наименование или ИНН компании для привязки</p>
+
+    <div class="mb-3">
+        <select id="companySelect" placeholder="Введите название или ИНН..."></select>
+    </div>
+
+    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+        <table class="table table-sm table-hover align-middle m-0 table-custom" id="selectedCompaniesTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Наименование организации</th>
+                    <th style="width: 150px;">ИНН</th>
+                    <th style="width: 50px;" class="text-end">Искл.</th>
+                </tr>
+            </thead>
+            <tbody id="skeletonCompaniesBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 5. ЭТАП 2: ТОНКАЯ НАСТРОЙКА КУРСОВ -->
+<div class="mb-3">
+    <h4 class="fw-bold text-dark m-0"><i class="bi bi-gear text-secondary"></i> Настройка курсов и допусков</h4>
+    <p class="text-muted small">Введите протоколы и настройте доступ к каждому курсу отдельно</p>
+</div>
+
+<div class="d-flex flex-column gap-3 mb-5" id="courseConfigsAccordionContainer"></div>
+
+<!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Внимание</h5>
+            <p class="text-muted small mb-4" id="confirmModalText">Вы уверены?</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="confirmModalBtn" type="button" class="btn btn-danger fw-bold w-50 rounded-3">Да</button>
+            </div>
         </div>
+    </div>
+</div>
 
-        <!-- 6. JAVASCRIPT -->
-        <script>
-            const currentGroupId = @ViewBag.GroupId;
-
-            // ==========================================
-            // 1. ФУНКЦИЯ УВЕДОМЛЕНИЙ (TOASTS)
-            // ==========================================
-            function showToast(message, type = 'success') {
-                const container = document.getElementById('toastContainer');
-                const toast = document.createElement('div');
+@section Scripts {
+    <script>
+        const currentGroupId = @ViewBag.GroupId;
         
-                toast.className = `custom-toast ${type}`;
-                const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
-        
-                toast.innerHTML = `
-                            <i class="bi ${iconClass} fs-4 me-3"></i>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
-                        `;
-        
-                container.appendChild(toast);
-        
-                setTimeout(() => {
-                    toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-                    setTimeout(() => toast.remove(), 300);
-                }, 3500);
-            }
+        // Инициализация модалки
+        const confirmActionModal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
+        let pendingAction = null;
 
-            // ==========================================
-            // 2. ГЛОБАЛЬНЫЕ МАССИВЫ
-            // ==========================================
-            let selectedStudents = [];
-            let selectedCourses = [];
-            let selectedCompanies = [];
+        // Функция показа уведомлений
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `custom-toast ${type}`;
+            const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+            toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
 
-            const skeletonStudentsBody = document.getElementById('skeletonStudentsBody');
-            const skeletonCoursesBody = document.getElementById('skeletonCoursesBody');
-            const skeletonCompaniesBody = document.getElementById('skeletonCompaniesBody');
-            const saveSkeletonBtn = document.getElementById('saveSkeletonBtn');
-            const accordionContainer = document.getElementById('courseConfigsAccordionContainer');
+        // Функция красивого подтверждения
+        function showConfirm(text, callback) {
+            document.getElementById('confirmModalText').textContent = text;
+            pendingAction = callback;
+            confirmActionModal.show();
+        }
 
-            // ==========================================
-            // 3. ЛОГИКА НАСТРОЕК ГРУППЫ
-            // ==========================================
-            function getGroupDefaults() {
-                return {
-                    number: document.getElementById('editGroupNumber').value,
-                    startDate: document.getElementById('editGroupStartDate').value,
-                    endDate: document.getElementById('editGroupEndDate').value
-                };
-            }
+        document.getElementById('confirmModalBtn').addEventListener('click', async function() {
+            if (!pendingAction) return;
+            confirmActionModal.hide();
+            await pendingAction();
+            pendingAction = null;
+        });
 
-            document.getElementById('saveGroupSettingsBtn').addEventListener('click', async function () {
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+        let selectedStudents = [];
+        let selectedCourses = [];
+        let selectedCompanies = [];
 
-                const params = new URLSearchParams();
-                params.append('groupId', currentGroupId);
-                params.append('groupNumber', document.getElementById('editGroupNumber').value);
-                params.append('title', document.getElementById('editGroupTitle').value);
-                params.append('startDate', document.getElementById('editGroupStartDate').value);
-                params.append('endDate', document.getElementById('editGroupEndDate').value);
-        
-                const accessDate = document.getElementById('editGroupMaterialAccessDate').value;
-                if (accessDate) params.append('materialAccessDate', accessDate);
+        const skeletonStudentsBody = document.getElementById('skeletonStudentsBody');
+        const skeletonCoursesBody = document.getElementById('skeletonCoursesBody');
+        const skeletonCompaniesBody = document.getElementById('skeletonCompaniesBody');
+        const saveSkeletonBtn = document.getElementById('saveSkeletonBtn');
+        const accordionContainer = document.getElementById('courseConfigsAccordionContainer');
 
-                try {
-                    const response = await fetch('/Groups/UpdateGroupSettings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params
-                    });
-                    const result = await response.json();
+        function getGroupDefaults() {
+            return {
+                number: document.getElementById('editGroupNumber').value,
+                startDate: document.getElementById('editGroupStartDate').value,
+                endDate: document.getElementById('editGroupEndDate').value
+            };
+        }
+
+        // СОХРАНЕНИЕ НАСТРОЕК ГРУППЫ
+        document.getElementById('saveGroupSettingsBtn').addEventListener('click', async function () {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+
+            const params = new URLSearchParams();
+            params.append('groupId', currentGroupId);
+            params.append('groupNumber', document.getElementById('editGroupNumber').value);
+            params.append('title', document.getElementById('editGroupTitle').value);
+            params.append('startDate', document.getElementById('editGroupStartDate').value);
+            params.append('endDate', document.getElementById('editGroupEndDate').value);
             
-                    if (result.success) {
-                        document.getElementById('headerGroupNumber').textContent = document.getElementById('editGroupNumber').value;
-                        document.getElementById('headerGroupTitle').textContent = document.getElementById('editGroupTitle').value;
-                
-                        showToast('Настройки группы успешно обновлены!', 'success');
-                    } else {
-                        showToast(result.message, 'danger');
-                    }
-                } catch (err) {
-                    showToast('Ошибка сети при сохранении настроек группы.', 'danger');
-                } finally {
-                    this.disabled = false;
-                    this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Сохранить настройки группы';
-                }
-            });
+            const accessDate = document.getElementById('editGroupMaterialAccessDate').value;
+            if (accessDate) params.append('materialAccessDate', accessDate);
 
-            // ==========================================
-            // 4. ИНИЦИАЛИЗАЦИЯ TOM SELECT
-            // ==========================================
-            const studentSelect = new TomSelect("#studentSelect", {
-                valueField: 'id', labelField: 'fio', searchField: 'fio', maxItems: 1,
-                load: function (query, callback) {
-                    if (!query.length) return callback();
-                    fetch(`/Groups/SearchStudents?term=${encodeURIComponent(query)}&groupId=${currentGroupId}`)
-                        .then(response => response.json()).then(json => callback(json)).catch(() => callback());
-                },
-                render: {
-                    option: (item, escape) => `<div><span class="fw-bold text-dark">${escape(item.fio)}</span><div class="text-muted small" style="font-size: 0.75rem;">${escape(item.company)} | ${escape(item.position)}</div></div>`,
-                    item: (item, escape) => `<div>${escape(item.fio)}</div>`
-                },
-                onItemAdd: function (value) {
-                    const data = this.options[value];
-                    addStudentToSkeleton(data.id, data.fio, data.company, data.position);
-                    this.clear();
-                }
-            });
-
-            const companySelect = new TomSelect("#companySelect", {
-                valueField: 'id', labelField: 'name', searchField: ['name', 'inn'], maxItems: 1,
-                load: function (query, callback) {
-                    if (!query.length) return callback();
-                    fetch(`/Groups/SearchCompanies?term=${encodeURIComponent(query)}`)
-                        .then(response => response.json()).then(json => callback(json)).catch(() => callback());
-                },
-                render: {
-                    option: (item, escape) => `<div><span class="fw-bold text-dark">${escape(item.name)}</span><div class="text-muted small" style="font-size: 0.75rem;">ИНН: ${escape(item.inn)}</div></div>`,
-                    item: (item, escape) => `<div>${escape(item.name)}</div>`
-                },
-                onItemAdd: function (value) {
-                    const data = this.options[value];
-                    addCompanyToSkeleton(data.id, data.name, data.inn);
-                    this.clear();
-                }
-            });
-
-            const courseSelect = new TomSelect("#courseSelectInput", {
-                maxItems: 1, create: false, searchField: ['text'],
-                render: {
-                    option: function (data, escape) { return `<div><span class="fw-bold text-dark">${escape(data.text)}</span></div>`; },
-                    item: function (data, escape) { return `<div>${escape(data.text)}</div>`; }
-                },
-                onChange: function (courseId) {
-                    if (!courseId) return;
-                    const selectedOption = this.options[courseId];
-                    const title = selectedOption.text.replace('📚 ', '').trim();
-            
-                    const defaults = getGroupDefaults();
-                    addCourseToSkeleton(parseInt(courseId), title, defaults);
-                    this.clear();
-                }
-            });
-
-            // ==========================================
-            // 5. ФУНКЦИИ ДОБАВЛЕНИЯ/УДАЛЕНИЯ
-            // ==========================================
-            function addStudentToSkeleton(id, fio, company, position) {
-                id = parseInt(id);
-                if (selectedStudents.some(st => st.id === id)) {
-                    showToast('Этот слушатель уже добавлен в группу!', 'danger');
-                    return;
-                }
-                selectedStudents.push({ id, fio, company, position });
-                renderStudentsTable();
-            }
-
-            function addCompanyToSkeleton(id, name, inn) {
-                id = parseInt(id);
-                if (selectedCompanies.some(c => c.id === id)) {
-                    showToast('Эта организация уже добавлена!', 'danger');
-                    return;
-                }
-                selectedCompanies.push({ id, name, inn });
-                renderCompaniesTable();
-            }
-
-            function addCourseToSkeleton(courseId, title, defaults) {
-                if (selectedCourses.some(c => c.courseId === courseId)) {
-                    showToast('Этот курс уже есть в группе!', 'danger');
-                    return;
-                }
-        
-                selectedCourses.push({
-                    configId: 0,
-                    courseId,
-                    title,
-                    protocol: defaults.number || '',
-                    start: defaults.startDate || '',
-                    end: defaults.endDate || '',
-                    allowedIds: ''
+            try {
+                const response = await fetch('/Groups/UpdateGroupSettings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
                 });
-                renderCoursesTable();
-            }
-
-            function removeStudentFromSkeleton(id) {
-                selectedStudents = selectedStudents.filter(st => st.id !== id);
-                renderStudentsTable();
-            }
-
-            function removeCourseFromSkeleton(courseId) {
-                selectedCourses = selectedCourses.filter(c => c.courseId !== courseId);
-                renderCoursesTable();
-            }
-
-            function removeCompanyFromSkeleton(id) {
-                selectedCompanies = selectedCompanies.filter(c => c.id !== id);
-                renderCompaniesTable();
-            }
-
-            // ==========================================
-            // 6. РЕНДЕРИНГ ТАБЛИЦ
-            // ==========================================
-            function renderStudentsTable() {
-                if (selectedStudents.length === 0) {
-                    skeletonStudentsBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted small">Список пуст. Используйте поиск выше.</td></tr>`;
-                    return;
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('headerGroupNumber').textContent = document.getElementById('editGroupNumber').value;
+                    document.getElementById('headerGroupTitle').textContent = document.getElementById('editGroupTitle').value;
+                    showToast('Настройки группы обновлены!', 'success');
+                } else {
+                    showToast(result.message, 'danger');
                 }
-                skeletonStudentsBody.innerHTML = selectedStudents.map(st => `
-                            <tr id="student-row-item-${st.id}">
-                                <td><div class="fw-bold text-dark">${st.fio}</div></td>
-                                <td class="text-muted small"><span class="d-block text-secondary fw-bold">${st.company}</span><span class="d-block" style="font-size:0.75rem;">${st.position}</span></td>
-                                <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeStudentFromSkeleton(${st.id})">×</button></td>
-                            </tr>`).join('');
+            } catch (err) {
+                showToast('Ошибка сети при сохранении настроек.', 'danger');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Сохранить настройки группы';
             }
+        });
 
-            function renderCoursesTable() {
-                if (selectedCourses.length === 0) {
-                    skeletonCoursesBody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-muted small">Программы не назначены.</td></tr>`;
-                    return;
-                }
-                skeletonCoursesBody.innerHTML = selectedCourses.map(c => `
-                            <tr id="course-row-item-${c.courseId}">
-                                <td class="fw-bold text-dark small">📚 ${c.title}</td>
-                                <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCourseFromSkeleton(${c.courseId})">×</button></td>
-                            </tr>`).join('');
+        // ИНИЦИАЛИЗАЦИЯ TOM SELECT
+        const studentSelect = new TomSelect("#studentSelect", {
+            valueField: 'id', labelField: 'fio', searchField: 'fio', maxItems: 1,
+            load: function (query, callback) {
+                if (!query.length) return callback();
+                fetch(`/Groups/SearchStudents?term=${encodeURIComponent(query)}&groupId=${currentGroupId}`)
+                    .then(response => response.json()).then(json => callback(json)).catch(() => callback());
+            },
+            render: {
+                option: (item, escape) => `<div><span class="fw-bold text-dark">${escape(item.fio)}</span><div class="text-muted small" style="font-size: 0.75rem;">${escape(item.company)} | ${escape(item.position)}</div></div>`,
+                item: (item, escape) => `<div>${escape(item.fio)}</div>`
+            },
+            onItemAdd: function (value) {
+                const data = this.options[value];
+                addStudentToSkeleton(data.id, data.fio, data.company, data.position);
+                this.clear();
             }
+        });
 
-            function renderCompaniesTable() {
-                if (selectedCompanies.length === 0) {
-                    skeletonCompaniesBody.innerHTML = `<tr><td colspan="3" class="text-center py-3 text-muted small">Список пуст.</td></tr>`;
-                    return;
-                }
-                skeletonCompaniesBody.innerHTML = selectedCompanies.map(c => `
-                            <tr id="company-row-item-${c.id}">
-                                <td class="fw-bold text-dark small">🏢 ${c.name}</td>
-                                <td class="text-secondary small">${c.inn}</td>
-                                <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCompanyFromSkeleton(${c.id})">×</button></td>
-                            </tr>`).join('');
+        const companySelect = new TomSelect("#companySelect", {
+            valueField: 'id', labelField: 'name', searchField: ['name', 'inn'], maxItems: 1,
+            load: function (query, callback) {
+                if (!query.length) return callback();
+                fetch(`/Groups/SearchCompanies?term=${encodeURIComponent(query)}`)
+                    .then(response => response.json()).then(json => callback(json)).catch(() => callback());
+            },
+            render: {
+                option: (item, escape) => `<div><span class="fw-bold text-dark">${escape(item.name)}</span><div class="text-muted small" style="font-size: 0.75rem;">ИНН: ${escape(item.inn)}</div></div>`,
+                item: (item, escape) => `<div>${escape(item.name)}</div>`
+            },
+            onItemAdd: function (value) {
+                const data = this.options[value];
+                addCompanyToSkeleton(data.id, data.name, data.inn);
+                this.clear();
             }
+        });
 
-            // ==========================================
-            // 7. ЗАГРУЗКА И СОХРАНЕНИЕ КОСТЯКА
-            // ==========================================
-            async function loadCurrentGroupData() {
-                try {
-                    const response = await fetch(`/Groups/GetGroupData/${currentGroupId}`);
-                    const data = await response.json();
-
-                    selectedCourses = data.courses || [];
-                    selectedCompanies = data.companies || [];
-                    selectedStudents = data.students || [];
-
-                    renderStudentsTable();
-                    renderCoursesTable();
-                    renderCompaniesTable();
-                    renderConfigsAccordion();
-                } catch (err) {
-                    console.error('Ошибка инициализации:', err);
-                    showToast('Не удалось загрузить данные группы.', 'danger');
-                }
+        const courseSelect = new TomSelect("#courseSelectInput", {
+            maxItems: 1, create: false, searchField: ['text'],
+            render: {
+                option: function (data, escape) { return `<div><span class="fw-bold text-dark">${escape(data.text)}</span></div>`; },
+                item: function (data, escape) { return `<div>${escape(data.text)}</div>`; }
+            },
+            onChange: function (courseId) {
+                if (!courseId) return;
+                const selectedOption = this.options[courseId];
+                const title = selectedOption.text.replace(' ', '').trim();
+                const defaults = getGroupDefaults();
+                addCourseToSkeleton(parseInt(courseId), title, defaults);
+                this.clear();
             }
+        });
 
-            saveSkeletonBtn.addEventListener('click', async function () {
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Синхронизация...';
-                const params = new URLSearchParams();
-                params.append('groupId', currentGroupId);
+        // ФУНКЦИИ ДОБАВЛЕНИЯ
+        function addStudentToSkeleton(id, fio, company, position) {
+            id = parseInt(id);
+            if (selectedStudents.some(st => st.id === id)) {
+                showToast('Этот слушатель уже добавлен в группу!', 'danger');
+                return;
+            }
+            selectedStudents.push({ id, fio, company, position });
+            renderStudentsTable();
+        }
 
-                selectedStudents.forEach(st => params.append('studentIds', st.id));
-                selectedCourses.forEach(c => params.append('courseIds', c.courseId));
-                selectedCompanies.forEach(c => params.append('companyIds', c.id));
+        function addCompanyToSkeleton(id, name, inn) {
+            id = parseInt(id);
+            if (selectedCompanies.some(c => c.id === id)) {
+                showToast('Эта организация уже добавлена!', 'danger');
+                return;
+            }
+            selectedCompanies.push({ id, name, inn });
+            renderCompaniesTable();
+        }
 
-                try {
-                    const response = await fetch('/Groups/SaveGroupSkeleton', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        showToast('Костяк группы успешно сохранен!', 'success');
-                        await loadCurrentGroupData();
-                    } else {
-                        showToast(result.message, 'danger');
-                    }
-                } catch (err) {
-                    showToast('Сбой сети при сохранении.', 'danger');
-                } finally {
-                    this.disabled = false;
-                    this.innerHTML = '<i class="bi bi-save me-1"></i> Сохранить костяк группы';
-                }
+        function addCourseToSkeleton(courseId, title, defaults) {
+            if (selectedCourses.some(c => c.courseId === courseId)) {
+                showToast('Этот курс уже есть в группе!', 'danger');
+                return;
+            }
+            selectedCourses.push({
+                configId: 0,
+                courseId,
+                title,
+                protocol: defaults.number || '',
+                start: defaults.startDate || '',
+                end: defaults.endDate || '',
+                allowedIds: ''
             });
+            renderCoursesTable();
+        }
 
-            // ==========================================
-            // 8. АККОРДЕОНЫ КУРСОВ
-            // ==========================================
-            function renderConfigsAccordion() {
-                saveSkeletonBtn.disabled = false;
-                saveSkeletonBtn.innerHTML = '<i class="bi bi-save me-1"></i> Сохранить костяк группы';
+        function removeStudentFromSkeleton(id) {
+            selectedStudents = selectedStudents.filter(st => st.id !== id);
+            renderStudentsTable();
+        }
 
-                if (selectedCourses.length === 0) {
-                    accordionContainer.innerHTML = `<div class="alert alert-light text-center border p-4 small text-muted mb-0" style="border-radius: 12px;">Здесь пока пусто. Добавьте курсы выше.</div>`;
-                    return;
+        function removeCourseFromSkeleton(courseId) {
+            selectedCourses = selectedCourses.filter(c => c.courseId !== courseId);
+            renderCoursesTable();
+        }
+
+        function removeCompanyFromSkeleton(id) {
+            selectedCompanies = selectedCompanies.filter(c => c.id !== id);
+            renderCompaniesTable();
+        }
+
+        // РЕНДЕРИНГ ТАБЛИЦ
+        function renderStudentsTable() {
+            if (selectedStudents.length === 0) {
+                skeletonStudentsBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted small">Список пуст. Используйте поиск выше.</td></tr>`;
+                return;
+            }
+            skeletonStudentsBody.innerHTML = selectedStudents.map(st => `
+                <tr id="student-row-item-${st.id}">
+                    <td><div class="fw-bold text-dark">${st.fio}</div></td>
+                    <td class="text-muted small"><span class="d-block text-secondary fw-bold">${st.company}</span><span class="d-block" style="font-size:0.75rem;">${st.position}</span></td>
+                    <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeStudentFromSkeleton(${st.id})">×</button></td>
+                </tr>`).join('');
+        }
+
+        function renderCoursesTable() {
+            if (selectedCourses.length === 0) {
+                skeletonCoursesBody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-muted small">Программы не назначены.</td></tr>`;
+                return;
+            }
+            skeletonCoursesBody.innerHTML = selectedCourses.map(c => `
+                <tr id="course-row-item-${c.courseId}">
+                    <td class="fw-bold text-dark small"> ${c.title}</td>
+                    <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCourseFromSkeleton(${c.courseId})">×</button></td>
+                </tr>`).join('');
+        }
+
+        function renderCompaniesTable() {
+            if (selectedCompanies.length === 0) {
+                skeletonCompaniesBody.innerHTML = `<tr><td colspan="3" class="text-center py-3 text-muted small">Список пуст.</td></tr>`;
+                return;
+            }
+            skeletonCompaniesBody.innerHTML = selectedCompanies.map(c => `
+                <tr id="company-row-item-${c.id}">
+                    <td class="fw-bold text-dark small"> ${c.name}</td>
+                    <td class="text-secondary small">${c.inn}</td>
+                    <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 px-2" onclick="removeCompanyFromSkeleton(${c.id})">×</button></td>
+                </tr>`).join('');
+        }
+
+        // ЗАГРУЗКА ДАННЫХ
+        async function loadCurrentGroupData() {
+            try {
+                const response = await fetch(`/Groups/GetGroupData/${currentGroupId}`);
+                const data = await response.json();
+
+                selectedCourses = data.courses || [];
+                selectedCompanies = data.companies || [];
+                selectedStudents = data.students || [];
+
+                renderStudentsTable();
+                renderCoursesTable();
+                renderCompaniesTable();
+                renderConfigsAccordion();
+            } catch (err) {
+                console.error('Ошибка инициализации:', err);
+                showToast('Не удалось загрузить данные группы.', 'danger');
+            }
+        }
+
+        // СОХРАНЕНИЕ КОСТЯКА
+        saveSkeletonBtn.addEventListener('click', async function () {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Синхронизация...';
+            const params = new URLSearchParams();
+            params.append('groupId', currentGroupId);
+
+            selectedStudents.forEach(st => params.append('studentIds', st.id));
+            selectedCourses.forEach(c => params.append('courseIds', c.courseId));
+            selectedCompanies.forEach(c => params.append('companyIds', c.id));
+
+            try {
+                const response = await fetch('/Groups/SaveGroupSkeleton', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Костяк группы успешно сохранен!', 'success');
+                    await loadCurrentGroupData();
+                } else {
+                    showToast(result.message, 'danger');
                 }
+            } catch (err) {
+                showToast('Сбой сети при сохранении.', 'danger');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-save me-1"></i> Сохранить костяк группы';
+            }
+        });
 
-                accordionContainer.innerHTML = selectedCourses.map((c) => {
-                    if (c.configId === 0) {
-                        return `<div class="card bg-light border p-3 small text-muted text-center" style="border-radius:12px;">
-                                            📌 Курс <strong>«${c.title}»</strong> добавлен. Сохраните костяк, чтобы открыть доступ к настройкам.
-                                        </div>`;
-                    }
+        // АККОРДЕОНЫ КУРСОВ
+        function renderConfigsAccordion() {
+            saveSkeletonBtn.disabled = false;
+            saveSkeletonBtn.innerHTML = '<i class="bi bi-save me-1"></i> Сохранить костяк группы';
 
-                    const allowedIdsArray = c.allowedIds ? c.allowedIds.split(',').map(id => parseInt(id)) : [];
-                    const isFirstTime = !c.allowedIds;
-
-                    let studentsCheckboxesHtml = selectedStudents.map(st => {
-                        const isChecked = isFirstTime || allowedIdsArray.includes(st.id);
-                        return `
-                                    <div class="col-md-6 col-lg-4">
-                                        <div class="p-2 border rounded bg-white d-flex align-items-center gap-2 small">
-                                            <input type="checkbox" class="form-check-input ms-1 course-student-checkbox-${c.configId}" value="${st.id}" ${isChecked ? 'checked' : ''} />
-                                            <div class="overflow-hidden">
-                                                <div class="fw-bold text-dark text-truncate">${st.fio}</div>
-                                                <div class="text-muted text-truncate" style="font-size:0.75rem;">${st.company}</div>
-                                            </div>
-                                        </div>
-                                    </div>`;
-                    }).join('');
-
-                    if (selectedStudents.length === 0) {
-                        studentsCheckboxesHtml = `<div class="col-12 text-muted small ps-3">Сначала добавьте слушателей в левую колонку.</div>`;
-                    }
-
-                    return `
-                                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
-                                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center" role="button" 
-                                         data-bs-toggle="collapse" data-bs-target="#collapse-config-${c.configId}" style="cursor:pointer;">
-                                        <span class="fw-bold text-dark fs-5">📚 ${c.title}</span>
-                                        <span class="text-muted small fw-bold">⚙️ Настройки &darr;</span>
-                                    </div>
-                                    <div id="collapse-config-${c.configId}" class="collapse p-4 border-top">
-                                        <div class="row g-3 mb-4">
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small fw-bold">НОМЕР ПРОТОКОЛА / ПРИКАЗА</label>
-                                                <input type="text" id="protocol-input-${c.configId}" class="form-control form-control-sm fw-bold" value="${c.protocol || ''}" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small fw-bold">НАЧАЛО ОБУЧЕНИЯ</label>
-                                                <input type="date" id="start-input-${c.configId}" class="form-control form-control-sm" value="${c.start || ''}" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small fw-bold">ЭКЗАМЕН (ОКОНЧАНИЕ)</label>
-                                                <input type="date" id="end-input-${c.configId}" class="form-control form-control-sm" value="${c.end || ''}" />
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label text-muted small fw-bold">ДОПУСК СЛУШАТЕЛЕЙ К КУРСУ</label>
-                                        </div>
-                                        <div class="row g-2 mb-4">
-                                            ${studentsCheckboxesHtml}
-                                        </div>
-                                        <div class="text-end border-top pt-3">
-                                            <button type="button" class="btn btn-sm btn-brand fw-bold px-4 py-2 rounded-3" onclick="saveIndividualCourseConfig(${c.configId})">
-                                                <i class="bi bi-check-lg me-1"></i> Сохранить параметры курса
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>`;
-                }).join('');
+            if (selectedCourses.length === 0) {
+                accordionContainer.innerHTML = `<div class="alert alert-light text-center border p-4 small text-muted mb-0" style="border-radius: 12px;">Здесь пока пусто. Добавьте курсы выше.</div>`;
+                return;
             }
 
-            window.saveIndividualCourseConfig = async function (configId) {
-                const protocolInput = document.getElementById(`protocol-input-${configId}`);
-                const startInput = document.getElementById(`start-input-${configId}`);
-                const endInput = document.getElementById(`end-input-${configId}`);
-
-                const checkedCheckboxes = document.querySelectorAll(`.course-student-checkbox-${configId}:checked`);
-                const allowedIds = Array.from(checkedCheckboxes).map(cb => parseInt(cb.value));
-
-                if (allowedIds.length === 0 && selectedStudents.length > 0) {
-                    if (!confirm('Вы сняли галочки со всех студентов! Продолжить?')) return;
+            accordionContainer.innerHTML = selectedCourses.map((c) => {
+                if (c.configId === 0) {
+                    return `<div class="card bg-light border p-3 small text-muted text-center" style="border-radius:12px;">
+                                Курс <strong>«${c.title}»</strong> добавлен. Сохраните костяк, чтобы открыть доступ к настройкам.
+                            </div>`;
                 }
 
-                const btn = document.querySelector(`button[onclick="saveIndividualCourseConfig(${configId})"]`);
+                const allowedIdsArray = c.allowedIds ? c.allowedIds.split(',').map(id => parseInt(id)) : [];
+                const isFirstTime = c.allowedIds === null || c.allowedIds === undefined;
+
+                let studentsCheckboxesHtml = selectedStudents.map(st => {
+                    const isChecked = isFirstTime || allowedIdsArray.includes(st.id);
+                    return `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="p-2 border rounded bg-white d-flex align-items-center gap-2 small">
+                                <input type="checkbox" class="form-check-input ms-1 course-student-checkbox-${c.configId}" value="${st.id}" ${isChecked ? 'checked' : ''} />
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold text-dark text-truncate">${st.fio}</div>
+                                    <div class="text-muted text-truncate" style="font-size:0.75rem;">${st.company}</div>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                if (selectedStudents.length === 0) {
+                    studentsCheckboxesHtml = `<div class="col-12 text-muted small ps-3">Сначала добавьте слушателей в левую колонку.</div>`;
+                }
+
+                return `
+                    <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+                        <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center" role="button" 
+                             data-bs-toggle="collapse" data-bs-target="#collapse-config-${c.configId}" style="cursor:pointer;">
+                            <span class="fw-bold text-dark fs-5"> ${c.title}</span>
+                            <span class="text-muted small fw-bold"> Настройки &darr;</span>
+                        </div>
+                        <div id="collapse-config-${c.configId}" class="collapse p-4 border-top">
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-bold">НОМЕР ПРОТОКОЛА / ПРИКАЗА</label>
+                                    <input type="text" id="protocol-input-${c.configId}" class="form-control form-control-sm fw-bold" value="${c.protocol || ''}" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-bold">НАЧАЛО ОБУЧЕНИЯ</label>
+                                    <input type="date" id="start-input-${c.configId}" class="form-control form-control-sm" value="${c.start || ''}" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-bold">ЭКЗАМЕН (ОКОНЧАНИЕ)</label>
+                                    <input type="date" id="end-input-${c.configId}" class="form-control form-control-sm" value="${c.end || ''}" />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">ДОПУСК СЛУШАТЕЛЕЙ К КУРСУ</label>
+                            </div>
+                            <div class="row g-2 mb-4">
+                                ${studentsCheckboxesHtml}
+                            </div>
+                            <div class="text-end border-top pt-3">
+                                <button type="button" class="btn btn-sm btn-brand fw-bold px-4 py-2 rounded-3" onclick="saveIndividualCourseConfig(${c.configId})">
+                                    <i class="bi bi-check-lg me-1"></i> Сохранить параметры курса
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // СОХРАНЕНИЕ КОНКРЕТНОГО КУРСА
+        window.saveIndividualCourseConfig = async function (configId) {
+            const protocolInput = document.getElementById(`protocol-input-${configId}`);
+            const startInput = document.getElementById(`start-input-${configId}`);
+            const endInput = document.getElementById(`end-input-${configId}`);
+
+            const checkedCheckboxes = document.querySelectorAll(`.course-student-checkbox-${configId}:checked`);
+            const allowedIds = Array.from(checkedCheckboxes).map(cb => parseInt(cb.value));
+
+            // Если сняли всех
+            if (allowedIds.length === 0 && selectedStudents.length > 0) {
+                showConfirm('Вы сняли галочки со всех студентов. Доступ к курсу будет закрыт для всех. Продолжить?', async () => {
+                    await executeSaveCourseConfig(configId, protocolInput.value.trim(), startInput.value, endInput.value, allowedIds);
+                });
+                return;
+            }
+
+            await executeSaveCourseConfig(configId, protocolInput.value.trim(), startInput.value, endInput.value, allowedIds);
+        };
+
+        async function executeSaveCourseConfig(configId, protocol, startDate, endDate, allowedIds) {
+            const btn = document.querySelector(`button[onclick="saveIndividualCourseConfig(${configId})"]`);
+            if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+            }
 
-                const params = new URLSearchParams();
-                params.append('configId', configId);
-                params.append('protocolNumber', protocolInput.value.trim());
-                if (startInput.value) params.append('startDate', startInput.value);
-                if (endInput.value) params.append('endDate', endInput.value);
-                allowedIds.forEach(id => params.append('allowedStudentIds', id));
+            const params = new URLSearchParams();
+            params.append('configId', configId);
+            params.append('protocolNumber', protocol);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            allowedIds.forEach(id => params.append('allowedStudentIds', id));
 
-                try {
-                    const response = await fetch('/Groups/SaveCourseConfig', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        showToast('Параметры курса обновлены!', 'success');
-                        await loadCurrentGroupData();
-                    } else {
-                        showToast(result.message, 'danger');
+            try {
+                const response = await fetch('/Groups/SaveCourseConfig', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Параметры курса обновлены!', 'success');
+                    await loadCurrentGroupData();
+                } else {
+                    showToast(result.message, 'danger');
+                    if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Сохранить параметры курса';
                     }
-                } catch (err) {
-                    showToast('Сбой сети при сохранении курса.', 'danger');
+                }
+            } catch (err) {
+                showToast('Сбой сети при сохранении курса.', 'danger');
+                if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Сохранить параметры курса';
                 }
-            };
+            }
+        }
 
-            // ==========================================
-            // 9. СКАЧИВАНИЕ ДОСТУПОВ (AJAX)
-            // ==========================================
-            document.getElementById('downloadAccessesBtn').addEventListener('click', async function (e) {
-                e.preventDefault();
-                const btn = this;
-                const originalHtml = btn.innerHTML;
+        // СКАЧИВАНИЕ ДОСТУПОВ (EXCEL/ZIP)
+        document.getElementById('downloadAccessesBtn').addEventListener('click', async function (e) {
+            e.preventDefault();
+            const btn = this;
+            const originalHtml = btn.innerHTML;
 
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Формирование...';
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Формирование...';
 
-                try {
-                    const response = await fetch(`/Groups/DownloadAccesses/${currentGroupId}`);
+            try {
+                const response = await fetch(`/Groups/DownloadAccesses/${currentGroupId}`);
 
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const disposition = response.headers.get('Content-Disposition');
-                        let filename = null;
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const disposition = response.headers.get('Content-Disposition');
+                    let filename = null;
 
-                        if (disposition) {
-                            // 1. Сначала ищем filename*=UTF-8''... (правильное русское имя)
-                            let matchStar = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
-                            if (matchStar && matchStar[1]) {
-                                filename = decodeURIComponent(matchStar[1].replace(/['"]/g, '').trim());
-                            } else {
-                                // 2. Fallback: filename="..." (латиница или старый формат)
-                                let match = disposition.match(/filename\s*=\s*"?([^";]+)"?/i);
-                                if (match && match[1]) {
-                                    filename = decodeURIComponent(match[1].replace(/['"]/g, '').trim());
-                                }
+                    if (disposition) {
+                        let matchStar = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+                        if (matchStar && matchStar[1]) {
+                            filename = decodeURIComponent(matchStar[1].replace(/['"]/g, '').trim());
+                        } else {
+                            let match = disposition.match(/filename\s*=\s*"?([^";]+)"?/i);
+                            if (match && match[1]) {
+                                filename = decodeURIComponent(match[1].replace(/['"]/g, '').trim());
                             }
                         }
-
-                        // Если имя так и не нашли — дефолт по MIME-типу
-                        if (!filename) {
-                            const isZip = response.headers.get('Content-Type')?.includes('zip');
-                            filename = isZip
-                                ? `Доступы_Группа_${currentGroupId}.zip`
-                                : `Доступы_Группа_${currentGroupId}.xlsx`;
-                        }
-
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = filename;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        a.remove();
-
-                        showToast('Файл с доступами успешно сформирован!', 'success');
-                    } else {
-                        const errorText = await response.text();
-                        const cleanError = errorText.replace(/<[^>]+>/g, '').trim();
-                        showToast(cleanError || 'Не удалось сформировать файл.', 'danger');
                     }
-                } catch (err) {
-                    console.error('Ошибка скачивания:', err);
-                    showToast('Сбой сети при скачивании файла.', 'danger');
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = originalHtml;
-                }
-            });
 
-            // Запуск
-            document.addEventListener("DOMContentLoaded", loadCurrentGroupData);
-        </script>
+                    if (!filename) {
+                        const isZip = response.headers.get('Content-Type')?.includes('zip');
+                        filename = isZip ? `Доступы_Группа_${currentGroupId}.zip` : `Доступы_Группа_${currentGroupId}.xlsx`;
+                    }
+
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+
+                    showToast('Файл с доступами успешно сформирован!', 'success');
+                } else {
+                    const errorText = await response.text();
+                    const cleanError = errorText.replace(/<[^>]+>/g, '').trim();
+                    showToast(cleanError || 'Не удалось сформировать файл.', 'danger');
+                }
+            } catch (err) {
+                showToast('Сбой сети при скачивании файла.', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        });
+
+        // Запуск
+        document.addEventListener("DOMContentLoaded", loadCurrentGroupData);
+    </script>
+}

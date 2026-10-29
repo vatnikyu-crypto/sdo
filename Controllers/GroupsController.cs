@@ -388,7 +388,8 @@ public class GroupsController : Controller
                         {
                             GroupId = groupId,
                             CourseId = cId,
-                            AllowedStudentIds = "",
+                            // Инициализируем списком всех текущих студентов группы (чтобы галочки стояли)
+                            AllowedStudentIds = studentIds != null ? string.Join(",", studentIds) : "", 
                             ProtocolNumber = group.GroupNumber,
                             CourseStartDate = group.StartDate,
                             CourseEndDate = group.EndDate

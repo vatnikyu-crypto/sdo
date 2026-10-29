@@ -3,7 +3,6 @@
     ViewData["Title"] = "Редактирование компании";
 }
 
-<!-- Стили (идентичны странице создания + уведомления) -->
 <style>
     :root {
         --brand-primary: #4F589D;
@@ -62,66 +61,58 @@
         font-size: 0.85rem;
     }
 
-    /* ========================================= */
-    /* СТИЛИ ДЛЯ ВСПЛЫВАЮЩИХ УВЕДОМЛЕНИЙ (TOASTS) */
-    /* ========================================= */
-    .toast-container-custom {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .custom-toast {
-        min-width: 300px;
-        max-width: 400px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    /* Стили для превью логотипа */
+    .logo-preview-box {
+        width: 100px;
+        height: 100px;
+        border-radius: 12px;
+        border: 2px dashed var(--brand-gray);
         display: flex;
         align-items: center;
-        padding: 15px 20px;
+        justify-content: center;
+        overflow: hidden;
+        background-color: #f8fafc;
+    }
+    .logo-preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    /* Уведомления */
+    .toast-container-custom {
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .custom-toast {
+        min-width: 300px; max-width: 400px; background: white;
+        border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex; align-items: center; padding: 15px 20px;
         animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         border-left: 6px solid #ccc;
     }
-
     .custom-toast.success { border-left-color: #198754; }
     .custom-toast.danger { border-left-color: #dc3545; }
 
-    @@keyframes slideInRight {
-        from { transform: translateX(120%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-
-    @@keyframes fadeOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(120%); opacity: 0; }
-    }
+    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
 </style>
 
-<!-- Контейнер для уведомлений -->
 <div id="toastContainer" class="toast-container-custom"></div>
 
-<!-- НАВИГАЦИОННАЯ ШАПКА -->
 <div class="mb-4 mt-2">
     <a href="/Companies/Index" class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 hover-primary" style="transition: color 0.2s;">
-        <i class="bi bi-arrow-left"></i>
-        Назад к списку компаний
+        <i class="bi bi-arrow-left"></i> Назад к списку компаний
     </a>
     <h3 class="fw-bold text-dark m-0">Редактирование компании</h3>
 </div>
 
-<!-- КАРТОЧКА С ФОРМОЙ -->
 <div class="card border-0 shadow-sm p-4 mb-5" style="max-width: 650px; border-radius: 12px;">
-    <form id="editCompanyForm" autocomplete="off">
+    <!-- ДОБАВЛЕН enctype -->
+    <form id="editCompanyForm" autocomplete="off" enctype="multipart/form-data">
         
-        <!-- Скрытое поле для ID -->
         <input type="hidden" id="editCompanyId" value="@ViewBag.Id" />
 
-        <!-- Поле: Название компании -->
         <div class="mb-4">
             <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ КОМПАНИИ <span class="text-danger">*</span></label>
             <div class="input-icon-wrapper">
@@ -131,7 +122,6 @@
             </div>
         </div>
 
-        <!-- Поле: ИНН -->
         <div class="mb-4">
             <label class="form-label text-muted small fw-bold">ИНН КОМПАНИИ <span class="text-danger">*</span></label>
             <div class="input-icon-wrapper">
@@ -140,12 +130,32 @@
                        pattern="[0-9]{10,12}" title="ИНН должен состоять только из 10 или 12 цифр" 
                        value="@ViewBag.Inn" style="letter-spacing: 1px;" />
             </div>
-            <div class="form-text small text-muted mt-1" style="font-size: 0.75rem;">
-                Только цифры. Длина: 10 (для юр. лиц) или 12 (для ИП).
+        </div>
+
+        <!-- НОВОЕ ПОЛЕ: ЗАМЕНА ЛОГОТИПА -->
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">ЛОГОТИП КОМПАНИИ</label>
+            <div class="d-flex align-items-center gap-4">
+                <!-- Блок превью -->
+                <div class="logo-preview-box" id="logoPreviewBox">
+                    @if (!string.IsNullOrEmpty(ViewBag.LogoUrl))
+                    {
+                        <img id="logoImagePreview" src="@ViewBag.LogoUrl" alt="Текущий логотип" />
+                    }
+                    else
+                    {
+                        <i class="bi bi-image text-muted opacity-50 fs-1" id="logoPlaceholderIcon"></i>
+                        <img id="logoImagePreview" src="" alt="Превью" style="display: none;" />
+                    }
+                </div>
+                <!-- Инпут выбора файла -->
+                <div class="flex-grow-1">
+                    <input name="logoFile" id="editCompanyLogo" type="file" class="form-control" accept="image/*" style="padding-left: 15px;" onchange="previewImage(this)" />
+                    <div class="form-text small text-muted mt-1">Оставьте пустым, если не хотите менять текущий логотип.</div>
+                </div>
             </div>
         </div>
 
-        <!-- Информационный блок -->
         <div class="info-box p-3 mb-4 d-flex gap-2 align-items-start">
             <i class="bi bi-info-circle-fill text-primary fs-5"></i>
             <div>
@@ -153,7 +163,6 @@
             </div>
         </div>
 
-        <!-- КНОПКИ УПРАВЛЕНИЯ -->
         <div class="d-flex gap-2 pt-2 border-top">
             <button type="button" id="submitEditBtn" class="btn btn-brand px-4 py-2 fw-bold d-flex align-items-center gap-2 rounded-3 mt-3">
                 <i class="bi bi-check-lg fs-5"></i> Сохранить изменения
@@ -166,69 +175,67 @@
 </div>
 
 <script>
-    // Функция для показа красивых уведомлений
     function showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
-        
         toast.className = `custom-toast ${type}`;
         const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
-        
-        toast.innerHTML = `
-            <i class="bi ${iconClass} fs-4 me-3"></i>
-            <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
-        `;
-        
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
         container.appendChild(toast);
-        
         setTimeout(() => {
             toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
             setTimeout(() => toast.remove(), 300);
         }, 3500);
     }
 
-    // Получаем ID компании из URL (например, /Companies/Edit/5)
+    // Предпросмотр новой картинки
+    function previewImage(input) {
+        const preview = document.getElementById('logoImagePreview');
+        const placeholder = document.getElementById('logoPlaceholderIcon');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if(placeholder) placeholder.style.display = 'none';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
     const pathParts = window.location.pathname.split('/');
     const companyId = pathParts[pathParts.length - 1];
 
-    // Обработка нажатия на кнопку "Сохранить изменения"
     document.getElementById('submitEditBtn').addEventListener('click', async function () {
         const form = document.getElementById('editCompanyForm');
         
-        // Встроенная HTML-валидация
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
         }
 
-        const nameInput = document.getElementById('editCompanyName');
-        const innInput = document.getElementById('editCompanyInn');
-
         this.disabled = true;
         this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
 
-        const params = new URLSearchParams();
-        params.append('Name', nameInput.value.trim());
-        params.append('Inn', innInput.value.trim());
+        // ИСПОЛЬЗУЕМ FormData
+        const formData = new FormData(form);
 
         try {
-            // Отправляем запрос на /Companies/Edit/{id}
             const response = await fetch(`/Companies/Edit/${companyId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: params
+                body: formData
+                // Content-Type не указываем, браузер сам поставит multipart/form-data
             });
             
             const result = await response.json();
 
             if (result.success) {
                 showToast('Данные компании успешно обновлены!', 'success');
-                // Ждем 1 секунду и переходим к списку
                 setTimeout(() => {
                     window.location.href = '/Companies/Index';
                 }, 1000);
             } else {
-                // Если сервер вернул ошибку (например, ИНН занят)
                 showToast(result.message, 'danger');
                 this.disabled = false;
                 this.innerHTML = '<i class="bi bi-check-lg fs-5"></i> Сохранить изменения';

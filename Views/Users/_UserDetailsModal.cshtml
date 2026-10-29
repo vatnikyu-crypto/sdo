@@ -1,0 +1,75 @@
+@model SdoApp.Models.ViewModels.UserDetailsViewModel
+@{
+    Layout = null;
+}
+
+<div class="mb-4 pb-3 border-bottom">
+    <h6 class="fw-bold text-dark mb-1">@Model.User.LastName @Model.User.FirstName @Model.User.MiddleName</h6>
+    <div class="text-muted small">
+        Компания: @(Model.User.Company?.Name ?? "Физ. лицо") | Должность: @(Model.User.Position ?? "—")
+    </div>
+</div>
+
+@if (!Model.Groups.Any())
+{
+    <div class="text-center py-4 text-muted small">
+        <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+        Слушатель пока не зачислен ни в одну группу или не имеет доступа к курсам.
+    </div>
+}
+else
+{
+    <div class="accordion" id="groupsAccordion">
+        @{
+            int gIdx = 0;
+        }
+        @foreach (var g in Model.Groups)
+        {
+            gIdx++;
+            string collapseId = $"collapseGroupModal-{gIdx}";
+            string isExpanded = gIdx == 1 ? "show" : "";
+            string btnExpanded = gIdx == 1 ? "true" : "false";
+
+            <div class="accordion-item mb-2 border rounded-3 overflow-hidden">
+                <div class="d-flex align-items-center bg-light pe-3">
+                    <button class="accordion-button @(gIdx != 1 ? "collapsed" : "") text-dark shadow-none p-3 flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@btnExpanded">
+                        <div>
+                            <span class="fw-bold">Группа № @g.Group.GroupNumber</span>
+                            <div class="text-muted small fw-normal mt-1">@g.Group.Title</div>
+                        </div>
+                    </button>
+                    
+                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold remove-group-btn ms-2 shadow-sm" 
+                            data-group-id="@g.Group.Id" 
+                            title="Отчислить из группы">
+                        <i class="bi bi-box-arrow-left me-1"></i> Отчислить
+                    </button>
+                </div>
+                
+                <div id="@collapseId" class="accordion-collapse collapse @isExpanded" data-bs-parent="#groupsAccordion">
+                    <div class="accordion-body p-3 bg-white">
+                        <h6 class="fw-bold text-secondary small text-uppercase mb-3">Доступные курсы:</h6>
+                        
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var c in g.Courses)
+                            {
+                                <div class="d-flex justify-content-between align-items-center p-2 rounded border border-success bg-success bg-opacity-10">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                        <div class="fw-bold text-dark small">@c.Course.Title</div>
+                                    </div>
+
+                                    <button type="button" class="btn btn-sm btn-link text-danger fw-bold text-decoration-none remove-course-btn" 
+                                            data-config-id="@c.GroupConfigId" 
+                                            title="Отчислить с курса">
+                                        <i class="bi bi-x-lg"></i> Отчислить
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

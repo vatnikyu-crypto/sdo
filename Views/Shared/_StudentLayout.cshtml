@@ -39,20 +39,26 @@
         .navbar-brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
+            transition: transform 0.2s ease;
+        }
+
+        .navbar-brand:hover {
+            transform: scale(1.02);
         }
 
         /* Белый круг для логотипа в шапке */
         .nav-logo-circle {
-            width: 42px;
-            height: 42px;
+            width: 48px;
+            height: 48px;
             background-color: #ffffff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 5px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            padding: 6px;
+            /* Красивая двойная тень */
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1), 0 4px 10px rgba(0,0,0,0.2);
         }
 
         .nav-logo-circle img {
@@ -68,18 +74,20 @@
         }
 
         .brand-title {
-            color: white;
-            font-weight: 700;
-            font-size: 1.2rem;
-            letter-spacing: 0.5px;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.35rem;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .brand-subtitle {
             color: var(--brand-accent);
             font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 1px;
+            font-weight: 700;
+            letter-spacing: 2px;
             text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         /* Стили для ссылок меню */
@@ -113,9 +121,10 @@
         .user-profile {
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
         }
 
         .btn-logout {
@@ -174,11 +183,16 @@
                     </li>
                 </ul>
                 
-                <!-- Блок пользователя и выход -->
+                                <!-- Блок пользователя и выход -->
                 <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
-                    <div class="user-profile">
-                        <i class="bi bi-person-circle fs-5"></i>
-                        <span>@User.FindFirst("FullName")?.Value</span>
+                    <div class="user-profile d-flex flex-column align-items-lg-end text-lg-end">
+                        <span class="fw-bold" style="font-size: 0.95rem;">@User.FindFirst("FullName")?.Value</span>
+                        @if (!string.IsNullOrEmpty(User.FindFirst("Position")?.Value))
+                        {
+                            <span class="text-white-50" style="font-size: 0.75rem; line-height: 1.2;">
+                                @User.FindFirst("Position")?.Value
+                            </span>
+                        }
                     </div>
                     <a href="/Auth/Logout" class="btn btn-sm btn-outline-light btn-logout fw-bold px-3 rounded-3 d-flex align-items-center gap-2">
                         <i class="bi bi-box-arrow-right"></i> Выйти
