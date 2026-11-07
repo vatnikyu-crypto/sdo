@@ -23,11 +23,13 @@ namespace SdoApp.Controllers;
 public class UsersController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
     // Внедряем контекст базы данных через конструктор
-    public UsersController(AppDbContext context)
+    public UsersController(AppDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
     }
 
     // ГЕТ: /Users/Index
@@ -38,6 +40,7 @@ public class UsersController : Controller
         var students = await _context.Users
             .Include(u => u.Company)
             .Where(u => u.Role == UserRole.Обучающийся)
+            .OrderByDescending(u => u.Id)
             .ToListAsync();
 
         return View(students);
@@ -322,61 +325,17 @@ public class UsersController : Controller
     [HttpGet]
     public IActionResult DownloadTemplate()
     {
-        using (var workbook = new XLWorkbook())
+        // Путь к статическому файлу в wwwroot/templates
+        string filePath = Path.Combine(_env.WebRootPath, "templates", "UsersImportTemplate.xlsx");
+
+        if (!System.IO.File.Exists(filePath))
         {
-            var worksheet = workbook.Worksheets.Add("Слушатели");
-
-            // Заголовки
-            string[] headers = {
-                "Фамилия", "Имя", "Отчество", "Пол", "Дата рождения",
-                "СНИЛС", "ИНН Организации", "Отделение", "Должность", "ID группы"
-            };
-
-            for (int i = 0; i < headers.Length; i++)
-            {
-                var cell = worksheet.Cell(1, i + 1);
-                cell.Value = headers[i];
-                cell.Style.Font.Bold = true;
-                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC"); // Желтоватый фон как в шапке доступов
-                cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            }
-
-            // Пример заполнения (строка 2)
-            worksheet.Cell(2, 1).Value = "Петров";
-            worksheet.Cell(2, 2).Value = "Петр";
-            worksheet.Cell(2, 3).Value = "Петрович";
-            worksheet.Cell(2, 4).Value = "Муж";
-            worksheet.Cell(2, 5).Value = "20.10.1995";
-            worksheet.Cell(2, 6).Value = "123-456-789 01";
-            worksheet.Cell(2, 7).Value = "7700000000"; // ИНН компании (если есть)
-            worksheet.Cell(2, 8).Value = "Отдел сборки";
-            worksheet.Cell(2, 9).Value = "Сварщик 5 разряда";
-            worksheet.Cell(2, 10).Value = ""; // ID группы (оставьте пустым, если не нужно зачислять)
-
-            // Стилизуем строку с примером (серый текст)
-            var exampleRow = worksheet.Row(2);
-            exampleRow.Style.Font.FontColor = XLColor.Gray;
-
-            // Автоширина
-            worksheet.Columns().AdjustToContents();
-
-            using (var stream = new MemoryStream())
-            {
-                workbook.SaveAs(stream);
-                var content = stream.ToArray();
-
-                // Формируем русское имя файла через ContentDisposition
-                var contentDisposition = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
-                {
-                    FileNameStar = "Шаблон_Импорта_Слушателей.xlsx"
-                };
-                Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = contentDisposition.ToString();
-
-                return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            }
+            return NotFound("Файл шаблона не найден на сервере. Обратитесь к администратору.");
         }
+
+        // Отдаем файл с правильным MIME-типом и именем
+        var fileBytes = System.IO.File.ReadAllBytes(filePath);
+        return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Шаблон_импорта_слушателей.xlsx");
     }
 
     // POST: /Users/Import

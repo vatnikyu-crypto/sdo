@@ -221,12 +221,8 @@
     /* МОБИЛЬНАЯ АДАПТАЦИЯ (ЭКРАНЫ ДО 768px)      */
     /* ========================================= */
     @@media (max-width: 768px) {
-        /* Ставим контент и сайдбар друг под другом */
-        .test-layout-wrapper {
-            flex-direction: column;
-        }
+        .test-layout-wrapper { flex-direction: column; }
 
-        /* Сайдбар на всю ширину, не прилипает, уходит вниз */
         .test-nav-sidebar {
             width: 100% !important;
             min-width: 100% !important;
@@ -241,7 +237,6 @@
             min-width: 100% !important;
         }
 
-        /* Шапка теста (заголовок, таймер и номер вопроса) встает в столбик */
         .test-header {
             flex-direction: column;
             align-items: flex-start !important;
@@ -253,18 +248,15 @@
             justify-content: space-between;
         }
 
-        /* Кнопки вопросов в сайдбаре делаем поменьше, чтобы влезало больше в ряд */
         .question-grid {
             grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
             gap: 6px;
         }
 
-        /* Текст вопроса чуть меньше на мобилке */
         .question-text {
             font-size: 1.1rem !important;
         }
 
-        /* Кнопки "Назад" и "Далее" на всю ширину */
         .test-nav-buttons {
             gap: 10px;
         }
@@ -390,6 +382,11 @@
             <button id="nextQuestionBtn" class="btn btn-brand px-5 py-2 fw-bold shadow-sm rounded-3">
                 Далее <i class="bi bi-chevron-right"></i>
             </button>
+
+            <!-- НОВАЯ КНОПКА ЗАВЕРШЕНИЯ (Изначально скрыта) -->
+            <button id="finishTestBtn" class="btn btn-danger px-5 py-2 fw-bold shadow-sm rounded-3 d-none">
+                <i class="bi bi-flag-fill me-1"></i> Завершить тест
+            </button>
         </div>
     </div>
 
@@ -460,10 +457,63 @@
     const steps = document.querySelectorAll('.question-wizard-step');
     const prevBtn = document.getElementById('prevQuestionBtn');
     const nextBtn = document.getElementById('nextQuestionBtn');
+    const finishBtn = document.getElementById('finishTestBtn'); // Кнопка завершения
     const stepDisplay = document.getElementById('currentStepDisplay');
     const progressBar = document.getElementById('testProgressBar');
     
-    let redirectUrlAfterTest = "";
+    // ==========================================
+    // СОХРАНЕНИЕ ПРОГРЕССА В LOCALSTORAGE
+    // ==========================================
+    const storageKey = `test_progress_@ViewBag.AttemptId`;
+
+    function saveProgressToStorage() {
+        const answers = {};
+        steps.forEach(step => {
+            const qId = step.getAttribute('data-question-id');
+            const checkedOptions = Array.from(step.querySelectorAll('.test-option-input:checked')).map(input => input.value);
+            if (checkedOptions.length > 0) {
+                answers[qId] = checkedOptions;
+            }
+        });
+
+        const state = {
+            activeStep: activeStep,
+            answers: answers
+        };
+
+        localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function restoreProgressFromStorage() {
+        const saved = localStorage.getItem(storageKey);
+        if (!saved) return;
+
+        try {
+            const state = JSON.parse(saved);
+
+            // Восстанавливаем ответы
+            if (state.answers) {
+                for (const [qId, optIds] of Object.entries(state.answers)) {
+                    optIds.forEach(optId => {
+                        const input = document.querySelector(`.test-option-input[value="${optId}"]`);
+                        if (input) {
+                            input.checked = true;
+                            // Вызываем событие change, чтобы подсветить кнопки в сайдбаре
+                            input.dispatchEvent(new Event('change')); 
+                        }
+                    });
+                }
+            }
+
+            // Восстанавливаем шаг
+            if (state.activeStep && state.activeStep <= totalSteps) {
+                activeStep = state.activeStep;
+                updateWizardUI();
+            }
+        } catch (e) {
+            console.error("Ошибка восстановления прогресса:", e);
+        }
+    }
 
     // 1. УВЕДОМЛЕНИЯ
     function showToast(message, type = 'success') {
@@ -493,6 +543,7 @@
         btn.addEventListener('click', () => {
             activeStep = i;
             updateWizardUI();
+            saveProgressToStorage();
         });
         questionGrid.appendChild(btn);
     }
@@ -517,11 +568,13 @@
         progressBar.style.width = `${((activeStep - 1) / totalSteps) * 100}%`;
         prevBtn.disabled = activeStep === 1;
         
-        // Прячем кнопку "Далее" на последнем шаге
+        // ПРОВЕРКА НА ПОСЛЕДНИЙ ВОПРОС
         if (activeStep === totalSteps) {
-            nextBtn.classList.add('d-none');
+            nextBtn.classList.add('d-none');       // Прячем "Далее"
+            finishBtn.classList.remove('d-none');  // Показываем "Завершить"
         } else {
-            nextBtn.classList.remove('d-none');
+            nextBtn.classList.remove('d-none');    // Показываем "Далее"
+            finishBtn.classList.add('d-none');     // Прячем "Завершить"
         }
 
         // Обновляем активную кнопку в сайдбаре
@@ -532,8 +585,8 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    nextBtn.addEventListener('click', () => { if (activeStep < totalSteps) { activeStep++; updateWizardUI(); } });
-    prevBtn.addEventListener('click', () => { if (activeStep > 1) { activeStep--; updateWizardUI(); } });
+    nextBtn.addEventListener('click', () => { if (activeStep < totalSteps) { activeStep++; updateWizardUI(); saveProgressToStorage(); } });
+    prevBtn.addEventListener('click', () => { if (activeStep > 1) { activeStep--; updateWizardUI(); saveProgressToStorage(); } });
 
     // 4. ОТСЛЕЖИВАНИЕ ОТВЕТОВ
     document.querySelectorAll('.test-option-input').forEach(input => {
@@ -548,6 +601,8 @@
             } else {
                 navBtn.classList.remove('answered');
             }
+
+            saveProgressToStorage(); // Сохраняем при каждом изменении ответа
         });
     });
 
@@ -569,8 +624,9 @@
         }
     }
 
-    // Привязка кнопки "Завершить" в сайдбаре
+    // Привязка кнопок "Завершить" (в сайдбаре и на последнем вопросе)
     document.getElementById('sidebarFinishBtn').addEventListener('click', attemptFinishTest);
+    finishBtn.addEventListener('click', attemptFinishTest);
     
     // Кнопка "Все равно сдать" в окне предупреждения
     document.getElementById('confirmFinishWithUnanswered').addEventListener('click', function() {
@@ -608,6 +664,9 @@
             const result = await response.json();
 
             if (result.success) {
+                // ОЧИЩАЕМ ПАМЯТЬ БРАУЗЕРА, ТАК КАК ТЕСТ СДАН
+                localStorage.removeItem(storageKey); 
+                
                 // Сразу редирект на страницу результатов
                 window.location.href = result.redirectUrl;
             } else {
@@ -630,6 +689,9 @@
 
     // 7. ТАЙМЕР
     document.addEventListener("DOMContentLoaded", function () {
+        // ВОССТАНАВЛИВАЕМ ОТВЕТЫ И ШАГ ИЗ ПАМЯТИ БРАУЗЕРА
+        restoreProgressFromStorage();
+
         let totalSecondsLeft = parseInt("@remainingSeconds") || 0;
         const display = document.getElementById("countdownDisplay");
         const timerContainer = document.getElementById("timerContainer");

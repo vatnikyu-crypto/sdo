@@ -451,5 +451,258 @@ public class CoursesController : Controller
 
         return Json(new { success = true });
     }
+
+    [HttpPost]
+public async Task<IActionResult> Duplicate(int id)
+{
+    var source = await _context.Courses
+        .Include(c => c.Themes)
+        .Include(c => c.Materials)
+        .Include(c => c.DocumentTemplates)
+        .FirstOrDefaultAsync(c => c.Id == id);
+
+    if (source == null)
+        return Json(new { success = false, message = "Исходный курс не найден!" });
+
+    await using var tx = await _context.Database.BeginTransactionAsync();
+    try
+    {
+        // ---------- 1. КАРТОЧКА КУРСА ----------
+        var newCourse = new Course
+        {
+            Title = $"{source.Title} (копия от {DateTime.Now:dd.MM.yyyy HH:mm})",
+            Description = source.Description,
+            ImageUrl = CopyPhysicalFile(source.ImageUrl),
+            CreatedAt = DateTime.UtcNow,
+            DurationHours = source.DurationHours,
+            RecertificationMonths = source.RecertificationMonths,
+            MintrudProgramId = source.MintrudProgramId
+        };
+        _context.Courses.Add(newCourse);
+        await _context.SaveChangesAsync();
+
+        // ---------- 2. ТЕМЫ (с маппингом старый Id → новый Id) ----------
+        var themeMap = new Dictionary<int, int>();
+        foreach (var theme in source.Themes.OrderBy(t => t.Order))
+        {
+            var newTheme = new CourseTheme
+            {
+                CourseId = newCourse.Id,
+                Title = theme.Title,
+                Order = theme.Order
+            };
+            _context.CourseThemes.Add(newTheme);
+            await _context.SaveChangesAsync();
+            themeMap[theme.Id] = newTheme.Id;
+        }
+
+        // ---------- 3. МАТЕРИАЛЫ КУРСА ----------
+        int materialsCount = 0;
+        foreach (var material in source.Materials.OrderBy(m => m.Order))
+        {
+            var newMaterial = new CourseMaterial
+            {
+                CourseId = newCourse.Id,
+                Title = material.Title,
+                Type = material.Type,
+                Order = material.Order,
+                TimeLimit = material.TimeLimit,
+                ShuffleQuestions = material.ShuffleQuestions,
+                PassPercentage = material.PassPercentage,
+                TestKind = material.TestKind,
+                QuestionsCountToUse = material.QuestionsCountToUse,
+                ThemeId = material.ThemeId.HasValue && themeMap.ContainsKey(material.ThemeId.Value)
+                    ? themeMap[material.ThemeId.Value]
+                    : null,
+                ContentOrPath = CopyMaterialContent(material)
+            };
+            _context.CourseMaterials.Add(newMaterial);
+            await _context.SaveChangesAsync();
+            materialsCount++;
+
+            // ---------- 4. ВОПРОСЫ И ОТВЕТЫ ДЛЯ ТЕСТОВ ----------
+            if (material.Type == MaterialType.Test)
+            {
+                var sourceQuestions = await _context.TestQuestions
+                    .Include(q => q.Answers)
+                    .Where(q => q.CourseMaterialId == material.Id)
+                    .ToListAsync();
+
+                foreach (var q in sourceQuestions)
+                {
+                    var newQuestion = new TestQuestion
+                    {
+                        CourseMaterialId = newMaterial.Id,
+                        QuestionText = q.QuestionText,
+                        Hint = q.Hint,
+                        IsMultipleChoice = q.IsMultipleChoice
+                    };
+                    _context.TestQuestions.Add(newQuestion);
+                    await _context.SaveChangesAsync();
+
+                    foreach (var a in q.Answers)
+                    {
+                        _context.TestAnswerOptions.Add(new TestAnswerOption
+                        {
+                            TestQuestionId = newQuestion.Id,
+                            AnswerText = a.AnswerText,
+                            IsCorrect = a.IsCorrect,
+                            ImageUrl = CopyPhysicalFile(a.ImageUrl) // картинка варианта ответа
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
+        // ---------- 5. ШАБЛОНЫ ДОКУМЕНТОВ ----------
+        foreach (var template in source.DocumentTemplates.OrderBy(t => t.SortOrder))
+        {
+            _context.CourseDocumentTemplates.Add(new CourseDocumentTemplate
+            {
+                CourseId = newCourse.Id,
+                Name = template.Name,
+                FilePath = CopyPhysicalFile(template.FilePath),
+                IsPerStudent = template.IsPerStudent,
+                RequiresCommission = template.RequiresCommission,
+                SortOrder = template.SortOrder
+            });
+        }
+        await _context.SaveChangesAsync();
+
+        await tx.CommitAsync();
+
+        return Json(new
+        {
+            success = true,
+            course = new
+            {
+                id = newCourse.Id,
+                title = newCourse.Title,
+                description = newCourse.Description ?? "",
+                imageUrl = newCourse.ImageUrl ?? "",
+                createdAt = newCourse.CreatedAt.ToString("dd.MM.yyyy"),
+                materialsCount = materialsCount
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        await tx.RollbackAsync();
+        return Json(new { success = false, message = $"Ошибка при дублировании: {ex.Message}" });
+    }
+}
+
+// =================================================================================
+// ХЕЛПЕР: физическое копирование одного файла (с сохранением в той же папке)
+// Возвращает НОВЫЙ относительный путь или null, если исходника нет на диске.
+// =================================================================================
+private string? CopyPhysicalFile(string? relativePath)
+{
+    if (string.IsNullOrEmpty(relativePath) || !relativePath.StartsWith("/uploads/"))
+        return relativePath; // не файл — оставляем как есть (для Text-контента и т.п.)
+
+    string sourceFullPath = Path.Combine(_env.WebRootPath, relativePath.TrimStart('/'));
+    if (!System.IO.File.Exists(sourceFullPath))
+        return null; // физически отсутствует — не будем хранить битую ссылку
+
+    string folder = Path.GetDirectoryName(sourceFullPath)!;
+    string extension = Path.GetExtension(sourceFullPath);
+    string newFileName = Guid.NewGuid().ToString() + extension;
+    string destFullPath = Path.Combine(folder, newFileName);
+
+    System.IO.File.Copy(sourceFullPath, destFullPath, overwrite: false);
+
+    // пересобираем относительный путь: та же папка, новое имя
+    string relativeFolder = Path.GetDirectoryName(relativePath)?.Replace('\\', '/') ?? "/uploads";
+    return $"{relativeFolder}/{newFileName}";
+}
+
+// =================================================================================
+// ХЕЛПЕР: копирование содержимого материала в зависимости от типа
+// =================================================================================
+private string? CopyMaterialContent(CourseMaterial material)
+{
+    if (string.IsNullOrEmpty(material.ContentOrPath))
+        return material.ContentOrPath;
+
+    switch (material.Type)
+    {
+        case MaterialType.Text:
+            // HTML-текст — копируем как есть
+            return material.ContentOrPath;
+
+        case MaterialType.Pdf:
+        case MaterialType.Video:
+        case MaterialType.Image:
+            // Одиночный файл
+            return CopyPhysicalFile(material.ContentOrPath);
+
+        case MaterialType.Assignment:
+            // Формат хранения: "fileUrl|||htmlText"
+            {
+                var parts = material.ContentOrPath.Split("|||");
+                string oldFile = parts.Length > 0 ? parts[0] : "";
+                string text = parts.Length > 1 ? parts[1] : "";
+                string newFile = string.IsNullOrEmpty(oldFile)
+                    ? ""
+                    : (CopyPhysicalFile(oldFile) ?? "");
+                return $"{newFile}|||{text}";
+            }
+
+        case MaterialType.Scorm:
+            // SCORM — копируем всю распакованную папку целиком
+            return CopyScormFolder(material.ContentOrPath);
+
+        case MaterialType.Test:
+            // У теста файлов в ContentOrPath нет — вопросы/ответы копируются отдельно
+            return material.ContentOrPath;
+
+        default:
+            return material.ContentOrPath;
+    }
+}
+
+// =================================================================================
+// ХЕЛПЕР: копирование папки SCORM-курса
+// =================================================================================
+private string? CopyScormFolder(string? contentOrPath)
+{
+    // Ожидаемый формат: /uploads/materials/scorm/{folderName}/{entryPoint}
+    if (string.IsNullOrEmpty(contentOrPath) || !contentOrPath.StartsWith("/uploads/materials/scorm/"))
+        return contentOrPath;
+
+    var parts = contentOrPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+    // parts = ["uploads","materials","scorm","{folderName}","{entryPoint...}"]
+    if (parts.Length < 5) return contentOrPath;
+
+    string oldFolderName = parts[3];
+    string entryPoint = string.Join("/", parts.Skip(4));
+
+    string scormRoot = Path.Combine(_env.WebRootPath, "uploads", "materials", "scorm");
+    string oldFolder = Path.Combine(scormRoot, oldFolderName);
+    if (!Directory.Exists(oldFolder)) return null;
+
+    string newFolderName = Guid.NewGuid().ToString();
+    string newFolder = Path.Combine(scormRoot, newFolderName);
+
+    // рекурсивное копирование папки
+    CopyDirectoryRecursive(oldFolder, newFolder);
+
+    return $"/uploads/materials/scorm/{newFolderName}/{entryPoint}";
+}
+
+private static void CopyDirectoryRecursive(string sourceDir, string destDir)
+{
+    Directory.CreateDirectory(destDir);
+
+    foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+    {
+        string relPath = Path.GetRelativePath(sourceDir, file);
+        string destFile = Path.Combine(destDir, relPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+        System.IO.File.Copy(file, destFile, overwrite: false);
+    }
+}
 }
 

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SdoApp.Models.ViewModels;
+using SdoApp.Helpers;
 
 namespace SdoApp.Controllers;
 
@@ -99,6 +100,9 @@ public class StudentTestController : Controller
     {
         int studentId = GetCurrentUserId();
         if (studentId == 0) return Challenge();
+
+        if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, testId, groupId))
+        return this.ForbidSmart("Нет доступа к этому тесту.");
 
         var testMaterial = await _context.CourseMaterials.FindAsync(testId);
         if (testMaterial == null || testMaterial.Type != MaterialType.Test)
@@ -202,9 +206,11 @@ public class StudentTestController : Controller
         if (model.GroupId <= 0)
             return Json(new { success = false, message = "Ошибка: не передан ID группы." });
 
-        var userIdClaim = User.FindFirst("UserId")?.Value;
-        if (userIdClaim == null) return Json(new { success = false, message = "Вы не авторизованы!" });
-        int studentId = int.Parse(userIdClaim);
+        int studentId = GetCurrentUserId();
+    if (studentId == 0) return Json(new { success = false, message = "Вы не авторизованы!" });
+
+        if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, model.TestId, model.GroupId))
+        return this.ForbidSmart("Нет доступа к этому тесту.");
 
         var testMaterial = await _context.CourseMaterials.FindAsync(model.TestId);
 
@@ -279,11 +285,12 @@ public class StudentTestController : Controller
         });
     }
 
-        [HttpGet]
+    [HttpGet]
     public async Task<IActionResult> Result(int attemptId)
     {
         int studentId = GetCurrentUserId();
         if (studentId == 0) return Challenge();
+        
 
         var attempt = await _context.TestAttempts
             .Include(a => a.CourseMaterial)
@@ -374,7 +381,7 @@ public class StudentTestController : Controller
         return View(vm);
     }
 
-        // GET: /StudentTest/DownloadResult?attemptId
+    // GET: /StudentTest/DownloadResult?attemptId
     [HttpGet]
     public async Task<IActionResult> DownloadResult(int attemptId)
     {

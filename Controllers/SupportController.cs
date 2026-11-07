@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using SdoApp.Helpers;
 
 namespace SdoApp.Controllers;
 
@@ -182,7 +183,7 @@ public class SupportController : Controller
 
         if (User.IsInRole("Обучающийся") && ticket.StudentId != currentUserId)
         {
-            return Forbid();
+            return this.ForbidSmart("Нет доступа к этому обращению.");
         }
 
         var result = new
@@ -199,7 +200,7 @@ public class SupportController : Controller
                 // ЖЕСТКАЯ ПРОВЕРКА: Если SenderId равен StudentId тикета — это Студент. Иначе — это Техподдержка!
                 senderFio = m.SenderId == ticket.StudentId
                     ? $"{ticket.Student?.LastName} {ticket.Student?.FirstName}".Trim()
-                    : "🛠️ Служба техподдержки (Администратор)",
+                    : " Служба техподдержки (Администратор)",
                 isMe = m.SenderId == currentUserId,
                 isAdminMessage = m.SenderId != ticket.StudentId, // Флаг, что сообщение от админа
                 createdAt = m.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"),
@@ -216,50 +217,42 @@ public class SupportController : Controller
     [HttpPost]
     public async Task<IActionResult> SendAdminReply(int ticketId, string text, IFormFile? replyFile)
     {
-        // Система сама железно вытащит ID того, кто кликнул кнопку отправить — админа или студента
         var senderIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                       ?? User.FindFirst("Id")?.Value
-                       ?? User.FindFirst("UserId")?.Value;
+                           ?? User.FindFirst("Id")?.Value
+                           ?? User.FindFirst("UserId")?.Value;
 
         if (string.IsNullOrEmpty(senderIdStr) || !int.TryParse(senderIdStr, out int senderId))
-        {
             return Json(new { success = false, message = "Ошибка: Авторизация пользователя истекла!" });
-        }
 
         var ticket = await _context.SupportTickets.FindAsync(ticketId);
         if (ticket == null)
-        {
             return Json(new { success = false, message = "Обращение не найдено в системе!" });
-        }
 
-        // ЖЕСТКАЯ БЛОКИРОВКА ПРИ ЗАКРЫТОМ ТИКЕТЕ
+        bool isStaff = User.IsInRole("Админ") || User.IsInRole("Главный_Админ");
+        if (!isStaff && ticket.StudentId != senderId)
+            return this.ForbidSmart("Нет доступа к этому обращению.");
+
         if (ticket.Status == TicketStatus.Закрыто)
-        {
             return Json(new { success = false, message = "Ошибка: Данное обращение успешно решено и закрыто. Писать в него больше нельзя!" });
-        }
 
         if (string.IsNullOrWhiteSpace(text) && replyFile == null)
-        {
             return Json(new { success = false, message = "Ошибка: Напишите текст сообщения или прикрепите файл!" });
-        }
 
-        // Формируем новое сообщение диалога техподдержки
+        // 4. Формируем сообщение
         var message = new SupportMessage
         {
             TicketId = ticketId,
-            SenderId = senderId, // Записываем реального автора (студента или админа)
+            SenderId = senderId,
             Text = !string.IsNullOrWhiteSpace(text) ? text.Trim() : "Прикрепленный файл от техподдержки",
             CreatedAt = DateTime.UtcNow
         };
 
         _context.SupportMessages.Add(message);
-
-        // Поднимаем тикет вверх в админском реестре по дате последнего обновления
         ticket.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
-        // Сохранение одиночного вложенного файла на диск (если он прикреплен)
+        // 5. Сохранение файла
         if (replyFile != null && replyFile.Length > 0)
         {
             try

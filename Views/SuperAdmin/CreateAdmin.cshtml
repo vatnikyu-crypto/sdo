@@ -1,0 +1,90 @@
+@{
+    Layout = "_SuperAdminLayout";
+    ViewData["Title"] = "Новый администратор";
+}
+
+<div class="container mt-4 mb-5" style="max-width: 700px;">
+    <a href="/SuperAdmin/Index" class="text-decoration-none text-muted small fw-semibold mb-2 d-inline-block">
+        <i class="bi bi-arrow-left"></i> Назад к списку
+    </a>
+    <h3 class="fw-bold text-dark mb-4">Создание аккаунта Администратора</h3>
+
+    <div class="card border-0 shadow-sm p-4" style="border-radius: 16px;">
+        <form id="createForm">
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Фамилия *</label>
+                    <input name="LastName" class="form-control" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Имя *</label>
+                    <input name="FirstName" class="form-control" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Отчество</label>
+                    <input name="MiddleName" class="form-control" />
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4 border-top pt-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Логин *</label>
+                    <input name="Login" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Пароль *</label>
+                    <input name="Password" type="text" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Подтверждение пароля *</label>
+                    <input name="passwordConfirm" type="text" class="form-control" required />
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4 border-top pt-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Должность</label>
+                    <input name="Position" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Отдел / Подразделение</label>
+                    <input name="Department" class="form-control" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-brand fw-bold px-4 py-2 w-100 rounded-3">
+                <i class="bi bi-check-lg"></i> Создать администратора
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('createForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = this;
+        if(!form.checkValidity()) { form.reportValidity(); return; }
+
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = 'Сохранение...';
+
+        const formData = new FormData(form);
+        try {
+            const res = await fetch('/SuperAdmin/CreateAdmin', { method: 'POST', body: formData });
+            const result = await res.json();
+            
+            if(result.success) {
+                window.location.href = '/SuperAdmin/Index';
+            } else {
+                alert(result.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-lg"></i> Создать администратора';
+            }
+        } catch {
+            alert('Ошибка сети');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> Создать администратора';
+        }
+    });
+</script>

@@ -1,0 +1,43 @@
+<script>
+    (function() {
+        const originalFetch = window.fetch;
+
+        window.fetch = async function(url, options) {
+            options = options || {};
+
+            // === 1. Ставим X-Requested-With, чтобы ForbidSmart понял, что это AJAX ===
+            if (!options.headers) {
+                options.headers = {};
+            }
+            if (options.headers instanceof Headers) {
+                if (!options.headers.has('X-Requested-With')) {
+                    options.headers.set('X-Requested-With', 'XMLHttpRequest');
+                }
+            } else if (Array.isArray(options.headers)) {
+                if (!options.headers.some(h => String(h[0]).toLowerCase() === 'x-requested-with')) {
+                    options.headers.push(['X-Requested-With', 'XMLHttpRequest']);
+                }
+            } else {
+                if (!options.headers['X-Requested-With']) {
+                    options.headers['X-Requested-With'] = 'XMLHttpRequest';
+                }
+            }
+
+            const response = await originalFetch.call(this, url, options);
+
+            // === 2. Обработка 403: редирект на кастомную страницу ===
+            if (response.status === 403) {
+                try {
+                    const clone = response.clone();
+                    const data = await clone.json();
+                    if (data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                        return response;
+                    }
+                } catch { /* ignore */ }
+            }
+
+            return response;
+        };
+    })();
+</script>

@@ -17,7 +17,11 @@ public class DashboardController : Controller
     }
 
     [Authorize(Roles = "Главный_Админ")]
-    public IActionResult SuperAdmin() => View();
+    public IActionResult SuperAdmin() 
+    {
+        // Перенаправляем на новый контроллер
+        return RedirectToAction("Index", "SuperAdmin");
+    }
 
     [Authorize(Roles = "Админ")]
     public IActionResult Admin() => View();
@@ -60,11 +64,25 @@ public class DashboardController : Controller
             .ToListAsync();
 
         // Фильтр: курс виден, пока не истёк доступ к материалам (или дата окончания группы).
+                // Фильтр: курс виден, пока не истёк доступ к материалам (или дата окончания группы)
+        // + НОВОЕ: проверка, что студент реально допущен к курсу (AllowedStudentIds)
         var allCourses = groupCourses
             .Where(gcc =>
             {
+                // 1. Проверка сроков
                 var effectiveEnd = gcc.Group!.MaterialAccessDate ?? gcc.Group.EndDate;
-                return effectiveEnd.Date >= today;
+                if (effectiveEnd.Date < today) return false;
+
+                // 2. Проверка допуска
+                // Если строка null, значит это курс, созданный до внедрения галочек (доступен всем)
+                if (gcc.AllowedStudentIds == null) return true; 
+                
+                // Если строка пустая, значит галочки сняты со всех
+                if (string.IsNullOrWhiteSpace(gcc.AllowedStudentIds)) return false;
+
+                // Иначе проверяем, есть ли ID студента в списке
+                var ids = gcc.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+                return ids.Contains(studentId);
             })
             .ToList();
 

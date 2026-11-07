@@ -35,8 +35,13 @@
         border-bottom: 1px solid #f1f3f5;
     }
 
-    .table-custom tbody tr { transition: all 0.2s; }
-    .table-custom tbody tr:hover { background-color: #f8f9fa; }
+    .table-custom tbody tr {
+        transition: all 0.2s;
+    }
+
+    .table-custom tbody tr:hover {
+        background-color: #f8f9fa;
+    }
 
     /* Кнопки действий в таблице */
     .btn-action {
@@ -50,11 +55,29 @@
         transition: all 0.2s;
     }
     
-    .btn-action-edit { background-color: #f0f4ff; color: var(--brand-primary); border: 1px solid #dce4ff; }
-    .btn-action-edit:hover { background-color: var(--brand-primary); color: white; border-color: var(--brand-primary); }
+    .btn-action-edit {
+        background-color: #f0f4ff;
+        color: var(--brand-primary);
+        border: 1px solid #dce4ff;
+    }
+
+    .btn-action-edit:hover {
+        background-color: var(--brand-primary);
+        color: white;
+        border-color: var(--brand-primary);
+    }
     
-    .btn-action-delete { background-color: #fff0f0; color: #dc3545; border: 1px solid #ffd6d6; }
-    .btn-action-delete:hover { background-color: #dc3545; color: white; border-color: #dc3545; }
+    .btn-action-delete {
+        background-color: #fff0f0;
+        color: #dc3545;
+        border: 1px solid #ffd6d6;
+    }
+
+    .btn-action-delete:hover {
+        background-color: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
 
     /* Фирменные кнопки */
     .btn-brand {
@@ -63,6 +86,7 @@
         border: none;
         transition: all 0.3s;
     }
+
     .btn-brand:hover {
         background-color: var(--brand-dark);
         color: white;
@@ -77,6 +101,7 @@
         border-radius: 8px;
         padding: 10px 12px;
     }
+
     .modal-input:focus {
         background-color: #fff;
         border-color: var(--brand-primary);
@@ -88,10 +113,12 @@
         background-color: var(--brand-primary);
         border-color: var(--brand-primary);
     }
-        /* === ПАГИНАЦИЯ (явные контрастные стили) === */
+
+    /* === ПАГИНАЦИЯ (явные контрастные стили) === */
     #groupPaginationButtons {
         gap: 4px;
     }
+
     #groupPaginationButtons .page-link {
         color: #4F589D !important;
         background-color: #ffffff !important;
@@ -103,17 +130,20 @@
         margin: 0 2px;
         transition: all 0.2s;
     }
+
     #groupPaginationButtons .page-link:hover {
         background-color: #f0f4ff !important;
         color: #3b4382 !important;
         border-color: #4F589D !important;
     }
+
     #groupPaginationButtons .page-item.active .page-link {
         background-color: #4F589D !important;
         border-color: #4F589D !important;
         color: #ffffff !important;
         box-shadow: 0 2px 8px rgba(79, 88, 157, 0.35);
     }
+
     #groupPaginationButtons .page-item.disabled .page-link {
         color: #cbd5e1 !important;
         background-color: #f8f9fa !important;
@@ -149,7 +179,7 @@
         max-width: 400px;
         background: white;
         border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         display: flex;
         align-items: center;
         padding: 15px 20px;
@@ -157,17 +187,36 @@
         border-left: 6px solid #ccc;
     }
 
-    .custom-toast.success { border-left-color: #198754; }
-    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.success {
+        border-left-color: #198754;
+    }
+
+    .custom-toast.danger {
+        border-left-color: #dc3545;
+    }
 
     @@keyframes slideInRight {
-        from { transform: translateX(120%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+        from {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
 
     @@keyframes fadeOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(120%); opacity: 0; }
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
     }
 </style>
 
@@ -183,8 +232,9 @@
     </div>
     <div class="d-flex gap-2">
         <!-- Кнопка массового удаления -->
-        <button id="massDeleteGroupsBtn" class="btn btn-outline-danger fw-bold d-flex align-items-center gap-2 rounded-3 px-3"
-                disabled data-bs-toggle="modal" data-bs-target="#massDeleteGroupModal">
+        <button id="massDeleteGroupsBtn"
+                class="btn btn-outline-danger fw-bold d-flex align-items-center gap-2 rounded-3 px-3" disabled
+                data-bs-toggle="modal" data-bs-target="#massDeleteGroupModal">
             <i class="bi bi-trash3"></i> Удалить выбранные
         </button>
         
@@ -227,9 +277,10 @@
                     <th style="width: 70px;">ID</th>
                     <th style="width: 160px;">Номер группы</th>
                     <th>Наименование группы</th>
+                    <th style="width: 120px;" class="text-center">Слушателей</th>
                     <th>Компании</th>
-                    <th style="width: 120px;">Начало</th>
-                    <th style="width: 120px;">Окончание</th>
+                    <!-- ОБЪЕДИНЕННЫЙ СТОЛБЕЦ ДАТ -->
+                    <th style="width: 180px;">Даты обучения</th>
                     <th style="width: 100px;" class="text-end pe-4">Действия</th>
                 </tr>
             </thead>
@@ -237,6 +288,7 @@
                 @if (!Model.Any())
                 {
                     <tr id="noGroupsRow">
+                        <!-- ИЗМЕНЕН COLSPAN С 9 НА 8 -->
                         <td colspan="8" class="text-center py-5 text-muted">
                             <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
                             <h5 class="fw-bold mt-2 text-dark">Учебные группы отсутствуют</h5>
@@ -255,6 +307,14 @@
                             <td class="text-muted fw-bold">#@g.Id</td>
                             <td class="fw-bold text-secondary group-cell-number">@g.GroupNumber</td>
                             <td class="fw-bold text-dark group-cell-title">@g.Title</td>
+                            
+                            <!-- КОЛИЧЕСТВО СЛУШАТЕЛЕЙ -->
+                            <td class="text-center">
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill fw-bold">
+                                    <i class="bi bi-people me-1"></i> @(g.GroupStudents?.Count ?? 0)
+                                </span>
+                            </td>
+
                             <td>
                                 @if (g.GroupCompanies != null && g.GroupCompanies.Any())
                                 {
@@ -274,8 +334,13 @@
                                     <span class="text-muted small fst-italic">Частные лица</span>
                                 }
                             </td>
-                            <td class="text-muted small">@g.StartDate.ToString("dd.MM.yyyy")</td>
-                            <td class="text-muted small">@g.EndDate.ToString("dd.MM.yyyy")</td>
+
+                            <!-- ОБЪЕДИНЕННЫЕ ДАТЫ ОБУЧЕНИЯ -->
+                            <td class="text-muted small">
+                                <i class="bi bi-calendar-range me-1"></i> 
+                                @g.StartDate.ToString("dd.MM.yyyy") — @g.EndDate.ToString("dd.MM.yyyy")
+                            </td>
+
                             <td class="text-end pe-4">
                                 <div class="d-flex gap-2 justify-content-end">
                                     <a href="/Groups/Edit/@g.Id" class="btn btn-action btn-action-edit" title="Редактировать группу">
@@ -319,331 +384,346 @@
             <div class="modal-body p-4">
                 <form id="createGroupForm" autocomplete="off">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">НОМЕР ГРУППЫ <span class="text-danger">*</span></label>
-                        <input name="groupNumber" id="newGroupNumber" type="text" class="form-control modal-input fw-bold" required />
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ ГРУППЫ <span class="text-danger">*</span></label>
-                        <input name="title" id="newGroupTitle" type="text" class="form-control modal-input" required />
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label class="form-label text-muted small fw-bold">ДАТА НАЧАЛА <span class="text-danger">*</span></label>
-                            <input name="startDate" id="newGroupStartDate" type="date" class="form-control modal-input" required />
+                        <label class="form-label text-muted small fw-bold">НОМЕР ГРУППЫ <span
+                            class="text-danger">*</span></label>
+                            <input name="groupNumber" id="newGroupNumber" type="text"
+                                   class="form-control modal-input fw-bold" required />
                         </div>
-                        <div class="col-6">
-                            <label class="form-label text-muted small fw-bold">ДАТА ОКОНЧАНИЯ <span class="text-danger">*</span></label>
-                            <input name="endDate" id="newGroupEndDate" type="date" class="form-control modal-input" required />
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">НАИМЕНОВАНИЕ ГРУППЫ <span
+                                class="text-danger">*</span></label>
+                                <input name="title" id="newGroupTitle" type="text" class="form-control modal-input" required />
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small fw-bold">ДАТА НАЧАЛА <span
+                                        class="text-danger">*</span></label>
+                                        <input name="startDate" id="newGroupStartDate" type="date" class="form-control modal-input"
+                                               required />
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small fw-bold">ДАТА ОКОНЧАНИЯ <span
+                                            class="text-danger">*</span></label>
+                                            <input name="endDate" id="newGroupEndDate" type="date" class="form-control modal-input"
+                                                   required />
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer bg-light border-0 py-3" style="border-radius: 0 0 16px 16px;">
+                                <button type="button" class="btn btn-light px-4 fw-bold border text-secondary rounded-3"
+                                        data-bs-dismiss="modal">Отмена</button>
+                                <button id="submitCreateGroupBtn" type="button" class="btn btn-brand px-4 fw-bold rounded-3">
+                                    <i class="bi bi-check-lg me-1"></i> Создать группу
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer bg-light border-0 py-3" style="border-radius: 0 0 16px 16px;">
-                <button type="button" class="btn btn-light px-4 fw-bold border text-secondary rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button id="submitCreateGroupBtn" type="button" class="btn btn-brand px-4 fw-bold rounded-3">
-                    <i class="bi bi-check-lg me-1"></i> Создать группу
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+                </div>
 
-<!-- МОДАЛЬНОЕ ОКНО 2: ОДИНОЧНОЕ УДАЛЕНИЕ -->
-<div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-            <div class="modal-body p-4 text-center">
-                <div class="text-danger mb-3 d-flex justify-content-center">
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-                        <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                <!-- МОДАЛЬНОЕ ОКНО 2: ОДИНОЧНОЕ УДАЛЕНИЕ -->
+                <div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                            <div class="modal-body p-4 text-center">
+                                <div class="text-danger mb-3 d-flex justify-content-center">
+                                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                         style="width: 70px; height: 70px;">
+                                        <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                                    </div>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Удаление группы</h5>
+                                <p class="text-muted small mb-2">Вы действительно хотите безвозвратно удалить группу</p>
+                                <p id="deleteGroupNameText" class="fw-bold text-dark mb-4 fs-5"></p>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
+                                            data-bs-dismiss="modal">Отмена</button>
+                                    <button id="confirmDeleteGroupBtn" type="button"
+                                            class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <h5 class="fw-bold text-dark mb-2">Удаление группы</h5>
-                <p class="text-muted small mb-2">Вы действительно хотите безвозвратно удалить группу</p>
-                <p id="deleteGroupNameText" class="fw-bold text-dark mb-4 fs-5"></p>
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
-                    <button id="confirmDeleteGroupBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- МОДАЛЬНОЕ ОКНО 3: МАССОВОЕ УДАЛЕНИЕ -->
-<div class="modal fade" id="massDeleteGroupModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-            <div class="modal-body p-4 text-center">
-                <div class="text-danger mb-3 d-flex justify-content-center">
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-                        <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                <!-- МОДАЛЬНОЕ ОКНО 3: МАССОВОЕ УДАЛЕНИЕ -->
+                <div class="modal fade" id="massDeleteGroupModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                            <div class="modal-body p-4 text-center">
+                                <div class="text-danger mb-3 d-flex justify-content-center">
+                                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                         style="width: 70px; height: 70px;">
+                                        <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                                    </div>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Массовое удаление</h5>
+                                <p class="text-muted small mb-2">Вы действительно хотите безвозвратно удалить все</p>
+                                <p class="fw-bold text-dark mb-4 fs-5"><span id="massDeleteCountText" class="text-danger">0</span>
+                                    выбранных учебных групп?</p>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
+                                                data-bs-dismiss="modal">Отмена</button>
+                                        <button id="confirmMassDeleteGroupsBtn" type="button"
+                                                class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить все</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Массовое удаление</h5>
-                <p class="text-muted small mb-2">Вы действительно хотите безвозвратно удалить все</p>
-                <p class="fw-bold text-dark mb-4 fs-5"><span id="massDeleteCountText" class="text-danger">0</span> выбранных учебных групп?</p>
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
-                    <button id="confirmMassDeleteGroupsBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить все</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- 5. СКРИПТ -->
-<script>
-    let currentGroupPage = 1;
-    const groupsTableBody = document.getElementById('groupsTableBody');
-    const groupPageSizeSelect = document.getElementById('groupPageSizeSelect');
-    const groupSearchInput = document.getElementById('groupTableSearchInput');
-    const globalCheckbox = document.getElementById('globalGroupCheckbox');
-    const massDeleteBtn = document.getElementById('massDeleteGroupsBtn');
+                    <!-- 5. СКРИПТ -->
+                    <script>
+                        let currentGroupPage = 1;
+                        const groupsTableBody = document.getElementById('groupsTableBody');
+                        const groupPageSizeSelect = document.getElementById('groupPageSizeSelect');
+                        const groupSearchInput = document.getElementById('groupTableSearchInput');
+                        const globalCheckbox = document.getElementById('globalGroupCheckbox');
+                        const massDeleteBtn = document.getElementById('massDeleteGroupsBtn');
 
-    let groupPageSize = parseInt(groupPageSizeSelect.value);
+                        let groupPageSize = parseInt(groupPageSizeSelect.value);
 
-    // ==========================================
-    // ФУНКЦИЯ УВЕДОМЛЕНИЙ (TOASTS)
-    // ==========================================
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
+                        // ==========================================
+                        // ФУНКЦИЯ УВЕДОМЛЕНИЙ (TOASTS)
+                        // ==========================================
+                        function showToast(message, type = 'success') {
+                            const container = document.getElementById('toastContainer');
+                            const toast = document.createElement('div');
         
-        toast.className = `custom-toast ${type}`;
-        const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+                            toast.className = `custom-toast ${type}`;
+                            const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
         
-        toast.innerHTML = `
-            <i class="bi ${iconClass} fs-4 me-3"></i>
-            <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
-        `;
+                            toast.innerHTML = `
+                                <i class="bi ${iconClass} fs-4 me-3"></i>
+                                <div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>
+                            `;
         
-        container.appendChild(toast);
+                            container.appendChild(toast);
         
-        setTimeout(() => {
-            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
-    }
+                            setTimeout(() => {
+                                toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+                                setTimeout(() => toast.remove(), 300);
+                            }, 3500);
+                        }
 
-    // ГЛАВНАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ И ПОСТРАНИЧНОГО ВЫВОДА
-    function updateGroupsTable() {
-        const rows = Array.from(groupsTableBody.querySelectorAll('.group-table-row'));
-        const searchText = groupSearchInput.value.trim().toLowerCase();
+                        // ГЛАВНАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ И ПОСТРАНИЧНОГО ВЫВОДА
+                        function updateGroupsTable() {
+                            const rows = Array.from(groupsTableBody.querySelectorAll('.group-table-row'));
+                            const searchText = groupSearchInput.value.trim().toLowerCase();
 
-        let filteredRows = rows;
-        if (searchText.length > 0) {
-            filteredRows = rows.filter(row => {
-                const num = row.querySelector('.group-cell-number')?.textContent?.toLowerCase() ?? "";
-                const title = row.querySelector('.group-cell-title')?.textContent?.toLowerCase() ?? "";
+                            let filteredRows = rows;
+                            if (searchText.length > 0) {
+                                filteredRows = rows.filter(row => {
+                                    const num = row.querySelector('.group-cell-number')?.textContent?.toLowerCase() ?? "";
+                                    const title = row.querySelector('.group-cell-title')?.textContent?.toLowerCase() ?? "";
 
-                const companiesText = Array.from(row.querySelectorAll('.company-badge'))
-                    .map(badge => badge.textContent.toLowerCase())
-                    .join(' ');
+                                    const companiesText = Array.from(row.querySelectorAll('.company-badge'))
+                                        .map(badge => badge.textContent.toLowerCase())
+                                        .join(' ');
 
-                return num.includes(searchText) ||
-                    title.includes(searchText) ||
-                    companiesText.includes(searchText);
-            });
-        }
+                                    return num.includes(searchText) ||
+                                        title.includes(searchText) ||
+                                        companiesText.includes(searchText);
+                                });
+                            }
 
-        const totalRows = filteredRows.length;
+                            const totalRows = filteredRows.length;
 
-        if (totalRows === 0) {
-            rows.forEach(r => r.style.display = 'none');
-            document.getElementById('groupPaginationInfo').textContent = 'Показано 0-0 из 0 групп';
-            document.getElementById('groupPaginationButtons').innerHTML = '';
-            globalCheckbox.checked = false;
-            toggleMassDeleteButton();
-            return;
-        }
+                            if (totalRows === 0) {
+                                rows.forEach(r => r.style.display = 'none');
+                                document.getElementById('groupPaginationInfo').textContent = 'Показано 0-0 из 0 групп';
+                                document.getElementById('groupPaginationButtons').innerHTML = '';
+                                globalCheckbox.checked = false;
+                                toggleMassDeleteButton();
+                                return;
+                            }
 
-        const totalPages = Math.ceil(totalRows / groupPageSize);
-        if (currentGroupPage > totalPages) currentGroupPage = totalPages;
-        if (currentGroupPage < 1) currentGroupPage = 1;
+                            const totalPages = Math.ceil(totalRows / groupPageSize);
+                            if (currentGroupPage > totalPages) currentGroupPage = totalPages;
+                            if (currentGroupPage < 1) currentGroupPage = 1;
 
-        const startIndex = (currentGroupPage - 1) * groupPageSize;
-        const endIndex = Math.min(startIndex + groupPageSize, totalRows);
+                            const startIndex = (currentGroupPage - 1) * groupPageSize;
+                            const endIndex = Math.min(startIndex + groupPageSize, totalRows);
 
-        rows.forEach(r => r.style.display = 'none');
-        filteredRows.forEach((row, index) => {
-            if (index >= startIndex && index < endIndex) {
-                row.style.display = '';
-            }
-        });
+                            rows.forEach(r => r.style.display = 'none');
+                            filteredRows.forEach((row, index) => {
+                                if (index >= startIndex && index < endIndex) {
+                                    row.style.display = '';
+                                }
+                            });
 
-        document.getElementById('groupPaginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} групп`;
+                            document.getElementById('groupPaginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} групп`;
 
-        const buttonsContainer = document.getElementById('groupPaginationButtons');
-        buttonsContainer.innerHTML = '';
+                            const buttonsContainer = document.getElementById('groupPaginationButtons');
+                            buttonsContainer.innerHTML = '';
 
-        const prevLi = document.createElement('li');
-        prevLi.className = `page-item ${currentGroupPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
-        if (currentGroupPage > 1) {
-            prevLi.addEventListener('click', () => { currentGroupPage--; updateGroupsTable(); });
-        }
-        buttonsContainer.appendChild(prevLi);
+                            const prevLi = document.createElement('li');
+                            prevLi.className = `page-item ${currentGroupPage === 1 ? 'disabled' : ''}`;
+                            prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
+                            if (currentGroupPage > 1) {
+                                prevLi.addEventListener('click', () => { currentGroupPage--; updateGroupsTable(); });
+                            }
+                            buttonsContainer.appendChild(prevLi);
 
-        for (let i = 1; i <= totalPages; i++) {
-            const li = document.createElement('li');
-            li.className = `page-item ${currentGroupPage === i ? 'active' : ''}`;
-            li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
-            li.addEventListener('click', () => { currentGroupPage = i; updateGroupsTable(); });
-            buttonsContainer.appendChild(li);
-        }
+                            for (let i = 1; i <= totalPages; i++) {
+                                const li = document.createElement('li');
+                                li.className = `page-item ${currentGroupPage === i ? 'active' : ''}`;
+                                li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+                                li.addEventListener('click', () => { currentGroupPage = i; updateGroupsTable(); });
+                                buttonsContainer.appendChild(li);
+                            }
 
-        const nextLi = document.createElement('li');
-        nextLi.className = `page-item ${currentGroupPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
-        if (currentGroupPage < totalPages) {
-            nextLi.addEventListener('click', () => { currentGroupPage++; updateGroupsTable(); });
-        }
-        buttonsContainer.appendChild(nextLi);
+                            const nextLi = document.createElement('li');
+                            nextLi.className = `page-item ${currentGroupPage === totalPages ? 'disabled' : ''}`;
+                            nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
+                            if (currentGroupPage < totalPages) {
+                                nextLi.addEventListener('click', () => { currentGroupPage++; updateGroupsTable(); });
+                            }
+                            buttonsContainer.appendChild(nextLi);
 
-        globalCheckbox.checked = false;
-        toggleMassDeleteButton();
-    }
+                            globalCheckbox.checked = false;
+                            toggleMassDeleteButton();
+                        }
 
-    // ЛОГИКА ЧЕКБОКСОВ
-    globalCheckbox.addEventListener('change', function () {
-        const visibleRows = Array.from(groupsTableBody.querySelectorAll('.group-table-row'))
-            .filter(r => r.style.display !== 'none');
+                        // ЛОГИКА ЧЕКБОКСОВ
+                        globalCheckbox.addEventListener('change', function () {
+                            const visibleRows = Array.from(groupsTableBody.querySelectorAll('.group-table-row'))
+                                .filter(r => r.style.display !== 'none');
 
-        visibleRows.forEach(row => {
-            const cb = row.querySelector('.single-group-checkbox');
-            if (cb) cb.checked = globalCheckbox.checked;
-        });
-        toggleMassDeleteButton();
-    });
+                            visibleRows.forEach(row => {
+                                const cb = row.querySelector('.single-group-checkbox');
+                                if (cb) cb.checked = globalCheckbox.checked;
+                            });
+                            toggleMassDeleteButton();
+                        });
 
-    groupsTableBody.addEventListener('change', function (e) {
-        if (e.target.classList.contains('single-group-checkbox')) {
-            toggleMassDeleteButton();
-        }
-    });
+                        groupsTableBody.addEventListener('change', function (e) {
+                            if (e.target.classList.contains('single-group-checkbox')) {
+                                toggleMassDeleteButton();
+                            }
+                        });
 
-    function toggleMassDeleteButton() {
-        const checkedCount = groupsTableBody.querySelectorAll('.single-group-checkbox:checked').length;
-        massDeleteBtn.disabled = checkedCount === 0;
-        document.getElementById('massDeleteCountText').textContent = checkedCount;
-    }
+                        function toggleMassDeleteButton() {
+                            const checkedCount = groupsTableBody.querySelectorAll('.single-group-checkbox:checked').length;
+                            massDeleteBtn.disabled = checkedCount === 0;
+                            document.getElementById('massDeleteCountText').textContent = checkedCount;
+                        }
 
-    // --- AJAX СОЗДАНИЕ ГРУППЫ ---
-    document.getElementById('submitCreateGroupBtn').addEventListener('click', async function () {
-        const numInput = document.getElementById('newGroupNumber');
-        const titleInput = document.getElementById('newGroupTitle');
-        const startInput = document.getElementById('newGroupStartDate');
-        const endInput = document.getElementById('newGroupEndDate');
+                        // --- AJAX СОЗДАНИЕ ГРУППЫ ---
+                        document.getElementById('submitCreateGroupBtn').addEventListener('click', async function () {
+                            const numInput = document.getElementById('newGroupNumber');
+                            const titleInput = document.getElementById('newGroupTitle');
+                            const startInput = document.getElementById('newGroupStartDate');
+                            const endInput = document.getElementById('newGroupEndDate');
 
-        if (!numInput.value.trim() || !titleInput.value.trim() || !startInput.value || !endInput.value) {
-            showToast('Заполните все обязательные поля!', 'danger');
-            return;
-        }
+                            if (!numInput.value.trim() || !titleInput.value.trim() || !startInput.value || !endInput.value) {
+                                showToast('Заполните все обязательные поля!', 'danger');
+                                return;
+                            }
 
-        this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+                            this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
 
-        const params = new URLSearchParams();
-        params.append('groupNumber', numInput.value.trim());
-        params.append('title', titleInput.value.trim());
-        params.append('startDate', startInput.value);
-        params.append('endDate', endInput.value);
+                            const params = new URLSearchParams();
+                            params.append('groupNumber', numInput.value.trim());
+                            params.append('title', titleInput.value.trim());
+                            params.append('startDate', startInput.value);
+                            params.append('endDate', endInput.value);
 
-        try {
-            const response = await fetch('/Groups/Create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: params
-            });
-            const result = await response.json();
+                            try {
+                                const response = await fetch('/Groups/Create', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: params
+                                });
+                                const result = await response.json();
 
-            if (result.success) {
-                document.querySelector('#createGroupModal [data-bs-dismiss="modal"]').click();
-                document.getElementById('createGroupForm').reset();
-                showToast('Группа успешно создана!', 'success');
-                setTimeout(() => window.location.reload(), 1000); // Ждем 1 сек, чтобы увидеть уведомление
-            } else {
-                showToast(result.message, 'danger');
-                this.disabled = false; this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Создать группу';
-            }
-        } catch (err) {
-            showToast('Ошибка сети.', 'danger');
-            this.disabled = false; this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Создать группу';
-        }
-    });
+                                if (result.success) {
+                                    document.querySelector('#createGroupModal [data-bs-dismiss="modal"]').click();
+                                    document.getElementById('createGroupForm').reset();
+                                    showToast('Группа успешно создана!', 'success');
+                                    setTimeout(() => window.location.reload(), 1000); // Ждем 1 сек, чтобы увидеть уведомление
+                                } else {
+                                    showToast(result.message, 'danger');
+                                    this.disabled = false; this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Создать группу';
+                                }
+                            } catch (err) {
+                                showToast('Ошибка сети.', 'danger');
+                                this.disabled = false; this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Создать группу';
+                            }
+                        });
 
-    // --- AJAX ОДИНОЧНОЕ УДАЛЕНИЕ ---
-    let groupIdToDelete = null;
-    function prepareDeleteGroup(id, gNumber) {
-        groupIdToDelete = id;
-        document.getElementById('deleteGroupNameText').textContent = '№ ' + gNumber;
-    }
+                        // --- AJAX ОДИНОЧНОЕ УДАЛЕНИЕ ---
+                        let groupIdToDelete = null;
+                        function prepareDeleteGroup(id, gNumber) {
+                            groupIdToDelete = id;
+                            document.getElementById('deleteGroupNameText').textContent = '№ ' + gNumber;
+                        }
 
-    document.getElementById('confirmDeleteGroupBtn').addEventListener('click', async function () {
-        if (!groupIdToDelete) return;
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                        document.getElementById('confirmDeleteGroupBtn').addEventListener('click', async function () {
+                            if (!groupIdToDelete) return;
+                            this.disabled = true;
+                            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-        try {
-            const response = await fetch(`/Groups/Delete/${groupIdToDelete}`, { method: 'POST' });
-            const result = await response.json();
+                            try {
+                                const response = await fetch(`/Groups/Delete/${groupIdToDelete}`, { method: 'POST' });
+                                const result = await response.json();
 
-            if (result.success) {
-                document.querySelector('#deleteGroupModal [data-bs-dismiss="modal"]').click();
-                const row = document.getElementById(`group-row-${groupIdToDelete}`);
-                if (row) {
-                    row.classList.add('fade-out');
-                    showToast('Группа успешно удалена!', 'success');
-                    setTimeout(() => { row.remove(); window.location.reload(); }, 1000);
-                }
-            } else { 
-                showToast(result.message, 'danger'); 
-                this.disabled = false;
-                this.textContent = 'Удалить';
-            }
-        } catch (err) { 
-            showToast('Сбой сети.', 'danger'); 
-            this.disabled = false;
-            this.textContent = 'Удалить';
-        }
-    });
+                                if (result.success) {
+                                    document.querySelector('#deleteGroupModal [data-bs-dismiss="modal"]').click();
+                                    const row = document.getElementById(`group-row-${groupIdToDelete}`);
+                                    if (row) {
+                                        row.classList.add('fade-out');
+                                        showToast('Группа успешно удалена!', 'success');
+                                        setTimeout(() => { row.remove(); window.location.reload(); }, 1000);
+                                    }
+                                } else {
+                                    showToast(result.message, 'danger');
+                                    this.disabled = false;
+                                    this.textContent = 'Удалить';
+                                }
+                            } catch (err) {
+                                showToast('Сбой сети.', 'danger');
+                                this.disabled = false;
+                                this.textContent = 'Удалить';
+                            }
+                        });
 
-    // --- AJAX МАССОВОЕ УДАЛЕНИЕ ---
-    document.getElementById('confirmMassDeleteGroupsBtn').addEventListener('click', async function () {
-        const checkedCheckboxes = groupsTableBody.querySelectorAll('.single-group-checkbox:checked');
-        const selectedIds = Array.from(checkedCheckboxes).map(cb => parseInt(cb.value));
+                        // --- AJAX МАССОВОЕ УДАЛЕНИЕ ---
+                        document.getElementById('confirmMassDeleteGroupsBtn').addEventListener('click', async function () {
+                            const checkedCheckboxes = groupsTableBody.querySelectorAll('.single-group-checkbox:checked');
+                            const selectedIds = Array.from(checkedCheckboxes).map(cb => parseInt(cb.value));
 
-        if (selectedIds.length === 0) return;
+                            if (selectedIds.length === 0) return;
         
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                            this.disabled = true;
+                            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-        try {
-            const response = await fetch('/Groups/DeleteSelected', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(selectedIds)
-            });
-            const result = await response.json();
+                            try {
+                                const response = await fetch('/Groups/DeleteSelected', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(selectedIds)
+                                });
+                                const result = await response.json();
 
-            if (result.success) {
-                document.querySelector('#massDeleteGroupModal [data-bs-dismiss="modal"]').click();
-                showToast('Выбранные группы успешно удалены!', 'success');
-                setTimeout(() => window.location.reload(), 1000);
-            } else { 
-                showToast(result.message, 'danger'); 
-                this.disabled = false;
-                this.textContent = 'Удалить все';
-            }
-        } catch (err) { 
-            showToast('Ошибка сети при массовом удалении.', 'danger'); 
-            this.disabled = false;
-            this.textContent = 'Удалить все';
-        }
-    });
+                                if (result.success) {
+                                    document.querySelector('#massDeleteGroupModal [data-bs-dismiss="modal"]').click();
+                                    showToast('Выбранные группы успешно удалены!', 'success');
+                                    setTimeout(() => window.location.reload(), 1000);
+                                } else {
+                                    showToast(result.message, 'danger');
+                                    this.disabled = false;
+                                    this.textContent = 'Удалить все';
+                                }
+                            } catch (err) {
+                                showToast('Ошибка сети при массовом удалении.', 'danger');
+                                this.disabled = false;
+                                this.textContent = 'Удалить все';
+                            }
+                        });
 
-    // Стартовая инициализация событий
-    groupSearchInput.addEventListener('input', () => { currentGroupPage = 1; updateGroupsTable(); });
-    groupPageSizeSelect.addEventListener('change', function () { groupPageSize = parseInt(this.value); currentGroupPage = 1; updateGroupsTable(); });
-    document.addEventListener("DOMContentLoaded", updateGroupsTable);
-</script>
+                        // Стартовая инициализация событий
+                        groupSearchInput.addEventListener('input', () => { currentGroupPage = 1; updateGroupsTable(); });
+                        groupPageSizeSelect.addEventListener('change', function () { groupPageSize = parseInt(this.value); currentGroupPage = 1; updateGroupsTable(); });
+                        document.addEventListener("DOMContentLoaded", updateGroupsTable);
+                    </script>

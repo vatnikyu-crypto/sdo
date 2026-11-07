@@ -55,7 +55,7 @@ public class AssignmentReviewController : Controller
             return Json(new { success = false, message = "Оценка должна быть в диапазоне от 2 до 5!" });
         }
 
-        int currentAdminId = 2; // Замени на реальный ID админа
+        int currentAdminId = int.Parse(User.FindFirst("UserId")!.Value); // Замени на реальный ID админа
 
         try
         {

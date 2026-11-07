@@ -17,7 +17,8 @@
         border-radius: 12px;
         background: #fff;
         transition: all 0.25s ease-in-out;
-        padding: 12px 16px; /* Уменьшили внутренние отступы */
+        padding: 12px 16px;
+        /* Уменьшили внутренние отступы */
     }
 
     .course-list-card:hover {
@@ -47,9 +48,21 @@
         font-size: 1.05rem;
         color: var(--brand-dark);
         transition: color 0.2s;
-        white-space: nowrap;
+        
+        /* Ограничение в 2 строки */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
         overflow: hidden;
-        text-overflow: ellipsis; /* Обрезаем слишком длинные названия */
+        text-overflow: ellipsis;
+
+        /* ЖЕСТКИЙ ФИКС ПЕРЕНОСА */
+        line-height: 1.3;
+        /* Межстрочный интервал */
+        max-height: 2.6em;
+        /* 1.3 (line-height) * 2 (строки) = 2.6em */
+        min-height: 2.6em;
+        /* Чтобы карточки были одной высоты */
     }
 
     .course-list-card:hover .course-title-text {
@@ -125,7 +138,8 @@
             <i class="bi bi-journal-bookmark-fill text-primary fs-3"></i> Курсы
         </h3>
     </div>
-    <a href="/Courses/Create" class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3">
+    <a href="/Courses/Create"
+       class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3">
         <i class="bi bi-plus-lg"></i> Создать курс
     </a>
 </div>
@@ -134,7 +148,8 @@
 <div class="row g-3 align-items-center mb-4">
     <div class="col-sm-auto d-flex align-items-center gap-2 small text-muted fw-bold">
         <span>Показать по:</span>
-        <select id="pageSizeSelect" class="form-select form-select-sm rounded-3 shadow-none border" style="width: 80px;">
+        <select id="pageSizeSelect" class="form-select form-select-sm rounded-3 shadow-none border"
+                style="width: 80px;">
             <option value="10" selected>10</option>
             <option value="25">25</option>
             <option value="50">50</option>
@@ -165,9 +180,8 @@
         {
             <div class="col course-card-wrapper" id="course-card-@course.Id" data-id="@course.Id">
                 <!-- Основной контейнер карточки (Flexbox для выравнивания в строку) -->
-                 <div class="course-list-card shadow-sm d-flex flex-column flex-md-row align-items-md-center gap-3" 
-                     onclick="window.location.href='/CourseMaterials/Index?courseId=@course.Id'" 
-                     style="cursor: pointer;">
+                <div class="course-list-card shadow-sm d-flex flex-column flex-md-row align-items-md-center gap-3"
+                     onclick="window.location.href='/CourseMaterials/Index?courseId=@course.Id'" style="cursor: pointer;">
                     
                     <!-- 1. Превью -->
                     <div class="course-thumbnail flex-shrink-0">
@@ -199,20 +213,30 @@
                     </div>
 
                     <!-- 3. Кнопки действий (Три кнопки в ряд) -->
+                    <!-- 3. Кнопки действий (Четыре кнопки в ряд) -->
                     <div class="d-flex gap-2 flex-shrink-0 mt-3 mt-md-0">
                         <!-- Шестеренка (Наполнение) -->
-                        <a href="/CourseMaterials/Index?courseId=@course.Id" class="btn btn-action btn-brand" title="Наполнение курса" onclick="event.stopPropagation();">
+                        <a href="/CourseMaterials/Index?courseId=@course.Id" class="btn btn-action btn-brand"
+                           title="Наполнение курса" onclick="event.stopPropagation();">
                             <i class="bi bi-gear-fill"></i>
                         </a>
-                        
+
+                        <!-- Дублировать -->
+                        <button type="button" class="btn btn-action btn-outline-primary" title="Дублировать курс"
+                                data-bs-toggle="modal" data-bs-target="#duplicateCourseModal"
+                                onclick="event.stopPropagation(); prepareDuplicateCourse(@course.Id, '@course.Title')">
+                            <i class="bi bi-copy"></i>
+                        </button>
+
                         <!-- Карандаш (Редактировать) -->
-                        <a href="/Courses/Edit/@course.Id" class="btn btn-action btn-outline-primary" title="Редактировать карточку" onclick="event.stopPropagation();">
+                        <a href="/Courses/Edit/@course.Id" class="btn btn-action btn-outline-primary"
+                           title="Редактировать карточку" onclick="event.stopPropagation();">
                             <i class="bi bi-pencil-square"></i>
                         </a>
-                        
+
                         <!-- Корзина (Удалить) -->
-                        <button class="btn btn-action btn-outline-danger" title="Удалить учебный курс"
-                                data-bs-toggle="modal" data-bs-target="#deleteCourseModal"
+                        <button class="btn btn-action btn-outline-danger" title="Удалить учебный курс" data-bs-toggle="modal"
+                                data-bs-target="#deleteCourseModal"
                                 onclick="event.stopPropagation(); prepareDeleteCourse(@course.Id, '@course.Title')">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -256,149 +280,320 @@
     </div>
 </div>
 
+<!-- МОДАЛЬНОЕ ОКНО ДУБЛИРОВАНИЯ КУРСА -->
+<div class="modal fade" id="duplicateCourseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-body p-4 text-center">
+                <div class="text-primary mb-3">
+                    <i class="bi bi-copy" style="font-size: 3.5rem;"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Дублирование курса</h5>
+                <p class="text-muted small mb-0">Будет создана <b>полная копия</b> курса:</p>
+                <p class="text-muted small mb-1">карточка, темы, материалы, тесты (с вопросами), шаблоны документов и все файлы.</p>
+                <p id="duplicateCourseNameText" class="fw-bold text-primary mb-4"></p>
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
+                            data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmDuplicateCourseBtn" type="button"
+                            class="btn btn-primary px-4 fw-bold w-50 rounded-3">Дублировать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentPage = 1;
-    const gridContainer = document.getElementById('coursesGridContainer');
-    const pageSizeSelect = document.getElementById('pageSizeSelect');
-    const searchInput = document.getElementById('courseTableSearchInput');
+const gridContainer = document.getElementById('coursesGridContainer');
+const pageSizeSelect = document.getElementById('pageSizeSelect');
+const searchInput = document.getElementById('courseTableSearchInput');
 
-    let pageSize = parseInt(pageSizeSelect.value);
+let pageSize = parseInt(pageSizeSelect.value);
 
-    function updateCoursePagination() {
-        const cards = Array.from(gridContainer.querySelectorAll('.course-card-wrapper'));
-        const searchText = searchInput.value.trim().toLowerCase();
+function updateCoursePagination() {
+    const cards = Array.from(gridContainer.querySelectorAll('.course-card-wrapper'));
+    const searchText = searchInput.value.trim().toLowerCase();
 
-        let filteredCards = cards;
-        if (searchText.length > 0) {
-            filteredCards = cards.filter(card => {
-                const title = card.querySelector('.course-title-text')?.textContent?.toLowerCase() ?? "";
-                const description = card.querySelector('.course-description')?.textContent?.toLowerCase() ?? "";
-                return title.includes(searchText) || description.includes(searchText);
-            });
-        }
+    let filteredCards = cards;
+    if (searchText.length > 0) {
+        filteredCards = cards.filter(card => {
+            const title = card.querySelector('.course-title-text')?.textContent?.toLowerCase() ?? "";
+            const description = card.querySelector('.course-description')?.textContent?.toLowerCase() ?? "";
+            return title.includes(searchText) || description.includes(searchText);
+        });
+    }
 
-        const totalCards = filteredCards.length;
+    const totalCards = filteredCards.length;
 
-        if (totalCards === 0) {
-            cards.forEach(card => card.style.display = 'none');
-            document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 курсов';
-            document.getElementById('paginationButtons').innerHTML = '';
-            
-            let noMessage = document.getElementById('noCoursesMessage');
-            if (!noMessage && cards.length > 0) {
-                const emptyDiv = document.createElement('div');
-                emptyDiv.id = 'noCoursesMessage';
-                emptyDiv.className = 'col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm';
-                emptyDiv.innerHTML = '<i class="bi bi-search text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">По вашему запросу ничего не найдено</h5>';
-                gridContainer.appendChild(emptyDiv);
-            }
-            return;
-        }
-
-        const noMessage = document.getElementById('noCoursesMessage');
-        if (noMessage && cards.length > 0) { noMessage.remove(); }
-
-        const totalPages = Math.ceil(totalCards / pageSize);
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1) currentPage = 1;
-
-        const startIndex = (currentPage - 1) * pageSize;
-        const endIndex = Math.min(startIndex + pageSize, totalCards);
-
+    if (totalCards === 0) {
         cards.forEach(card => card.style.display = 'none');
-        filteredCards.forEach((card, index) => {
-            if (index >= startIndex && index < endIndex) {
-                card.style.display = '';
-            }
+        document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 курсов';
+        document.getElementById('paginationButtons').innerHTML = '';
+
+        let noMessage = document.getElementById('noCoursesMessage');
+        if (!noMessage && cards.length > 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.id = 'noCoursesMessage';
+            emptyDiv.className = 'col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm';
+            emptyDiv.innerHTML = '<i class="bi bi-search text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">По вашему запросу ничего не найдено</h5>';
+            gridContainer.appendChild(emptyDiv);
+        }
+        return;
+    }
+
+    const noMessage = document.getElementById('noCoursesMessage');
+    if (noMessage && cards.length > 0) { noMessage.remove(); }
+
+    const totalPages = Math.ceil(totalCards / pageSize);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalCards);
+
+    cards.forEach(card => card.style.display = 'none');
+    filteredCards.forEach((card, index) => {
+        if (index >= startIndex && index < endIndex) {
+            card.style.display = '';
+        }
+    });
+
+    document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalCards} курсов`;
+
+    const paginationContainer = document.getElementById('paginationButtons');
+    paginationContainer.innerHTML = '';
+
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
+    if (currentPage > 1) {
+        prevLi.addEventListener('click', () => { currentPage--; updateCoursePagination(); });
+    }
+    paginationContainer.appendChild(prevLi);
+
+    for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+        li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+        li.addEventListener('click', () => { currentPage = i; updateCoursePagination(); });
+        paginationContainer.appendChild(li);
+    }
+
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
+    if (currentPage < totalPages) {
+        nextLi.addEventListener('click', () => { currentPage++; updateCoursePagination(); });
+    }
+    paginationContainer.appendChild(nextLi);
+}
+
+searchInput.addEventListener('input', function () {
+    currentPage = 1;
+    updateCoursePagination();
+});
+
+pageSizeSelect.addEventListener('change', function () {
+    pageSize = parseInt(this.value);
+    currentPage = 1;
+    updateCoursePagination();
+});
+
+// =====================================================================
+// ЛОГИКА АСИНХРОННОГО AJAX-УДАЛЕНИЯ КУРСА (без изменений)
+// =====================================================================
+let courseIdToDelete = null;
+
+function prepareDeleteCourse(id, courseTitle) {
+    courseIdToDelete = id;
+    document.getElementById('deleteCourseNameText').textContent = `«${courseTitle}»`;
+}
+
+document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async function () {
+    if (!courseIdToDelete) return;
+
+    try {
+        const response = await fetch(`/Courses/Delete/${courseIdToDelete}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
 
-        document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalCards} курсов`;
+        const result = await response.json();
 
-        const paginationContainer = document.getElementById('paginationButtons');
-        paginationContainer.innerHTML = '';
+        if (result.success) {
+            document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
 
-        const prevLi = document.createElement('li');
-        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
-        if (currentPage > 1) {
-            prevLi.addEventListener('click', () => { currentPage--; updateCoursePagination(); });
-        }
-        paginationContainer.appendChild(prevLi);
+            const cardWrapper = document.getElementById(`course-card-${courseIdToDelete}`);
+            if (cardWrapper) {
+                cardWrapper.classList.add('fade-out');
+                setTimeout(() => {
+                    cardWrapper.remove();
 
-        for (let i = 1; i <= totalPages; i++) {
-            const li = document.createElement('li');
-            li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-            li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
-            li.addEventListener('click', () => { currentPage = i; updateCoursePagination(); });
-            paginationContainer.appendChild(li);
-        }
-
-        const nextLi = document.createElement('li');
-        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
-        if (currentPage < totalPages) {
-            nextLi.addEventListener('click', () => { currentPage++; updateCoursePagination(); });
-        }
-        paginationContainer.appendChild(nextLi);
-    }
-
-    searchInput.addEventListener('input', function () {
-        currentPage = 1;
-        updateCoursePagination();
-    });
-
-    pageSizeSelect.addEventListener('change', function () {
-        pageSize = parseInt(this.value);
-        currentPage = 1;
-        updateCoursePagination();
-    });
-
-    // --- ЛОГИКА АСИНХРОННОГО AJAX-УДАЛЕНИЯ КУРСА ---
-    let courseIdToDelete = null;
-
-    function prepareDeleteCourse(id, courseTitle) {
-        courseIdToDelete = id;
-        document.getElementById('deleteCourseNameText').textContent = `«${courseTitle}»`;
-    }
-
-    document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async function () {
-        if (!courseIdToDelete) return;
-
-        try {
-            const response = await fetch(`/Courses/Delete/${courseIdToDelete}`, {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
-
-                const cardWrapper = document.getElementById(`course-card-${courseIdToDelete}`);
-                if (cardWrapper) {
-                    cardWrapper.classList.add('fade-out');
-                    setTimeout(() => {
-                        cardWrapper.remove();
-                        
-                        const cards = gridContainer.querySelectorAll('.course-card-wrapper');
-                        if (cards.length === 0) {
-                            gridContainer.innerHTML = `<div id="noCoursesMessage" class="col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm"><i class="bi bi-journal-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">В системе пока нет созданных курсов</h5></div>`;
-                        }
-                        updateCoursePagination();
-                    }, 300);
-                }
-            } else {
-                alert('Внимание: ' + result.message);
-                document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
+                    const cards = gridContainer.querySelectorAll('.course-card-wrapper');
+                    if (cards.length === 0) {
+                        gridContainer.innerHTML = `<div id="noCoursesMessage" class="col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm"><i class="bi bi-journal-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">В системе пока нет созданных курсов</h5></div>`;
+                    }
+                    updateCoursePagination();
+                }, 300);
             }
-        } catch (error) {
-            console.error('Ошибка удаления курса:', error);
-            alert('Не удалось связаться с сервером для удаления курса.');
+        } else {
+            alert('Внимание: ' + result.message);
+            document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
         }
-    });
+    } catch (error) {
+        console.error('Ошибка удаления курса:', error);
+        alert('Не удалось связаться с сервером для удаления курса.');
+    }
+});
 
-    document.addEventListener("DOMContentLoaded", function () {
-        updateCoursePagination();
-    });
+// =====================================================================
+// НОВОЕ: ЛОГИКА ДУБЛИРОВАНИЯ КУРСА
+// =====================================================================
+let courseIdToDuplicate = null;
+
+function prepareDuplicateCourse(id, courseTitle) {
+    courseIdToDuplicate = id;
+    document.getElementById('duplicateCourseNameText').textContent = `«${courseTitle}»`;
+}
+
+document.getElementById('confirmDuplicateCourseBtn').addEventListener('click', async function () {
+    if (!courseIdToDuplicate) return;
+
+    const btn = this;
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Копирование...';
+
+    try {
+        const response = await fetch(`/Courses/Duplicate/${courseIdToDuplicate}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Закрываем модалку
+            document.querySelector('#duplicateCourseModal [data-bs-dismiss="modal"]').click();
+
+            // Удаляем сообщение "нет курсов", если оно было
+            const noMsg = document.getElementById('noCoursesMessage');
+            if (noMsg) noMsg.remove();
+
+            // Создаём и вставляем HTML новой карточки в начало грида
+            const newCardHtml = buildCourseCardHtml(result.course);
+            gridContainer.insertAdjacentHTML('afterbegin', newCardHtml);
+
+            // Вешаем обработчики на новую карточку (без inline onclick)
+            const newCard = document.getElementById(`course-card-${result.course.id}`);
+            if (newCard) attachHandlersToNewCard(newCard);
+
+            currentPage = 1;
+            updateCoursePagination();
+        } else {
+            alert('Ошибка: ' + result.message);
+            document.querySelector('#duplicateCourseModal [data-bs-dismiss="modal"]').click();
+        }
+    } catch (error) {
+        console.error('Ошибка дублирования курса:', error);
+        alert('Не удалось связаться с сервером для дублирования курса.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        courseIdToDuplicate = null;
+    }
+});
+
+// Строит HTML одной карточки курса (без inline onclick — обработчики вешаются отдельно)
+function buildCourseCardHtml(course) {
+    const esc = (str) => {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+
+    const title = esc(course.title);
+    const description = esc(course.description);
+    const imageUrl = esc(course.imageUrl);
+    const createdAt = esc(course.createdAt);
+    const materialsCount = course.materialsCount || 0;
+
+    const descriptionHtml = description
+        ? `<p class="text-muted small mb-2 course-description text-truncate" style="max-width: 100%;">${description}</p>`
+        : '';
+
+    return `
+        <div class="col course-card-wrapper" id="course-card-${course.id}" data-id="${course.id}">
+            <div class="course-list-card shadow-sm d-flex flex-column flex-md-row align-items-md-center gap-3"
+                 onclick="window.location.href='/CourseMaterials/Index?courseId=${course.id}'"
+                 style="cursor: pointer;">
+                <div class="course-thumbnail flex-shrink-0">
+                    <img src="${imageUrl}" alt="Обложка курса"
+                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://w3.org\\' width=\\'100%\\' height=\\'100%\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%234e73df\\'/><text x=\\'50%\\' y=\\'55%\\' font-family=\\'sans-serif\\' font-weight=\\'bold\\' font-size=\\'14\\' fill=\\'white\\' text-anchor=\\'middle\\'>СДО</text></svg>';">
+                </div>
+                <div class="flex-grow-1 min-w-0 pe-md-3">
+                    <h5 class="fw-bold course-title-text mb-1" title="${title}">${title}</h5>
+                    ${descriptionHtml}
+                    <div class="d-flex flex-wrap gap-3 align-items-center mt-2 mt-md-0">
+                        <span class="text-secondary small fw-semibold">
+                            <i class="bi bi-collection-play me-1"></i> Элементов: ${materialsCount}
+                        </span>
+                        <span class="text-muted small">
+                            <i class="bi bi-calendar3 me-1"></i> ${createdAt}
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-shrink-0 mt-3 mt-md-0">
+                    <a href="/CourseMaterials/Index?courseId=${course.id}" class="btn btn-action btn-brand" title="Наполнение курса" onclick="event.stopPropagation();">
+                        <i class="bi bi-gear-fill"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-outline-primary" title="Дублировать курс" data-action="duplicate">
+                        <i class="bi bi-copy"></i>
+                    </button>
+                    <a href="/Courses/Edit/${course.id}" class="btn btn-action btn-outline-primary" title="Редактировать карточку" onclick="event.stopPropagation();">
+                        <i class="bi bi-pencil-square"></i>
+                    </a>
+                    <button type="button" class="btn btn-action btn-outline-danger" title="Удалить учебный курс" data-action="delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Вешает обработчики на свежесозданную карточку (дублирование + удаление через data-action)
+function attachHandlersToNewCard(cardElement) {
+    const id = parseInt(cardElement.dataset.id);
+    const titleEl = cardElement.querySelector('.course-title-text');
+    const title = titleEl ? titleEl.textContent : '';
+
+    const dupBtn = cardElement.querySelector('[data-action="duplicate"]');
+    if (dupBtn) {
+        dupBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prepareDuplicateCourse(id, title);
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('duplicateCourseModal')).show();
+        });
+    }
+
+    const delBtn = cardElement.querySelector('[data-action="delete"]');
+    if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prepareDeleteCourse(id, title);
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteCourseModal')).show();
+        });
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    updateCoursePagination();
+});
 </script>

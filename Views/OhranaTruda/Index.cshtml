@@ -1,0 +1,190 @@
+@model SdoApp.Models.ViewModels.CertificateViewModel
+@{
+    Layout = null; // Отключаем админский/студенческий лейаут, так как страница публичная
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Проверка знаний - СДО Энергетик</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
+    <style>
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px 15px;
+        }
+
+        .certificate-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .logo-container {
+            text-align: center;
+            padding: 30px 20px 10px;
+        }
+
+        .logo-container img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .header-block {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .header-block h4 {
+            color: #4F589D; /* Фирменный синий */
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.4;
+            font-size: 1.1rem;
+        }
+
+        .content-block {
+            padding: 24px;
+        }
+
+        .field-label {
+            color: #8c98a4;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+        }
+
+        .field-value {
+            font-weight: 700;
+            color: #334155;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .company-block {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .company-name {
+            font-weight: 700;
+            color: #334155;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .company-inn {
+            color: #8c98a4;
+            font-size: 0.85rem;
+        }
+
+        .result-passed {
+            color: #198754; /* Зеленый */
+            font-weight: 700;
+        }
+        
+        .result-failed {
+            color: #dc3545; /* Красный */
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="certificate-card">
+        <!-- Логотип -->
+        <div class="logo-container">
+            <img src="~/logo.png" alt="Логотип СДО" />
+        </div>
+
+        <!-- Заголовок -->
+        <div class="header-block">
+            @if (Model.IsPassed)
+            {
+                <h4>Поздравляем, Вы успешно<br>прошли проверку знаний<br>требований охраны труда!</h4>
+            }
+            else
+            {
+                <h4>Информация о проверке знаний<br>требований охраны труда</h4>
+            }
+        </div>
+
+        <div class="content-block">
+            <!-- Компания -->
+            <div class="company-block">
+                <div class="company-name">@Model.CompanyName</div>
+                <div class="company-inn">ИНН: @Model.CompanyInn</div>
+            </div>
+
+            <!-- ФИО -->
+            <div class="field-label">ФИО слушателя:</div>
+            <div class="field-value">@Model.MaskedFullName</div>
+
+            <!-- Программа обучения -->
+            <div class="field-label">Программа обучения:</div>
+            <div class="field-value">@Model.ProgramName</div>
+
+            <!-- Номер в реестре Минтруда -->
+            @if (!string.IsNullOrWhiteSpace(Model.MintrudOfficialNumber))
+            {
+                <div class="field-label">Номер в реестре Минтруда:</div>
+                <div class="field-value">@Model.MintrudOfficialNumber</div>
+            }
+
+            <!-- Протокол -->
+            <div class="field-label">Номер протокола проверки знаний:</div>
+            <div class="field-value">
+                @Model.ProtocolNumber
+                @if (Model.ProtocolDate.HasValue)
+                {
+                    <br /><span class="text-muted fw-normal" style="font-size: 0.85rem;">От: @Model.ProtocolDate.Value.ToString("dd.MM.yyyy")</span>
+                }
+            </div>
+
+            <!-- Дата следующей проверки -->
+            <div class="field-label">Дата следующей проверки:</div>
+            <div class="field-value">
+                @if (Model.NextCheckDate.HasValue)
+                {
+                    @Model.NextCheckDate.Value.ToString("dd.MM.yyyy")
+                }
+                else
+                {
+                    <span>—</span>
+                }
+            </div>
+
+            <!-- Результат -->
+            <div class="field-label mb-1">Результат:</div>
+            <div class="field-value mb-0">
+                @if (Model.IsPassed)
+                {
+                    <span class="result-passed">Успешно прошел проверку знаний</span>
+                }
+                else
+                {
+                    <span class="result-failed">Не прошел проверку знаний (нет успешных попыток)</span>
+                }
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

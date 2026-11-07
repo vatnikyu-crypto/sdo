@@ -1,10 +1,232 @@
-@{ ViewData["Title"] = "ЛК Главного Администратора"; }
-<div class="card border-danger shadow-sm p-4 bg-white">
-    <h2 class="text-danger fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>Кабинет Главного Администратора</h2>
-    <p class="lead">Вам доступен полный контроль над СДО: управление всеми компаниями, администраторами и системными настройками.</p>
-    <hr>
-    <div class="d-flex gap-2">
-        <a href="/Admin/Users" class="btn btn-outline-primary">Управление пользователями</a>
-        <a href="/Auth/Logout" class="btn btn-danger">Выйти из системы</a>
+@model IEnumerable<SdoApp.Models.User>
+@{
+    Layout = "_SuperAdminLayout"; // <--- ИЗМЕНИТЬ ВОТ ЗДЕСЬ
+    ViewData["Title"] = "ЛК Главного Администратора";
+    var fullName = User.FindFirst("FullName")?.Value ?? "Главный Администратор";
+}
+
+<style>
+    :root {
+        --brand-primary: #4F589D;
+        --brand-dark: #3b4382;
+        --brand-danger: #dc3545;
+        --brand-gray: #e2e8f0;
+    }
+
+    /* Стили таблицы */
+    .table-custom th {
+        font-weight: 600;
+        color: #6c757d;
+        border-bottom: 2px solid var(--brand-gray);
+        padding: 15px 12px;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-custom td {
+        padding: 15px 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    /* Кнопки действий */
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    
+    .btn-action-edit { background-color: #f0f4ff; color: var(--brand-primary); border: 1px solid #dce4ff; }
+    .btn-action-edit:hover { background-color: var(--brand-primary); color: white; border-color: var(--brand-primary); }
+    
+    .btn-action-delete { background-color: #fff0f0; color: var(--brand-danger); border: 1px solid #ffd6d6; }
+    .btn-action-delete:hover { background-color: var(--brand-danger); color: white; border-color: var(--brand-danger); }
+
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+
+    /* Уведомления (Toasts) */
+    .toast-container-custom { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .custom-toast { min-width: 300px; max-width: 400px; background: white; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: flex; align-items: center; padding: 15px 20px; animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-left: 6px solid #ccc; }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+</style>
+
+<div id="toastContainer" class="toast-container-custom"></div>
+
+<!-- ПРИВЕТСТВЕННЫЙ БАННЕР -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+    <div class="card-body p-4 p-md-5 text-white d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <span class="badge bg-danger text-uppercase px-3 py-1 mb-2 fw-bold" style="letter-spacing: 1px;">Высший уровень доступа</span>
+            <h3 class="fw-bold m-0 d-flex align-items-center gap-2">
+                <i class="bi bi-shield-lock-fill text-warning"></i> Кабинет Главного Администратора
+            </h3>
+            <p class="small text-white-50 mt-2 mb-0">Приветствуем, @fullName. Здесь вы можете управлять штатом администраторов системы.</p>
+        </div>
+        <div class="text-md-end">
+            <div class="fs-1 text-white-50"><i class="bi bi-person-badge"></i></div>
+        </div>
     </div>
 </div>
+
+<!-- ЗАГОЛОВОК И КНОПКА -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+        <i class="bi bi-people-fill text-primary"></i> Действующие администраторы
+    </h5>
+    <!-- Если у тебя есть страница создания админа, укажи путь. Если нет — сделаем позже -->
+    <a href="/Users/Create" class="btn btn-brand px-4 py-2 fw-bold shadow-sm rounded-3 d-flex align-items-center gap-2">
+        <i class="bi bi-person-plus-fill"></i> Добавить администратора
+    </a>
+</div>
+
+<!-- ТАБЛИЦА АДМИНИСТРАТОРОВ -->
+<div class="card border-0 shadow-sm mb-5" style="border-radius: 12px; overflow: hidden;">
+    <div class="table-responsive">
+        <table class="table table-custom table-hover m-0">
+            <thead class="bg-light">
+                <tr>
+                    <th>ФИО администратора</th>
+                    <th>Логин</th>
+                    <th>Контакты / Должность</th>
+                    <th class="text-end pe-4" style="width: 120px;">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            В системе пока нет администраторов.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var admin in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark">
+                                    <i class="bi bi-person me-1 text-muted"></i> @admin.LastName @admin.FirstName @admin.MiddleName
+                                </div>
+                                <span class="text-muted small">ID: #@admin.Id</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border fw-mono">@admin.Login</span>
+                            </td>
+                            <td>
+                                <div class="small fw-bold text-secondary">@(string.IsNullOrEmpty(admin.Position) ? "Должность не указана" : admin.Position)</div>
+                                <div class="text-muted small">@(string.IsNullOrEmpty(admin.Department) ? "—" : admin.Department)</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="/Users/Edit/@admin.Id" class="btn btn-action btn-action-edit" title="Редактировать">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <button class="btn btn-action btn-action-delete" title="Удалить" 
+                                            data-bs-toggle="modal" data-bs-target="#deleteAdminModal"
+                                            onclick="prepareDeleteAdmin(@admin.Id, '@admin.LastName @admin.FirstName')">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ -->
+<div class="modal fade" id="deleteAdminModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body p-4 text-center">
+                <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                    <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Удаление администратора</h5>
+                <p class="text-muted small mb-2">Вы действительно хотите лишить прав администратора пользователя</p>
+                <p id="deleteAdminNameText" class="fw-bold text-dark mb-4 fs-5"></p>
+                
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                    <button id="confirmDeleteAdminBtn" type="button" class="btn btn-danger px-4 fw-bold w-50 rounded-3">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    let adminIdToDelete = null;
+
+    function prepareDeleteAdmin(id, fullName) {
+        adminIdToDelete = id;
+        document.getElementById('deleteAdminNameText').textContent = fullName;
+    }
+
+    document.getElementById('confirmDeleteAdminBtn').addEventListener('click', async function () {
+        if (!adminIdToDelete) return;
+        
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            // Предполагается, что твой UsersController умеет удалять по ID
+            const response = await fetch(`/Users/Delete/${adminIdToDelete}`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('deleteAdminModal')).hide();
+                showToast('Администратор успешно удален', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast(result.message, 'danger');
+                this.disabled = false;
+                this.textContent = 'Удалить';
+            }
+        } catch (err) {
+            showToast('Ошибка сети при удалении', 'danger');
+            this.disabled = false;
+            this.textContent = 'Удалить';
+        }
+    });
+</script>

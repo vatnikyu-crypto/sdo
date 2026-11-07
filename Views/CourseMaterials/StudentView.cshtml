@@ -33,9 +33,18 @@
         flex-shrink: 0;
     }
 
-    .course-sidebar::-webkit-scrollbar { width: 6px; }
-    .course-sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .course-sidebar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .course-sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .course-sidebar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    .course-sidebar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 
     .course-content-area {
         flex-grow: 1;
@@ -47,10 +56,12 @@
         transition: all 0.3s ease-in-out;
         display: flex;
         flex-direction: column;
-        min-width: 0; 
+        min-width: 0;
     }
 
-    .theme-group { border-bottom: 1px solid var(--brand-gray); }
+    .theme-group {
+        border-bottom: 1px solid var(--brand-gray);
+    }
     
     .theme-header {
         background-color: #f8fafc;
@@ -64,13 +75,20 @@
         transition: background-color 0.2s;
     }
 
-    .theme-header:hover { background-color: #f1f5f9; }
+    .theme-header:hover {
+        background-color: #f1f5f9;
+    }
+
     .theme-header[aria-expanded="true"] {
         background-color: #f0f4ff;
         border-bottom: 1px solid var(--brand-gray);
     }
 
-    .theme-icon { transition: transform 0.3s; font-size: 0.8rem; color: var(--brand-primary); }
+    .theme-icon {
+        transition: transform 0.3s;
+        font-size: 0.8rem;
+        color: var(--brand-primary);
+    }
 
     .sidebar-material-btn {
         width: 100%;
@@ -95,78 +113,207 @@
         background-color: var(--brand-gray);
     }
 
-    .sidebar-material-btn:last-child { border-bottom: none; }
-    .sidebar-material-btn:hover { background-color: #f8fafc; }
-    .sidebar-material-btn.active { background-color: rgba(79, 88, 157, 0.08); }
-    .sidebar-material-btn.active::before { background-color: var(--brand-primary); width: 3px; }
+    .sidebar-material-btn:last-child {
+        border-bottom: none;
+    }
 
-    .sidebar-material-btn.test-kind-0::before { background-color: #4e73df; }
-    .sidebar-material-btn.test-kind-1::before { background-color: #e74a3b; }
-    .sidebar-material-btn.test-kind-2::before { background-color: #f6c23e; }
-    .sidebar-material-btn.assignment-card::before { background-color: #36b9cc; }
-    .sidebar-material-btn.scorm-card::before { background-color: #8B5CF6; }
+    .sidebar-material-btn:hover {
+        background-color: #f8fafc;
+    }
+
+    .sidebar-material-btn.active {
+        background-color: rgba(79, 88, 157, 0.08);
+    }
+
+    .sidebar-material-btn.active::before {
+        background-color: var(--brand-primary);
+        width: 3px;
+    }
+
+    .sidebar-material-btn.test-kind-0::before {
+        background-color: #4e73df;
+    }
+
+    .sidebar-material-btn.test-kind-1::before {
+        background-color: #e74a3b;
+    }
+
+    .sidebar-material-btn.test-kind-2::before {
+        background-color: #f6c23e;
+    }
+
+    .sidebar-material-btn.assignment-card::before {
+        background-color: #36b9cc;
+    }
+
+    .sidebar-material-btn.scorm-card::before {
+        background-color: #8B5CF6;
+    }
 
     #pdfViewerContainer {
-        display: flex; flex-direction: column; gap: 15px; background: #f1f5f9;
-        padding: 20px; border-radius: 8px; max-height: 700px; overflow-y: auto;
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05); width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background: #f1f5f9;
+        padding: 20px;
+        border-radius: 8px;
+        max-height: 700px;
+        overflow-y: auto;
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+        width: 100%;
     }
+
     .pdf-page-canvas {
-        display: block; margin: 0 auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        background: white; max-width: 100%; height: auto;
+        display: block;
+        margin: 0 auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background: white;
+        max-width: 100%;
+        height: auto;
     }
+
     .test-info-grid {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 16px; margin-bottom: 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
     }
+
     .test-info-item {
-        background: #f8fafc; border: 1px solid var(--brand-gray);
-        border-radius: 8px; padding: 16px; text-align: center;
+        background: #f8fafc;
+        border: 1px solid var(--brand-gray);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
     }
 
     .course-sidebar.sidebar-hidden {
-        width: 0 !important; min-width: 0 !important; opacity: 0; visibility: hidden;
-        padding: 0 !important; margin: 0 !important; border: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        opacity: 0;
+        visibility: hidden;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
     }
 
     .fullscreen-toggle-btn {
-        background: #f8fafc; border: 1px solid #d1d5db; color: var(--brand-primary);
-        border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: bold;
-        transition: all 0.2s; white-space: nowrap;
+        background: #f8fafc;
+        border: 1px solid #d1d5db;
+        color: var(--brand-primary);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        transition: all 0.2s;
+        white-space: nowrap;
     }
-    .fullscreen-toggle-btn:hover { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
 
-    .image-preview-wrapper img { cursor: zoom-in; transition: transform 0.2s ease; }
+    .fullscreen-toggle-btn:hover {
+        background: var(--brand-primary);
+        color: #fff;
+        border-color: var(--brand-primary);
+    }
+
+    .image-preview-wrapper img {
+        cursor: zoom-in;
+        transition: transform 0.2s ease;
+    }
+
     .fullscreen-image-overlay {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(15, 23, 42, 0.85); z-index: 2000;
-        display: flex; align-items: center; justify-content: center;
-        opacity: 0; visibility: hidden; transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.85);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out;
         cursor: zoom-out;
     }
-    .fullscreen-image-overlay.show { opacity: 1; visibility: visible; }
-    .fullscreen-image-overlay img {
-        max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transform: scale(0.95); transition: transform 0.25s ease-in-out;
+
+    .fullscreen-image-overlay.show {
+        opacity: 1;
+        visibility: visible;
     }
-    .fullscreen-image-overlay.show img { transform: scale(1); }
+
+    .fullscreen-image-overlay img {
+        max-width: 95%;
+        max-height: 95%;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transform: scale(0.95);
+        transition: transform 0.25s ease-in-out;
+    }
+
+    .fullscreen-image-overlay.show img {
+        transform: scale(1);
+    }
 
     .toast-container-custom {
-        position: fixed; top: 20px; right: 20px; z-index: 9999;
-        display: flex; flex-direction: column; gap: 10px;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
+
     .custom-toast {
-        min-width: 300px; max-width: 400px; background: white;
-        border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        display: flex; align-items: center; padding: 15px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
         animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         border-left: 6px solid #ccc;
     }
-    .custom-toast.success { border-left-color: #198754; }
-    .custom-toast.danger { border-left-color: #dc3545; }
-    .custom-toast.warning { border-left-color: #F59E0B; }
-    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+    .custom-toast.success {
+        border-left-color: #198754;
+    }
+
+    .custom-toast.danger {
+        border-left-color: #dc3545;
+    }
+
+    .custom-toast.warning {
+        border-left-color: #F59E0B;
+    }
+
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes fadeOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+    }
     
     /* ========================================= */
     /* НОВЫЕ СТИЛИ ДЛЯ ЧАТА (TELEGRAM STYLE)     */
@@ -191,7 +338,7 @@
         position: relative;
         font-size: 0.9rem;
         line-height: 1.4;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
     .chat-bubble.me {
@@ -237,11 +384,12 @@
     }
 
     .chat-bubble.me .chat-file-link {
-        background: rgba(255,255,255,0.2);
+        background: rgba(255, 255, 255, 0.2);
         color: white;
     }
+
     .chat-bubble.me .chat-file-link:hover {
-        background: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.3);
         color: white;
     }
 
@@ -250,37 +398,112 @@
         color: var(--brand-primary);
         border: 1px solid var(--brand-gray);
     }
+
     .chat-bubble.teacher .chat-file-link:hover {
         background: #f1f5f9;
     }
 
-    .course-content-area:fullscreen, .course-content-area:-webkit-full-screen {
-        background: #fff; padding: 20px !important; width: 100vw; height: 100vh;
-        border-radius: 0; border: none; display: flex; flex-direction: column;
+    .course-content-area:fullscreen,
+    .course-content-area:-webkit-full-screen {
+        background: #fff;
+        padding: 20px !important;
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        border: none;
+        display: flex;
+        flex-direction: column;
     }
-    .course-content-area:fullscreen #dynamicBodyContainer, .course-content-area:-webkit-full-screen #dynamicBodyContainer {
-        flex-grow: 1; display: flex; flex-direction: column; height: 100%;
+
+    .course-content-area:fullscreen #dynamicBodyContainer,
+    .course-content-area:-webkit-full-screen #dynamicBodyContainer {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
-    .course-content-area:fullscreen iframe, .course-content-area:fullscreen #pdfViewerContainer, .course-content-area:fullscreen video,
-    .course-content-area:-webkit-full-screen iframe, .course-content-area:-webkit-full-screen #pdfViewerContainer, .course-content-area:-webkit-full-screen video {
-        flex-grow: 1; height: 100% !important; max-height: none !important;
+
+    .course-content-area:fullscreen iframe,
+    .course-content-area:fullscreen #pdfViewerContainer,
+    .course-content-area:fullscreen video,
+    .course-content-area:-webkit-full-screen iframe,
+    .course-content-area:-webkit-full-screen #pdfViewerContainer,
+    .course-content-area:-webkit-full-screen video {
+        flex-grow: 1;
+        height: 100% !important;
+        max-height: none !important;
     }
     
-    .btn-brand { background-color: var(--brand-primary); color: white; border: none; transition: all 0.3s; }
-    .btn-brand:hover { background-color: var(--brand-dark); color: white; box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3); }
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
 
     @@media (max-width: 768px) {
-        .course-layout { flex-direction: column; gap: 16px; }
-        .course-sidebar { width: 100%; min-width: 100%; position: static; max-height: 300px; margin-bottom: 0; }
-        .course-content-area { min-height: auto; padding: 1rem !important; width: 100%; }
-        .d-flex.justify-content-between.align-items-center.mb-3 { flex-direction: column; align-items: flex-start !important; gap: 10px; }
-        .fullscreen-toggle-btn { width: 100%; display: flex; justify-content: center; }
-        #pdfViewerContainer { padding: 10px; max-height: 60vh; }
-        .table-responsive { font-size: 0.85rem; }
-        .table-responsive .btn { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
-        .p-4 { padding: 1rem !important; }
-        .test-info-grid { grid-template-columns: 1fr; }
-        .chat-bubble { max-width: 95%; }
+        .course-layout {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .course-sidebar {
+            width: 100%;
+            min-width: 100%;
+            position: static;
+            max-height: 300px;
+            margin-bottom: 0;
+        }
+
+        .course-content-area {
+            min-height: auto;
+            padding: 1rem !important;
+            width: 100%;
+        }
+
+        .d-flex.justify-content-between.align-items-center.mb-3 {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 10px;
+        }
+
+        .fullscreen-toggle-btn {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        #pdfViewerContainer {
+            padding: 10px;
+            max-height: 60vh;
+        }
+
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+
+        .table-responsive .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .p-4 {
+            padding: 1rem !important;
+        }
+
+        .test-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .chat-bubble {
+            max-width: 95%;
+        }
     }
 </style>
 
@@ -293,7 +516,8 @@
 </script>
 
 <div class="mb-3 mt-2">
-    <a href="/Dashboard/Student" class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 fw-semibold">
+    <a href="/Dashboard/Student"
+       class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 fw-semibold">
         <i class="bi bi-arrow-left"></i> Назад к моим курсам
     </a>
     <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 fs-4 fs-md-3">
@@ -320,7 +544,8 @@
                 string ariaExpanded = isFirstTheme ? "true" : "false";
 
                 <div class="theme-group">
-                    <div class="theme-header" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@ariaExpanded">
+                    <div class="theme-header" data-bs-toggle="collapse" data-bs-target="#@collapseId"
+                         aria-expanded="@ariaExpanded">
                         <span><i class="bi bi-folder2-open me-2 text-primary"></i> @theme.Title</span>
                         <i class="bi bi-chevron-down theme-icon"></i>
                     </div>
@@ -343,14 +568,23 @@
                                     customClass = $"test-kind-{(int)m.TestKind}";
                                     subLabel = $"Тест: {m.TestKind}";
                                 }
-                                else if (m.Type == SdoApp.Models.MaterialType.Assignment) { customClass = "assignment-card"; subLabel = "Практика"; }
+                                else if (m.Type == SdoApp.Models.MaterialType.Assignment)
+                                {
+                                    customClass = "assignment-card";
+                                    subLabel = "Практика";
+                                }
                                 else if (m.Type == SdoApp.Models.MaterialType.Text) { subLabel = "Лекция"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Pdf) { subLabel = "PDF-документ"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Video) { subLabel = "Видео"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Image) { subLabel = "Схема"; }
-                                else if (m.Type == SdoApp.Models.MaterialType.Scorm) { customClass = "scorm-card"; subLabel = "SCORM-курс"; }
+                                else if (m.Type == SdoApp.Models.MaterialType.Scorm)
+                                {
+                                    customClass = "scorm-card"; subLabel =
+ "SCORM-курс";
+                                }
 
-                                <button class="sidebar-material-btn material-item-btn @customClass" data-id="@m.Id" onclick="loadContentToRightSide(@m.Id, this)">
+                                <button class="sidebar-material-btn material-item-btn @customClass" data-id="@m.Id"
+                                        onclick="loadContentToRightSide(@m.Id, this)">
                                     <span class="text-muted small fw-bold mb-1">Шаг #@globalIdx — @subLabel</span>
                                     <span class="fw-bold text-dark text-truncate w-100" style="font-size:0.9rem;">@m.Title</span>
                                 </button>
@@ -374,7 +608,8 @@
                             {
                                 globalIdx++;
                                 string subLabel = m.Type.ToString();
-                                <button class="sidebar-material-btn material-item-btn" data-id="@m.Id" onclick="loadContentToRightSide(@m.Id, this)">
+                                <button class="sidebar-material-btn material-item-btn" data-id="@m.Id"
+                                        onclick="loadContentToRightSide(@m.Id, this)">
                                     <span class="text-muted small fw-bold mb-1">Шаг #@globalIdx — @subLabel</span>
                                     <span class="fw-bold text-dark text-truncate w-100" style="font-size:0.9rem;">@m.Title</span>
                                 </button>
@@ -389,7 +624,8 @@
     <div class="course-content-area p-4" id="mainContentWindow">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="fw-bold text-dark m-0 fs-5" id="rightSideMaterialTitle">Загрузка...</h4>
-            <button class="fullscreen-toggle-btn shadow-sm d-flex align-items-center gap-1" onclick="toggleTheaterMode()">
+            <button class="fullscreen-toggle-btn shadow-sm d-flex align-items-center gap-1"
+                    onclick="toggleTheaterMode()">
                 <i class="bi bi-fullscreen"></i> <span>На весь экран</span>
             </button>
         </div>
@@ -410,7 +646,8 @@
 <div class="modal fade" id="startTestConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
         <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                 style="width: 70px; height: 70px;">
                 <i class="bi bi-play-circle-fill fs-2 text-primary"></i>
             </div>
             <h5 class="fw-bold text-dark mb-2">Запуск тестирования</h5>
@@ -418,12 +655,15 @@
             <h6 id="modalTestTitle" class="fw-bold text-dark mb-3"></h6>
             
             <div class="alert alert-warning small text-start border-0 mb-4">
-                <i class="bi bi-clock-history me-1"></i> <b>Внимание:</b> Если у теста есть ограничение по времени, таймер запустится сразу после нажатия кнопки «Начать».
+                <i class="bi bi-clock-history me-1"></i> <b>Внимание:</b> Если у теста есть ограничение по времени,
+                таймер запустится сразу после нажатия кнопки «Начать».
             </div>
             
             <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button id="confirmStartTestBtn" type="button" class="btn btn-brand fw-bold w-50 rounded-3">Начать</button>
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
+                        data-bs-dismiss="modal">Отмена</button>
+                <button id="confirmStartTestBtn" type="button"
+                        class="btn btn-brand fw-bold w-50 rounded-3">Начать</button>
             </div>
         </div>
     </div>
@@ -459,7 +699,11 @@
         bodyContainer.innerHTML = '<div class="text-center text-muted my-auto py-5"><div class="spinner-border text-primary mb-2"></div><p>Загрузка данных...</p></div>';
 
         try {
-            const response = await fetch(`/CourseMaterials/GetMaterialData/${id}`);
+            const response = await fetch(`/CourseMaterials/GetMaterialData/${id}?groupId=@ViewBag.GroupId`);
+            if (response.status === 403) {
+                container.innerHTML = '<div class="alert alert-warning border-0 shadow-sm">Нет доступа к этому материалу.</div>';
+                return;
+            }
             const rawData = await response.json();
 
             const data = {};

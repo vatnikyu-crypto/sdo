@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
 using SdoApp.Models.ViewModels;
+using SdoApp.Services;
 using System;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using SdoApp.Helpers;
 using System.Threading.Tasks;
 
 namespace SdoApp.Controllers;
@@ -24,7 +26,7 @@ public class AssignmentsController : Controller
         _env = env;
     }
 
-        [HttpGet]
+    [HttpGet]
     public async Task<IActionResult> SubmitPage(int materialId, int groupId)
     {
         var material = await _context.CourseMaterials
@@ -67,8 +69,12 @@ public class AssignmentsController : Controller
     [HttpPost]
     public async Task<IActionResult> SubmitPage([FromForm] AssignmentSubmitViewModel model)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("UserId")?.Value;
-        if (!int.TryParse(userIdClaim, out int studentId)) return Unauthorized();
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                   ?? User.FindFirst("UserId")?.Value;
+    if (!int.TryParse(userIdClaim, out int studentId)) return Unauthorized();
+
+    if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, model.MaterialId, model.GroupId))
+        return this.ForbidSmart("Нет доступа к этому заданию.");
 
         if (string.IsNullOrWhiteSpace(model.StudentComment) && model.SubmissionFile == null)
         {
@@ -146,6 +152,9 @@ public class AssignmentsController : Controller
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("UserId")?.Value;
         if (!int.TryParse(userIdClaim, out int studentId)) return Unauthorized();
+
+        if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, materialId, groupId))
+        return this.ForbidSmart("Нет доступа к этому материалу.");
 
         var submission = await _context.StudentSubmissions
             .Include(s => s.Messages)

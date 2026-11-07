@@ -1,0 +1,237 @@
+@model IEnumerable<SdoApp.Models.User>
+@{
+    Layout = "_SuperAdminLayout";
+    ViewData["Title"] = "Управление администраторами";
+}
+
+<div id="toastContainer" class="toast-container-custom"></div>
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+            <i class="bi bi-person-badge-fill text-primary fs-3"></i> Администраторы СДО
+        </h3>
+        <small class="text-muted mt-1 d-block">Управление доступом и правами сотрудников</small>
+    </div>
+    <a href="/SuperAdmin/CreateAdmin" class="btn btn-brand px-4 py-2 fw-bold shadow-sm rounded-3 d-flex align-items-center gap-2" style="background-color: var(--brand-primary); color: white; text-decoration: none;">
+        <i class="bi bi-person-plus-fill"></i> Добавить администратора
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-5" style="border-radius: 12px; overflow: hidden;">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle m-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">ФИО администратора</th>
+                    <th>Логин</th>
+                    <th>Должность / Отдел</th>
+                    <th class="text-end pe-4">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            В системе пока нет администраторов.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var admin in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">@admin.LastName @admin.FirstName @admin.MiddleName</div>
+                                <span class="text-muted small">ID: #@admin.Id</span>
+                            </td>
+                            <td><span class="badge bg-light text-primary border">@admin.Login</span></td>
+                            <td>
+                                <div class="small fw-bold text-secondary">@(string.IsNullOrEmpty(admin.Position) ? "—" : admin.Position)</div>
+                                <div class="text-muted small">@(string.IsNullOrEmpty(admin.Department) ? "—" : admin.Department)</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="/SuperAdmin/EditAdmin/@admin.Id" class="btn btn-sm btn-outline-primary fw-bold me-1" style="border-radius: 8px;">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger fw-bold" style="border-radius: 8px;"
+                                        onclick="prepareDelete(@admin.Id, '@admin.LastName @admin.FirstName')"
+                                        data-bs-toggle="modal" data-bs-target="#deleteAdminModal">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- БЛОК РЕЗЕРВНОГО КОПИРОВАНИЯ БД -->
+<div class="card mb-5 border-0 shadow-sm" style="border-radius: 12px;">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h5 class="fw-bold m-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-database-down text-primary"></i>
+                    Резервные копии БД
+                </h5>
+                <small class="text-muted">Атомарный снимок базы данных. Хранятся последние 10 копий.</small>
+            </div>
+            <button id="btnCreateBackup"
+                    class="btn btn-primary fw-bold d-flex align-items-center gap-2 rounded-3 px-3">
+                <i class="bi bi-plus-lg"></i> Создать бэкап
+            </button>
+        </div>
+
+        <div id="backupsList" class="text-muted small">Загрузка...</div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const btn = document.getElementById('btnCreateBackup');
+    const list = document.getElementById('backupsList');
+
+    async function loadBackups() {
+        try {
+            const res = await fetch('/SuperAdmin/ListBackups');
+            const data = await res.json();
+
+            if (!data.success) {
+                list.innerHTML = `<div class="text-danger">Ошибка: ${data.message}</div>`;
+                return;
+            }
+
+            if (!data.files.length) {
+                list.innerHTML = '<div class="fst-italic text-muted"><i class="bi bi-info-circle me-1"></i> Резервных копий пока нет</div>';
+                return;
+            }
+
+            list.innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Файл</th>
+                                <th style="width: 100px;">Размер</th>
+                                <th style="width: 180px;">Создан</th>
+                                <th style="width: 120px;" class="text-end">Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.files.map(f => `
+                                <tr>
+                                    <td class="font-monospace small fw-semibold">${f.fileName}</td>
+                                    <td class="text-muted small">${f.sizeMb} МБ</td>
+                                    <td class="text-muted small">${f.createdAt}</td>
+                                    <td class="text-end">
+                                        <a href="/SuperAdmin/DownloadBackup?fileName=${encodeURIComponent(f.fileName)}"
+                                           class="btn btn-sm btn-outline-primary rounded-2">
+                                            <i class="bi bi-download"></i> Скачать
+                                        </a>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        } catch (e) {
+            list.innerHTML = '<div class="text-danger">Ошибка загрузки списка бэкапов</div>';
+        }
+    }
+
+    btn.addEventListener('click', async function () {
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Создание...';
+
+        try {
+            const res = await fetch('/SuperAdmin/BackupDatabase', { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(`✅ Бэкап создан: ${data.fileName} (${data.sizeMb} МБ)`, 'success');
+                await loadBackups();
+            } else {
+                showToast(`❌ ${data.message}`, 'danger');
+            }
+        } catch (e) {
+            showToast('❌ Ошибка сети при создании бэкапа', 'danger');
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-plus-lg"></i> Создать бэкап';
+        }
+    });
+
+    loadBackups();
+})();
+</script>
+
+<!-- МОДАЛКА УДАЛЕНИЯ -->
+<div class="modal fade" id="deleteAdminModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Удаление администратора</h5>
+            <p class="text-muted small mb-2">Вы действительно хотите лишить прав пользователя</p>
+            <p id="deleteNameText" class="fw-bold text-dark mb-4 fs-5"></p>
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="confirmDeleteBtn" type="button" class="btn btn-danger fw-bold w-50 rounded-3">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    let idToDelete = null;
+    function prepareDelete(id, name) {
+        idToDelete = id;
+        document.getElementById('deleteNameText').textContent = name;
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
+        if (!idToDelete) return;
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        const formData = new FormData();
+        formData.append('id', idToDelete);
+
+        try {
+            const res = await fetch('/SuperAdmin/DeleteAdmin', { method: 'POST', body: formData });
+            const result = await res.json();
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('deleteAdminModal')).hide();
+                showToast('Администратор успешно удален', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast(result.message, 'danger');
+                this.disabled = false;
+                this.textContent = 'Удалить';
+            }
+        } catch {
+            showToast('Ошибка сети', 'danger');
+            this.disabled = false;
+            this.textContent = 'Удалить';
+        }
+    });
+</script>

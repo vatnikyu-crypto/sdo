@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] | СДО Энергетик</title>
+    
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
+    <style>
+        :root {
+            --brand-primary: #4F589D;
+            --brand-dark: #1e293b; /* Строгий графит для суперадмина */
+            --brand-accent: #F59E0B;
+            --brand-gray: #e2e8f0;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            background: var(--brand-dark);
+            color: white;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 260px;
+            z-index: 1040;
+            transition: all 0.3s;
+        }
+
+        .sidebar-brand {
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+
+        .sidebar-brand:hover { background-color: rgba(255, 255, 255, 0.05); }
+
+        .sidebar-brand img {
+            width: 35px;
+            height: 35px;
+            background: white;
+            border-radius: 50%;
+            padding: 4px;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            margin: 4px 15px;
+            padding: 12px 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(3px);
+        }
+
+        .sidebar .nav-link.active {
+            color: white;
+            background: var(--brand-primary);
+            box-shadow: inset 4px 0 0 var(--brand-accent);
+            font-weight: 600;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+
+        .toast-container-custom { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .custom-toast { min-width: 300px; max-width: 400px; background: white; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: flex; align-items: center; padding: 15px 20px; animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-left: 6px solid #ccc; }
+        .custom-toast.success { border-left-color: #198754; }
+        .custom-toast.danger { border-left-color: #dc3545; }
+        @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+        @@media (max-width: 768px) {
+            .sidebar { margin-left: -260px; }
+            .sidebar.show { margin-left: 0; }
+            .main-content { margin-left: 0; padding: 15px; }
+            .mobile-toggle { display: flex !important; position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--brand-dark); color: white; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1050; }
+        }
+        .mobile-toggle { display: none; }
+    </style>
+</head>
+<body>
+    @await Html.PartialAsync("_FetchInterceptor")
+    <!-- Боковое меню суперадмина -->
+    <nav class="sidebar" id="sidebarMenu">
+        <a href="/SuperAdmin/Index" class="sidebar-brand text-decoration-none">
+            <img src="~/logo.png" alt="Logo" onerror="this.style.display='none'">
+            <div>
+                <h6 class="m-0 fw-bold text-white">Super Admin</h6>
+                <small class="text-white-50" style="font-size: 0.7rem;">Управление СДО</small>
+            </div>
+        </a>
+
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link active" href="/SuperAdmin/Index">
+                    <i class="bi bi-shield-lock"></i> Администраторы
+                </a>
+            </li>
+        </ul>
+
+        <hr class="text-white-50 mx-3">
+        <ul class="nav flex-column mb-4">
+            <li class="nav-item">
+                <a class="nav-link text-danger" href="/Auth/Logout" style="color: #ff7b7b !important;">
+                    <i class="bi bi-box-arrow-right"></i> Выйти из системы
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Кнопка меню для мобильных -->
+    <button class="mobile-toggle" onclick="document.getElementById('sidebarMenu').classList.toggle('show')">
+        <i class="bi bi-list fs-4"></i>
+    </button>
+
+    <!-- Основное рабочее пространство -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

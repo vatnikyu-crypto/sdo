@@ -29,6 +29,7 @@ public class GroupsController : Controller
         var groups = await _context.Groups
             .Include(g => g.GroupCompanies)
             .ThenInclude(gc => gc.Company)
+            .Include(g => g.GroupStudents)
             .OrderByDescending(g => g.CreatedAt)
             .ToListAsync();
         return View(groups);
@@ -410,6 +411,56 @@ public class GroupsController : Controller
             }
 
             await _context.SaveChangesAsync();
+
+                        // 3.5. АВТОМАТИЧЕСКОЕ РАСПРЕДЕЛЕНИЕ НОВЫХ СТУДЕНТОВ НА ВСЕ КУРСЫ
+            // Логика: если у студента нет ни одной галочки в этой группе, ставим её на все курсы.
+            var actualStudents = await _context.GroupStudents
+                .Where(gs => gs.GroupId == groupId)
+                .Select(gs => gs.StudentId)
+                .ToListAsync();
+
+            var actualConfigs = await _context.GroupCourseConfigs
+                .Where(gc => gc.GroupId == groupId)
+                .ToListAsync();
+
+            if (actualStudents.Any() && actualConfigs.Any())
+            {
+                bool hasChanges = false;
+
+                foreach (var sId in actualStudents)
+                {
+                    // Проверяем, есть ли студент хотя бы в одном курсе
+                    bool isAssignedToAnyCourse = actualConfigs.Any(cfg => 
+                    {
+                        if (string.IsNullOrWhiteSpace(cfg.AllowedStudentIds)) return false;
+                        var ids = cfg.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                        return ids.Contains(sId.ToString());
+                    });
+
+                    // Если он вообще нигде не отмечен, добавляем его во ВСЕ курсы
+                    if (!isAssignedToAnyCourse)
+                    {
+                        foreach (var cfg in actualConfigs)
+                        {
+                            var idsList = string.IsNullOrWhiteSpace(cfg.AllowedStudentIds) 
+                                ? new List<string>() 
+                                : cfg.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+                            if (!idsList.Contains(sId.ToString()))
+                            {
+                                idsList.Add(sId.ToString());
+                                cfg.AllowedStudentIds = string.Join(",", idsList);
+                            }
+                        }
+                        hasChanges = true;
+                    }
+                }
+
+                if (hasChanges)
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             // 4. АВТОМАТИЧЕСКОЕ ПРИСВОЕНИЕ НОМЕРОВ МИНТРУДА (просто числа: 1, 2, 3...)
             var actualStudentIds = await _context.GroupStudents

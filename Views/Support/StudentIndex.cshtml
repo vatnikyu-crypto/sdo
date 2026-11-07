@@ -113,7 +113,7 @@
     <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 mb-2">
         <i class="bi bi-life-preserver text-primary fs-3"></i> Служба технической поддержки
     </h3>
-    <p class="text-muted small mb-0">Если у вас возникли технические проблемы, отправьте обращение специалисту технической поддержки</p>
+    <p class="text-muted small mb-0">Если у вас возникли технические проблемы, отправьте обращение специалисту технической по дистанционному обучению</p>
 </div>
 
 <!-- БАННЕР С КОНТАКТАМИ СПЕЦИАЛИСТА (СВЕРХУ) -->
@@ -180,7 +180,7 @@
                     <div class="text-center py-5 text-muted small" id="noTicketsPlaceholder">
                         <i class="bi bi-envelope-paper text-secondary opacity-50 d-block mb-3" style="font-size: 3rem;"></i>
                         <h6 class="fw-bold mt-2 mb-1 text-dark">Обращений пока нет</h6>
-                        <p class="mb-0">Заполните форму справа, чтобы сформировать первый тикет.</p>
+                        <p class="mb-0">Заполните форму справа, чтобы сформировать обращение.</p>
                     </div>
                 }
                 else
@@ -233,11 +233,11 @@
             <form id="createTicketForm" autocomplete="off" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label class="form-label text-muted small fw-bold text-uppercase">Ваш номер телефона для связи <span class="text-danger">*</span></label>
-                    <input type="text" id="ticketPhone" name="phone" class="form-control fw-bold" required placeholder="Например: +7 (999) 123-45-67" />
+                    <input type="text" id="ticketPhone" name="phone" class="form-control fw-bold" required />
                 </div>
                 <div class="mb-3">
                     <label class="form-label text-muted small fw-bold text-uppercase">Описание технической проблемы <span class="text-danger">*</span></label>
-                    <textarea id="ticketText" name="text" class="form-control" rows="5" required placeholder="Подробно опишите вашу проблему..."></textarea>
+                    <textarea id="ticketText" name="text" class="form-control" rows="5" required ></textarea>
                 </div>
                 <div class="mb-4">
                     <label class="form-label text-muted small fw-bold text-uppercase">Прикрепить файлы (до 3 штук, до 15 МБ)</label>
@@ -259,7 +259,7 @@
                 </div>
                 <div>
                     <button class="btn btn-sm btn-outline-primary fw-bold rounded-3" onclick="window.showCreateForm()">
-                        <i class="bi bi-plus-lg me-1"></i> Новый тикет
+                        <i class="bi bi-plus-lg me-1"></i> Новое обращение
                     </button>
                 </div>
             </div>
@@ -345,8 +345,7 @@
         if (files.length === 0) return true;
 
         if (files.length > 3) {
-            feedbackEl.textContent = '⚠️ Ошибка: Можно прикрепить не более 3 файлов!';
-            feedbackEl.classList.remove('d-none');
+feedbackEl.innerHTML = '<span class="d-inline-flex align-items-center gap-1"><i class="bi bi-exclamation-triangle-fill"></i> Ошибка: Можно прикрепить не более 3 файлов!</span>';            feedbackEl.classList.remove('d-none');
             buttonEl.disabled = true;
             return false;
         }
@@ -354,7 +353,7 @@
         for (let i = 0; i < files.length; i++) totalBytes += files[i].size;
         const totalMb = totalBytes / (1024 * 1024);
         if (totalMb > 15.0) {
-            feedbackEl.textContent = `⚠️ Ошибка: Вес файлов (${totalMb.toFixed(2)} МБ) превышает 15 МБ!`;
+feedbackEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> Ошибка: Вес файлов (${totalMb.toFixed(2)} МБ) превышает 15 МБ!`;
             feedbackEl.classList.remove('d-none');
             buttonEl.disabled = true;
             return false;

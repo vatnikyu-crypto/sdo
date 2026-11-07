@@ -1,0 +1,125 @@
+@{
+    Layout = null; // Публичная страница без меню
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Сертификат не найден - СДО Энергетик</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
+    
+    <style>
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .not-found-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            padding: 40px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Декоративный фон */
+        .not-found-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #dc3545, #f59e0b);
+        }
+
+        .error-icon {
+            width: 90px;
+            height: 90px;
+            background: #fee2e2;
+            color: #dc3545;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.15);
+        }
+
+        .error-title {
+            color: #334155;
+            font-weight: 800;
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+
+        .error-text {
+            color: #8c98a4;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .btn-brand {
+            background-color: #4F589D;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-brand:hover {
+            background-color: #3b4382;
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+        }
+
+        .logo-small {
+            max-width: 100px;
+            opacity: 0.5;
+            margin-top: 30px;
+            filter: grayscale(100%);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="not-found-card">
+        <div class="error-icon">
+            <i class="bi bi-file-earmark-x"></i>
+        </div>
+        
+        <h2 class="error-title">Проверка знаний не найдена</h2>
+        
+        <p class="error-text">
+            Запрашиваемый номер из реестра Минтруда отсутствует в базе данных или QR-код некорректный. 
+        </p>
+
+        <div>
+            <img src="~/logo.png" alt="Логотип" class="logo-small" onerror="this.style.display='none'" />
+        </div>
+    </div>
+
+</body>
+</html>

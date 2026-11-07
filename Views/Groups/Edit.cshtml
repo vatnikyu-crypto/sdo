@@ -238,7 +238,7 @@
 <!-- 5. ЭТАП 2: ТОНКАЯ НАСТРОЙКА КУРСОВ -->
 <div class="mb-3">
     <h4 class="fw-bold text-dark m-0"><i class="bi bi-gear text-secondary"></i> Настройка курсов и допусков</h4>
-    <p class="text-muted small">Введите протоколы и настройте доступ к каждому курсу отдельно</p>
+    <p class="text-muted small">Индивидуальная настройка каждого курса</p>
 </div>
 
 <div class="d-flex flex-column gap-3 mb-5" id="courseConfigsAccordionContainer"></div>
@@ -566,8 +566,23 @@
                             </div>`;
                 }
 
-                const allowedIdsArray = c.allowedIds ? c.allowedIds.split(',').map(id => parseInt(id)) : [];
+                                const allowedIdsArray = c.allowedIds ? c.allowedIds.split(',').map(id => parseInt(id)) : [];
                 const isFirstTime = c.allowedIds === null || c.allowedIds === undefined;
+
+                // Считаем, сколько студентов сейчас отмечено для этого курса
+                let checkedCount = 0;
+                selectedStudents.forEach(st => {
+                    if (isFirstTime || allowedIdsArray.includes(st.id)) {
+                        checkedCount++;
+                    }
+                });
+
+                // Красивое склонение слова "слушатель" (1 слушатель, 2 слушателя, 5 слушателей)
+                function getStudentWord(count) {
+                    if (count % 10 === 1 && count % 100 !== 11) return 'слушатель';
+                    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'слушателя';
+                    return 'слушателей';
+                }
 
                 let studentsCheckboxesHtml = selectedStudents.map(st => {
                     const isChecked = isFirstTime || allowedIdsArray.includes(st.id);
@@ -589,15 +604,20 @@
 
                 return `
                     <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
-                        <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center" role="button" 
+                                                <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center" role="button" 
                              data-bs-toggle="collapse" data-bs-target="#collapse-config-${c.configId}" style="cursor:pointer;">
-                            <span class="fw-bold text-dark fs-5"> ${c.title}</span>
-                            <span class="text-muted small fw-bold"> Настройки &darr;</span>
+                            
+                            <span class="fw-bold text-dark fs-5">
+                                ${c.title} 
+                                <span class="text-muted fw-normal fs-6 ms-2">(${checkedCount} ${getStudentWord(checkedCount)})</span>
+                            </span>
+                            
+                            <span class="text-muted small fw-bold text-nowrap ms-2"> Настройки &darr;</span>
                         </div>
                         <div id="collapse-config-${c.configId}" class="collapse p-4 border-top">
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
-                                    <label class="form-label text-muted small fw-bold">НОМЕР ПРОТОКОЛА / ПРИКАЗА</label>
+                                    <label class="form-label text-muted small fw-bold">НОМЕР ПРОТОКОЛА</label>
                                     <input type="text" id="protocol-input-${c.configId}" class="form-control form-control-sm fw-bold" value="${c.protocol || ''}" />
                                 </div>
                                 <div class="col-md-4">
