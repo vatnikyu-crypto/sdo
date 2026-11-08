@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
+using SdoApp.Services;
 using System;
 using System.IO;
 using System.Linq;
@@ -77,23 +78,15 @@ public class KnowledgeBaseController : Controller
             .Where(cc => _context.GroupStudents.Any(gs => gs.GroupId == cc.GroupId && gs.StudentId == studentId))
             .ToListAsync();
 
-        // Проверяем, есть ли доступ хотя бы к одному курсу
         bool hasActiveAccess = availableConfigs.Any(cc =>
         {
-            // 1. ГЛАВНОЕ: Если есть дата продления доступа и она еще не прошла — 
-            // даем доступ СРАЗУ, даже если сам курс или группа уже закончились.
             if (cc.Group != null && cc.Group.MaterialAccessDate.HasValue)
             {
                 if (today <= cc.Group.MaterialAccessDate.Value.Date)
-                {
-                    return true;
-                }
+                    return AccessService.IsStudentAllowed(cc.AllowedStudentIds, studentId);
             }
 
-            // 2. Если продления нет, проверяем стандартные даты курса/группы
             bool isWithinDates = true;
-
-            // Проверка даты НАЧАЛА
             if (cc.CourseStartDate.HasValue)
             {
                 if (today < cc.CourseStartDate.Value.Date) isWithinDates = false;
@@ -103,7 +96,6 @@ public class KnowledgeBaseController : Controller
                 if (today < cc.Group.StartDate.Date) isWithinDates = false;
             }
 
-            // Проверка даты ОКОНЧАНИЯ
             if (cc.CourseEndDate.HasValue)
             {
                 if (today > cc.CourseEndDate.Value.Date) isWithinDates = false;
@@ -115,17 +107,8 @@ public class KnowledgeBaseController : Controller
 
             if (!isWithinDates) return false;
 
-            // 3. Проверка индивидуального допуска (галочки в аккордеоне)
-            // Если строка пустая — значит, допущены все, кто в группе.
-            if (string.IsNullOrWhiteSpace(cc.AllowedStudentIds))
-                return true;
-
-            var allowedIds = cc.AllowedStudentIds
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(id => int.TryParse(id.Trim(), out var parsedId) ? parsedId : -1)
-                .ToList();
-
-            return allowedIds.Contains(studentId);
+            // null = все, "" = никто, "1,2,5" = список
+            return AccessService.IsStudentAllowed(cc.AllowedStudentIds, studentId);
         });
 
         // Если активного обучения нет — блокируем доступ и показываем View-заглушку

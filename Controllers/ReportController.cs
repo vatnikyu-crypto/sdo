@@ -29,6 +29,7 @@ using XceedDocX = Xceed.Words.NET.DocX;
 using XceedAlignment = Xceed.Document.NET.Alignment;
 using XceedTableDesign = Xceed.Document.NET.TableDesign;
 using XceedFont = Xceed.Document.NET.Font;
+using SdoApp.Services;
 // -----------------------------------------------------------
 
 namespace SdoApp.Controllers;
@@ -123,17 +124,10 @@ public class ReportController : Controller
         var template = await _context.CourseDocumentTemplates.FindAsync(templateId);
         if (template == null) return NotFound("Шаблон не найден.");
 
-        var studentIds = config.AllowedStudentIds?
-            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(int.Parse).ToList() ?? new List<int>();
+        var studentIds = await AccessService.GetAllowedStudentIdsAsync(_context, config.GroupId, config.CourseId);
 
-        if (!studentIds.Any() && config.Group != null)
-        {
-            studentIds = await _context.GroupStudents
-                .Where(gs => gs.GroupId == config.GroupId)
-                .Select(gs => gs.StudentId)
-                .ToListAsync();
-        }
+        if (!studentIds.Any())
+    return BadRequest(new { success = false, message = "В группе нет студентов, допущенных к этому курсу." });
 
         var students = await _context.Users
             .Include(u => u.Company)
@@ -141,7 +135,8 @@ public class ReportController : Controller
             .OrderBy(u => u.LastName)
             .ToListAsync();
 
-        if (!students.Any()) return BadRequest("В группе нет студентов для формирования отчёта.");
+        if (!students.Any())
+    return BadRequest(new { success = false, message = "В группе нет студентов для формирования отчёта." });
 
         var progresses = await _context.CourseProgresses
             .Where(p => p.CourseId == config.CourseId && p.GroupId == config.GroupId && studentIds.Contains(p.StudentId))
@@ -300,14 +295,7 @@ public class ReportController : Controller
 
         foreach (var config in configs)
         {
-            var studentIds = config.AllowedStudentIds?
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(int.Parse).ToList() ?? new List<int>();
-
-            if (!studentIds.Any() && group.GroupStudents != null)
-            {
-                studentIds = group.GroupStudents.Select(gs => gs.StudentId).ToList();
-            }
+            var studentIds = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
 
             if (!studentIds.Any()) continue;
 
@@ -427,12 +415,7 @@ public class ReportController : Controller
 
             foreach (var config in configs)
             {
-                var studentIds = config.AllowedStudentIds?
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(int.Parse).ToList() ?? new List<int>();
-
-                if (!studentIds.Any() && group.GroupStudents != null)
-                    studentIds = group.GroupStudents.Select(gs => gs.StudentId).ToList();
+                var studentIds = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
 
                 if (!studentIds.Any()) continue;
 
@@ -536,12 +519,7 @@ public class ReportController : Controller
 
             foreach (var config in configs)
             {
-                var studentIds = config.AllowedStudentIds?
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(int.Parse).ToList() ?? new List<int>();
-
-                if (!studentIds.Any() && group.GroupStudents != null)
-                    studentIds = group.GroupStudents.Select(gs => gs.StudentId).ToList();
+                var studentIds = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
 
                 if (!studentIds.Any()) continue;
 
@@ -660,11 +638,8 @@ public class ReportController : Controller
 
             foreach (var config in configs)
             {
-                var studentIds = config.AllowedStudentIds?.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList() ?? new List<int>();
-                if (!studentIds.Any())
-                {
-                    studentIds = await _context.GroupStudents.Where(gs => gs.GroupId == groupId).Select(gs => gs.StudentId).ToListAsync();
-                }
+                var studentIds = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
+                if (!studentIds.Any()) continue;
 
                 var students = await _context.Users.Include(u => u.Company).Where(u => studentIds.Contains(u.Id)).OrderBy(u => u.LastName).ToListAsync();
                 var finalTest = await _context.CourseMaterials.FirstOrDefaultAsync(m => m.CourseId == config.CourseId && m.Type == MaterialType.Test && m.TestKind == TestStatus.Итоговый);
@@ -881,56 +856,59 @@ public class ReportController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ImportMintrudNumbers(IFormFile excelFile)
+public async Task<IActionResult> ImportMintrudNumbers(IFormFile excelFile)
+{
+    if (excelFile == null || excelFile.Length == 0)
+        return Json(new { success = false, message = "Файл не выбран или пуст." });
+
+    await using var tx = await _context.Database.BeginTransactionAsync();
+    try
     {
-        if (excelFile == null || excelFile.Length == 0)
-            return Json(new { success = false, message = "Файл не выбран или пуст." });
+        using var stream = new MemoryStream();
+        await excelFile.CopyToAsync(stream);
+        using var workbook = new XLWorkbook(stream);
+        var worksheet = workbook.Worksheet(1);
 
-        try
+        var headerRow = worksheet.Row(1);
+        int colExternalId = headerRow.CellsUsed().First(c => c.GetString().Trim() == "Id внешней системы").Address.ColumnNumber;
+        int colRegNumber = headerRow.CellsUsed().First(c => c.GetString().Trim() == "Номер в реестре").Address.ColumnNumber;
+
+        int updatedCount = 0;
+        int notFoundCount = 0;
+
+        foreach (var row in worksheet.RowsUsed().Skip(1))
         {
-            using var stream = new MemoryStream();
-            await excelFile.CopyToAsync(stream);
-            using var workbook = new XLWorkbook(stream);
-            var worksheet = workbook.Worksheet(1);
+            string externalId = row.Cell(colExternalId).GetString().Trim();
+            string regNumber = row.Cell(colRegNumber).GetString().Trim();
 
-            var headerRow = worksheet.Row(1);
-            int colExternalId = headerRow.CellsUsed().First(c => c.GetString().Trim() == "Id внешней системы").Address.ColumnNumber;
-            int colRegNumber = headerRow.CellsUsed().First(c => c.GetString().Trim() == "Номер в реестре").Address.ColumnNumber;
+            if (string.IsNullOrEmpty(externalId) || string.IsNullOrEmpty(regNumber)) continue;
 
-            int updatedCount = 0;
-            int notFoundCount = 0;
-
-            foreach (var row in worksheet.RowsUsed().Skip(1))
+            var progress = await _context.CourseProgresses.FirstOrDefaultAsync(p => p.MintrudNumber == externalId);
+            if (progress != null)
             {
-                string externalId = row.Cell(colExternalId).GetString().Trim();
-                string regNumber = row.Cell(colRegNumber).GetString().Trim();
-
-                if (string.IsNullOrEmpty(externalId) || string.IsNullOrEmpty(regNumber)) continue;
-
-                var progress = await _context.CourseProgresses.FirstOrDefaultAsync(p => p.MintrudNumber == externalId);
-                if (progress != null)
-                {
-                    progress.MintrudOfficialNumber = regNumber;
-                    updatedCount++;
-                }
-                else
-                {
-                    notFoundCount++;
-                }
+                progress.MintrudOfficialNumber = regNumber;
+                updatedCount++;
             }
-
-            await _context.SaveChangesAsync();
-
-            string message = $"Импорт завершен. Обновлено записей: {updatedCount}.";
-            if (notFoundCount > 0) message += $" Не найдено в системе (пропущено): {notFoundCount}.";
-
-            return Json(new { success = true, message = message });
+            else
+            {
+                notFoundCount++;
+            }
         }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = $"Ошибка при чтении файла: {ex.Message}" });
-        }
+
+        await _context.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        string message = $"Импорт завершен. Обновлено записей: {updatedCount}.";
+        if (notFoundCount > 0) message += $" Не найдено в системе (пропущено): {notFoundCount}.";
+
+        return Json(new { success = true, message = message });
     }
+    catch (Exception ex)
+    {
+        await tx.RollbackAsync();
+        return Json(new { success = false, message = $"Ошибка при чтении файла: {ex.Message}" });
+    }
+}
 }
 
 // =========================================================================

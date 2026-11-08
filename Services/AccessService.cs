@@ -69,4 +69,40 @@ public static class AccessService
         return allowedCsv.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Any(s => int.TryParse(s.Trim(), out var id) && id == studentId);
     }
+
+    /// <summary>
+    /// Возвращает список ID студентов группы, реально допущенных к курсу.
+    /// null = все → вернёт всех студентов группы.
+    /// "" = никто → вернёт пустой список.
+    /// "1,2,5" → вернёт пересечение списка с реальными студентами группы.
+    /// </summary>
+    public static async Task<List<int>> GetAllowedStudentIdsAsync(
+        AppDbContext context, int groupId, int courseId)
+    {
+        var allGroupStudentIds = await context.GroupStudents
+            .AsNoTracking()
+            .Where(gs => gs.GroupId == groupId)
+            .Select(gs => gs.StudentId)
+            .ToListAsync();
+
+        var config = await context.GroupCourseConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.GroupId == groupId && c.CourseId == courseId);
+
+        if (config == null) return new List<int>();
+
+        if (config.AllowedStudentIds == null)
+            return allGroupStudentIds;                     // null = все
+
+        if (string.IsNullOrWhiteSpace(config.AllowedStudentIds))
+            return new List<int>();                        // "" = никто
+
+        var explicitIds = config.AllowedStudentIds
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => int.TryParse(s.Trim(), out var id) ? id : -1)
+            .Where(id => id > 0)
+            .ToHashSet();
+
+        return allGroupStudentIds.Where(id => explicitIds.Contains(id)).ToList();
+    }
 }

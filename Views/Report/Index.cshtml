@@ -628,6 +628,7 @@
                                         
 
 
+
                                                                     @{
                                                                         var courseStudents = allowedIds
                                                                             .Where(id => studentsMap.ContainsKey(id))
@@ -644,22 +645,23 @@
                                                                     else
                                                                     {
                                                                         <div class="table-responsive">
-                                                                            <table class="table table-custom table-hover table-bordered bg-white m-0 align-middle" style="cursor: pointer;">
+                                                                            <table class="table table-custom table-hover table-bordered bg-white m-0 align-middle"
+                                                                                   style="cursor: pointer;">
                                                                                 <thead>
-    <tr>
-        <th style="width: 5%; text-align: center;">№</th>
-        <th style="width: 32%;">ФИО полностью</th>
-        <th style="width: 18%;">Должность</th>
-        <th style="width: 22%;">Организация</th>
-        <th style="width: 10%;" class="text-center">Результат</th>
-        <th style="width: 13%;">№ Удостоверения</th>
-        <th style="width: 60px;" class="text-center">Действия</th>
-    </tr>
-</thead>
+                                                                                    <tr>
+                                                                                        <th style="width: 5%; text-align: center;">№</th>
+                                                                                        <th style="width: 32%;">ФИО полностью</th>
+                                                                                        <th style="width: 18%;">Должность</th>
+                                                                                        <th style="width: 22%;">Организация</th>
+                                                                                        <th style="width: 10%;" class="text-center">Результат</th>
+                                                                                        <th style="width: 13%;">№ Удостоверения</th>
+                                                                                        <th style="width: 60px;" class="text-center">Действия</th>
+                                                                                    </tr>
+                                                                                </thead>
                                                                                 <tbody>
                                                                                     @foreach (var student in courseStudents)
                                                                                     {
-                                                                                        var fullName = $"{student.LastName} {student.FirstName}                                                   {student.MiddleName}".Trim();
+                                                                                        var fullName = $"{student.LastName} {student.FirstName}                                                    {student.MiddleName}".Trim();
                                                                                         var companyName = student.Company?.Name ?? "Не указана";
                                                                                         var position = string.IsNullOrEmpty(student.Position) ? "—" : student.Position;
                                                                             
@@ -677,15 +679,15 @@
                                                                                                 <td><span class="badge bg-light text-dark border"><i
                                                                                                     class="bi bi-building me-1"></i> @companyName</span></td>
                                                                                                     <td class="text-center">
-    @if (isPassed)
-    {
-        <span class="badge bg-success text-white px-3 py-2 rounded-pill" style="font-size: 0.75rem; font-weight: 600;">Сдал</span>
-    }
-    else
-    {
-        <span class="badge bg-danger text-white px-3 py-2 rounded-pill" style="font-size: 0.75rem; font-weight: 600;">Не сдал</span>
-    }
-</td>
+                                                                                                        @if (isPassed)
+                                                                                                        {
+                                                                                                            <span class="badge bg-success text-white px-3 py-2 rounded-pill" style="font-size: 0.75rem; font-weight: 600;">Сдал</span>
+                                                                                                        }
+                                                                                                        else
+                                                                                                        {
+                                                                                                            <span class="badge bg-danger text-white px-3 py-2 rounded-pill" style="font-size: 0.75rem; font-weight: 600;">Не сдал</span>
+                                                                                                        }
+                                                                                                    </td>
                                                                                                     <td>
                                                                                                         @if (!string.IsNullOrEmpty(certNumber))
                                                                                                         {
@@ -701,12 +703,12 @@
                                                                                                         }
                                                                                                     </td>
                                                                                                     <td class="text-center">
-    <button type="button" class="btn btn-sm btn-outline-danger fw-bold p-1"
-            title="Отчислить с курса"
-            onclick="event.stopPropagation(); prepareRemoveFromCourse(@student.Id, @config.Id, '@fullName')">
-        <i class="bi bi-person-x-fill"></i>
-    </button>
-</td>
+                                                                                                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold p-1"
+                                                                                                                title="Отчислить с курса"
+                                                                                                                onclick="event.stopPropagation(); prepareRemoveFromCourse(@student.Id, @config.Id, '@fullName')">
+                                                                                                            <i class="bi bi-person-x-fill"></i>
+                                                                                                        </button>
+                                                                                                    </td>
                                                                                                 </tr>
                                                                                             }
                                                                                         </tbody>
@@ -812,7 +814,7 @@
                              aria-labelledby="reportSetupModalLabel" aria-hidden="true">
                             <div class="modal-dialog modal-md modal-dialog-centered">
                                 <div class="modal-content shadow-lg border-0 rounded-4">
-                                    <form asp-action="GenerateCourseReport" method="post">
+                                    <form id="reportSetupForm">
                                         <input type="hidden" id="modalGroupConfigId" name="groupConfigId" value="" />
                                         <input type="hidden" id="modalTemplateId" name="templateId" value="" />
 
@@ -872,637 +874,718 @@
                                                 <div class="modal-footer border-0 bg-light rounded-bottom-4">
                                                     <button type="button" class="btn btn-light border fw-bold px-4 rounded-3"
                                                             data-bs-dismiss="modal">Отмена</button>
-                                                    <button type="submit" class="btn btn-brand fw-bold px-4 rounded-3"><i
-                                                        class="bi bi-download me-1"></i> Сформировать</button>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                                    <button type="button" id="btnGenerateReport" class="btn btn-brand fw-bold px-4 rounded-3">
+                                                        <i class="bi bi-download me-1"></i> Сформировать
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <!-- МОДАЛКА ЗАГРУЗКИ НОМЕРОВ ИЗ МИНТРУДА -->
-                                    <div class="modal fade" id="importMintrudModal" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content border-0 shadow-lg rounded-4">
-                                                <div class="modal-header bg-warning text-white rounded-top-4">
-                                                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel me-2"></i> Загрузка номеров из
-                                                        Минтруда</h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                <!-- МОДАЛКА ЗАГРУЗКИ НОМЕРОВ ИЗ МИНТРУДА -->
+                                <div class="modal fade" id="importMintrudModal" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg rounded-4">
+                                            <div class="modal-header bg-warning text-white rounded-top-4">
+                                                <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel me-2"></i> Загрузка номеров из
+                                                    Минтруда</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body p-4">
+                                                    <p class="text-muted small mb-3">Выберите Excel-файл, выгруженный из Минтруда. Система сопоставит номера
+                                                        по колонке «Id внешней системы» и обновит официальные номера.</p>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold small">ФАЙЛ EXCEL</label>
+                                                            <input type="file" id="mintrudFileInput" class="form-control modal-input" accept=".xlsx, .xls" />
+                                                        </div>
                                                     </div>
-                                                    <div class="modal-body p-4">
-                                                        <p class="text-muted small mb-3">Выберите Excel-файл, выгруженный из Минтруда. Система сопоставит номера
-                                                            по колонке «Id внешней системы» и обновит официальные номера.</p>
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-bold small">ФАЙЛ EXCEL</label>
-                                                                <input type="file" id="mintrudFileInput" class="form-control modal-input" accept=".xlsx, .xls" />
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                                                            <button type="button" class="btn btn-light border fw-bold" data-bs-dismiss="modal">Отмена</button>
-                                                            <button type="button" id="btnImportMintrud" class="btn btn-warning fw-bold text-white"
-                                                                    onclick="importMintrudNumbers()">
-                                                                <i class="bi bi-upload me-1"></i> Загрузить
-                                                            </button>
-                                                        </div>
+                                                    <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                                                        <button type="button" class="btn btn-light border fw-bold" data-bs-dismiss="modal">Отмена</button>
+                                                        <button type="button" id="btnImportMintrud" class="btn btn-warning fw-bold text-white"
+                                                                onclick="importMintrudNumbers()">
+                                                            <i class="bi bi-upload me-1"></i> Загрузить
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- МОДАЛЬНОЕ ОКНО: ОТЧИСЛЕНИЕ С КУРСА -->
-<div class="modal fade" id="removeFromCourseModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
-                <i class="bi bi-person-x-fill fs-2 text-danger"></i>
-            </div>
-            <h5 class="fw-bold text-dark mb-2">Отчисление с курса</h5>
-            <p class="text-muted small mb-2">Вы действительно хотите отчислить с курса студента:</p>
-            <p id="removeFromCourseNameText" class="fw-bold text-dark mb-1 fs-5"></p>
-            <p class="text-muted small mb-4">Студент потеряет доступ к материалам и тестам этого курса.</p>
+                                        </div>
+                                        <!-- МОДАЛЬНОЕ ОКНО: ОТЧИСЛЕНИЕ С КУРСА -->
+                                        <div class="modal fade" id="removeFromCourseModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                                            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                                                <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+                                                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                                         style="width: 70px; height: 70px;">
+                                                        <i class="bi bi-person-x-fill fs-2 text-danger"></i>
+                                                    </div>
+                                                    <h5 class="fw-bold text-dark mb-2">Отчисление с курса</h5>
+                                                    <p class="text-muted small mb-2">Вы действительно хотите отчислить с курса студента:</p>
+                                                    <p id="removeFromCourseNameText" class="fw-bold text-dark mb-1 fs-5"></p>
+                                                    <p class="text-muted small mb-4">Студент потеряет доступ к материалам и тестам этого курса.</p>
 
-            <input type="hidden" id="removeFromCourseStudentId" />
-            <input type="hidden" id="removeFromCourseConfigId" />
+                                                    <input type="hidden" id="removeFromCourseStudentId" />
+                                                    <input type="hidden" id="removeFromCourseConfigId" />
 
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button id="confirmRemoveFromCourseBtn" type="button" class="btn btn-danger fw-bold w-50 rounded-3">Отчислить</button>
-            </div>
-        </div>
-    </div>
-</div>
-                                            @section Scripts {
-                                                <script>
-                                                    // ==========================================
-                                                    // TOASTS
-                                                    // ==========================================
-                                                    function showToast(message, type = 'success') {
-                                                        const container = document.getElementById('toastContainer');
-                                                        const toast = document.createElement('div');
-                                                        toast.className = `custom-toast ${type}`;
-                                                        let iconClass = 'bi-check-circle-fill text-success';
-                                                        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
-                                                        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
-                                                        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
-                                                        container.appendChild(toast);
-                                                        setTimeout(() => {
-                                                            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-                                                            setTimeout(() => toast.remove(), 300);
-                                                        }, 4000);
+                                                    <div class="d-flex gap-2 justify-content-center">
+                                                        <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
+                                                                data-bs-dismiss="modal">Отмена</button>
+                                                        <button id="confirmRemoveFromCourseBtn" type="button"
+                                                                class="btn btn-danger fw-bold w-50 rounded-3">Отчислить</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @section Scripts {
+                                            <script>
+                                                // ==========================================
+                                                // TOASTS
+                                                // ==========================================
+                                                function showToast(message, type = 'success') {
+                                                    const container = document.getElementById('toastContainer');
+                                                    const toast = document.createElement('div');
+                                                    toast.className = `custom-toast ${type}`;
+                                                    let iconClass = 'bi-check-circle-fill text-success';
+                                                    if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+                                                    if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+                                                    toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+                                                    container.appendChild(toast);
+                                                    setTimeout(() => {
+                                                        toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+                                                        setTimeout(() => toast.remove(), 300);
+                                                    }, 4000);
+                                                }
+
+                                                // ==========================================
+                                                // ФИЛЬТР И ПАГИНАЦИЯ
+                                                // ==========================================
+                                                let currentGroupPage = 1;
+                                                const groupsAccordion = document.getElementById('groupsAccordion');
+                                                const groupItems = groupsAccordion ? Array.from(groupsAccordion.querySelectorAll('.group-item')) : [];
+                                                const groupSearchInput = document.getElementById('groupSearchInput');
+                                                const groupPageSizeSelect = document.getElementById('groupPageSizeSelect');
+                                                let groupPageSize = groupPageSizeSelect ? parseInt(groupPageSizeSelect.value) : 10;
+
+                                                function updateGroupsPagination() {
+                                                    if (!groupsAccordion) return;
+                                                    const searchText = groupSearchInput.value.trim().toLowerCase();
+
+                                                    let filteredItems = groupItems;
+                                                    if (searchText.length > 0) {
+                                                        filteredItems = groupItems.filter(item => item.textContent.toLowerCase().includes(searchText));
                                                     }
 
-                                                    // ==========================================
-                                                    // ФИЛЬТР И ПАГИНАЦИЯ
-                                                    // ==========================================
-                                                    let currentGroupPage = 1;
-                                                    const groupsAccordion = document.getElementById('groupsAccordion');
-                                                    const groupItems = groupsAccordion ? Array.from(groupsAccordion.querySelectorAll('.group-item')) : [];
-                                                    const groupSearchInput = document.getElementById('groupSearchInput');
-                                                    const groupPageSizeSelect = document.getElementById('groupPageSizeSelect');
-                                                    let groupPageSize = groupPageSizeSelect ? parseInt(groupPageSizeSelect.value) : 10;
+                                                    const totalRows = filteredItems.length;
+                                                    const infoEl = document.getElementById('groupPaginationInfo');
+                                                    const buttonsEl = document.getElementById('groupPaginationButtons');
 
-                                                    function updateGroupsPagination() {
-                                                        if (!groupsAccordion) return;
-                                                        const searchText = groupSearchInput.value.trim().toLowerCase();
-
-                                                        let filteredItems = groupItems;
-                                                        if (searchText.length > 0) {
-                                                            filteredItems = groupItems.filter(item => item.textContent.toLowerCase().includes(searchText));
-                                                        }
-
-                                                        const totalRows = filteredItems.length;
-                                                        const infoEl = document.getElementById('groupPaginationInfo');
-                                                        const buttonsEl = document.getElementById('groupPaginationButtons');
-
-                                                        if (totalRows === 0) {
-                                                            groupItems.forEach(item => item.style.display = 'none');
-                                                            infoEl.textContent = 'Показано 0-0 из 0 групп';
-                                                            buttonsEl.innerHTML = '';
-                                                            updateSelectedCount();
-                                                            return;
-                                                        }
-
-                                                        const totalPages = Math.ceil(totalRows / groupPageSize);
-                                                        if (currentGroupPage > totalPages) currentGroupPage = totalPages;
-                                                        if (currentGroupPage < 1) currentGroupPage = 1;
-
-                                                        const startIndex = (currentGroupPage - 1) * groupPageSize;
-                                                        const endIndex = Math.min(startIndex + groupPageSize, totalRows);
-
+                                                    if (totalRows === 0) {
                                                         groupItems.forEach(item => item.style.display = 'none');
-                                                        filteredItems.slice(startIndex, endIndex).forEach(item => item.style.display = '');
-
-                                                        infoEl.textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} групп`;
-
+                                                        infoEl.textContent = 'Показано 0-0 из 0 групп';
                                                         buttonsEl.innerHTML = '';
-
-                                                        const prevLi = document.createElement('li');
-                                                        prevLi.className = `page-item ${currentGroupPage === 1 ? 'disabled' : ''}`;
-                                                        prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
-                                                        if (currentGroupPage > 1) {
-                                                            prevLi.addEventListener('click', () => { currentGroupPage--; updateGroupsPagination(); });
-                                                        }
-                                                        buttonsEl.appendChild(prevLi);
-
-                                                        for (let i = 1; i <= totalPages; i++) {
-                                                            const li = document.createElement('li');
-                                                            li.className = `page-item ${currentGroupPage === i ? 'active' : ''}`;
-                                                            li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
-                                                            li.addEventListener('click', () => { currentGroupPage = i; updateGroupsPagination(); });
-                                                            buttonsEl.appendChild(li);
-                                                        }
-
-                                                        const nextLi = document.createElement('li');
-                                                        nextLi.className = `page-item ${currentGroupPage === totalPages ? 'disabled' : ''}`;
-                                                        nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
-                                                        if (currentGroupPage < totalPages) {
-                                                            nextLi.addEventListener('click', () => { currentGroupPage++; updateGroupsPagination(); });
-                                                        }
-                                                        buttonsEl.appendChild(nextLi);
-
                                                         updateSelectedCount();
+                                                        return;
                                                     }
 
-                                                    if (groupSearchInput) {
-                                                        groupSearchInput.addEventListener('input', () => {
-                                                            currentGroupPage = 1;
-                                                            updateGroupsPagination();
-                                                        });
-                                                    }
-                                                    if (groupPageSizeSelect) {
-                                                        groupPageSizeSelect.addEventListener('change', function () {
-                                                            groupPageSize = parseInt(this.value);
-                                                            currentGroupPage = 1;
-                                                            updateGroupsPagination();
-                                                        });
-                                                    }
+                                                    const totalPages = Math.ceil(totalRows / groupPageSize);
+                                                    if (currentGroupPage > totalPages) currentGroupPage = totalPages;
+                                                    if (currentGroupPage < 1) currentGroupPage = 1;
 
-                                                    // ==========================================
-                                                    // МАССОВЫЙ ВЫБОР
-                                                    // ==========================================
-                                                    function toggleSelectAll(source) {
-                                                        const checkboxes = document.querySelectorAll('.group-checkbox');
-                                                        checkboxes.forEach(cb => {
-                                                            const groupItem = cb.closest('.group-item');
-                                                            if (groupItem && groupItem.style.display !== 'none') {
-                                                                cb.checked = source.checked;
-                                                            }
-                                                        });
-                                                        if (!source.checked) {
-                                                            checkboxes.forEach(cb => cb.checked = false);
-                                                        }
-                                                        updateSelectedCount();
-                                                    }
+                                                    const startIndex = (currentGroupPage - 1) * groupPageSize;
+                                                    const endIndex = Math.min(startIndex + groupPageSize, totalRows);
 
-                                                    function updateSelectedCount() {
-                                                        const checked = document.querySelectorAll('.group-checkbox:checked');
-                                                        const badge = document.getElementById('selectedCountBadge');
-                                                        if (badge) {
-                                                            if (checked.length > 0) {
-                                                                badge.textContent = checked.length;
-                                                                badge.classList.remove('d-none');
-                                                            } else {
-                                                                badge.classList.add('d-none');
-                                                            }
-                                                        }
-            
-                                                        // Синхронизируем чекбокс "Выбрать все"
-                                                        const selectAll = document.getElementById('selectAllGroups');
-                                                        if (selectAll) {
-                                                            const visibleCheckboxes = Array.from(document.querySelectorAll('.group-checkbox')).filter(cb => {
-                                                                const groupItem = cb.closest('.group-item');
-                                                                return groupItem && groupItem.style.display !== 'none';
-                                                            });
-                                                            if (visibleCheckboxes.length > 0) {
-                                                                selectAll.checked = visibleCheckboxes.every(cb => cb.checked);
-                                                            } else {
-                                                                selectAll.checked = false;
-                                                            }
-                                                        }
+                                                    groupItems.forEach(item => item.style.display = 'none');
+                                                    filteredItems.slice(startIndex, endIndex).forEach(item => item.style.display = '');
+
+                                                    infoEl.textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalRows} групп`;
+
+                                                    buttonsEl.innerHTML = '';
+
+                                                    const prevLi = document.createElement('li');
+                                                    prevLi.className = `page-item ${currentGroupPage === 1 ? 'disabled' : ''}`;
+                                                    prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
+                                                    if (currentGroupPage > 1) {
+                                                        prevLi.addEventListener('click', () => { currentGroupPage--; updateGroupsPagination(); });
+                                                    }
+                                                    buttonsEl.appendChild(prevLi);
+
+                                                    for (let i = 1; i <= totalPages; i++) {
+                                                        const li = document.createElement('li');
+                                                        li.className = `page-item ${currentGroupPage === i ? 'active' : ''}`;
+                                                        li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+                                                        li.addEventListener('click', () => { currentGroupPage = i; updateGroupsPagination(); });
+                                                        buttonsEl.appendChild(li);
                                                     }
 
-                                                    function getSelectedGroupIds() {
-                                                        return Array.from(document.querySelectorAll('.group-checkbox:checked')).map(cb => parseInt(cb.value));
+                                                    const nextLi = document.createElement('li');
+                                                    nextLi.className = `page-item ${currentGroupPage === totalPages ? 'disabled' : ''}`;
+                                                    nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
+                                                    if (currentGroupPage < totalPages) {
+                                                        nextLi.addEventListener('click', () => { currentGroupPage++; updateGroupsPagination(); });
                                                     }
+                                                    buttonsEl.appendChild(nextLi);
 
-                                                    // ==========================================
-                                                    // ГЕНЕРАЦИЯ XML ПО ВЫБРАННЫМ ГРУППАМ
-                                                    // ==========================================
-                                                    async function generateMintrudXml() {
-                                                        const groupIds = getSelectedGroupIds();
-                                                        if (groupIds.length === 0) {
-                                                            showToast('Выберите хотя бы одну группу для формирования шаблона', 'danger');
-                                                            return;
-                                                        }
+                                                    updateSelectedCount();
+                                                }
 
-                                                        try {
-                                                            const formData = new FormData();
-                                                            groupIds.forEach(id => formData.append('groupIds', id));
-
-                                                            const response = await fetch('/Report/ExportGroupsToMintrudXml', {
-                                                                method: 'POST',
-                                                                body: formData
-                                                            });
-
-                                                            if (response.ok) {
-                                                                const blob = await response.blob();
-                                                                let filename = `EISOT_Группы.xml`;
-                                                                const disposition = response.headers.get('Content-Disposition');
-                                                                if (disposition && disposition.includes('filename=')) {
-                                                                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                                                                    if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
-                                                                }
-                                                                const url = window.URL.createObjectURL(blob);
-                                                                const a = document.createElement('a');
-                                                                a.href = url;
-                                                                a.download = filename;
-                                                                document.body.appendChild(a);
-                                                                a.click();
-                                                                a.remove();
-                                                                window.URL.revokeObjectURL(url);
-                                                                showToast('XML-файл успешно сформирован!', 'success');
-                                                            } else {
-                                                                const errorJson = await response.json();
-                                                                showToast(errorJson.message || 'Ошибка формирования XML', 'danger');
-                                                            }
-                                                        } catch (err) {
-                                                            showToast('Ошибка сети при формировании XML', 'danger');
-                                                        }
-                                                    }
-
-                                                    // ==========================================
-                                                    // ПРИСВОЕНИЕ НОМЕРОВ (одиночное)
-                                                    // ==========================================
-                                                    let currentAssignGroupId = null;
-
-                                                    function openAssignModal(groupId) {
-                                                        currentAssignGroupId = groupId;
-                                                        new bootstrap.Modal(document.getElementById('assignCertificatesModal')).show();
-                                                    }
-
-                                                    document.getElementById('confirmAssignBtn').addEventListener('click', async function () {
-                                                        if (!currentAssignGroupId) return;
-                                                        this.disabled = true;
-                                                        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
-
-                                                        try {
-                                                            const response = await fetch(`/Report/AssignCertificates?groupId=${currentAssignGroupId}`, { method: 'POST' });
-                                                            const result = await response.json();
-                                                            bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
-
-                                                            if (result.success) {
-                                                                showToast(result.message, 'success');
-                                                                setTimeout(() => window.location.reload(), 1500);
-                                                            } else {
-                                                                showToast("Ошибка: " + result.message, 'danger');
-                                                            }
-                                                        } catch (err) {
-                                                            bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
-                                                            showToast("Ошибка сети при попытке присвоения номеров.", 'danger');
-                                                        } finally {
-                                                            this.disabled = false;
-                                                            this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Присвоить';
-                                                        }
-                                                    });
-
-                                                    // ==========================================
-                                                    // КОМИССИЯ (Tom Select) + ОТЧЕТЫ
-                                                    // ==========================================
-                                                    const commissionData = [
-                                                                                                                                                                                                                                                                                                                                                            @foreach (var c in commission)
-                                                        {
-                                                                                                                                                                                                                                                                                                                                                                                            @: { value: '@c.Id', text: '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(c.DisplayName)' },
-                                                        }
-                                                                                                                                                                                                                                                                                                                                                        ];
-
-                                                    let tsChairman, tsMember1, tsMember2;
-
-                                                    document.addEventListener("DOMContentLoaded", function () {
-                                                        const selectConfig = {
-                                                            options: commissionData,
-                                                            valueField: 'value',
-                                                            labelField: 'text',
-                                                            searchField: ['text'],
-                                                            create: true,
-                                                            createOnBlur: true,
-                                                            persist: false,
-                                                            plugins: ['dropdown_input']
-                                                        };
-                                                        tsChairman = new TomSelect('#selectChairman', selectConfig);
-                                                        tsMember1 = new TomSelect('#selectMember1', selectConfig);
-                                                        tsMember2 = new TomSelect('#selectMember2', selectConfig);
-
+                                                if (groupSearchInput) {
+                                                    groupSearchInput.addEventListener('input', () => {
+                                                        currentGroupPage = 1;
                                                         updateGroupsPagination();
                                                     });
+                                                }
+                                                if (groupPageSizeSelect) {
+                                                    groupPageSizeSelect.addEventListener('change', function () {
+                                                        groupPageSize = parseInt(this.value);
+                                                        currentGroupPage = 1;
+                                                        updateGroupsPagination();
+                                                    });
+                                                }
 
-                                                    function openReportSetupModal(groupConfigId, templateId, requiresCommission, isPerStudent) {
-                                                        document.getElementById('modalGroupConfigId').value = groupConfigId;
-                                                        document.getElementById('modalTemplateId').value = templateId;
-                                                        document.getElementById('checkboxSplitByCompany').checked = false;
+                                                // ==========================================
+                                                // МАССОВЫЙ ВЫБОР
+                                                // ==========================================
+                                                function toggleSelectAll(source) {
+                                                    const checkboxes = document.querySelectorAll('.group-checkbox');
+                                                    checkboxes.forEach(cb => {
+                                                        const groupItem = cb.closest('.group-item');
+                                                        if (groupItem && groupItem.style.display !== 'none') {
+                                                            cb.checked = source.checked;
+                                                        }
+                                                    });
+                                                    if (!source.checked) {
+                                                        checkboxes.forEach(cb => cb.checked = false);
+                                                    }
+                                                    updateSelectedCount();
+                                                }
 
-                                                        const commissionBlock = document.getElementById('commissionFieldsBlock');
-                                                        const companyBlock = document.getElementById('checkboxSplitByCompany').closest('.p-3');
-                                                        const selects = [document.getElementById('selectChairman'), document.getElementById('selectMember1'), document.getElementById('selectMember2')];
-                                                        const orderNumInput = document.getElementById('inputCommissionOrderNumber');
-                                                        const orderDateInput = document.getElementById('inputCommissionOrderDate');
-
-                                                        if (requiresCommission) {
-                                                            commissionBlock.classList.remove('d-none');
-                                                            selects.forEach(s => s.setAttribute('required', 'required'));
-                                                            orderNumInput.setAttribute('required', 'required');
-                                                            orderDateInput.setAttribute('required', 'required');
-                                                            orderNumInput.value = "";
-                                                            orderDateInput.value = "";
-                                                            if (tsChairman) { tsChairman.clear(); tsMember1.clear(); tsMember2.clear(); }
+                                                function updateSelectedCount() {
+                                                    const checked = document.querySelectorAll('.group-checkbox:checked');
+                                                    const badge = document.getElementById('selectedCountBadge');
+                                                    if (badge) {
+                                                        if (checked.length > 0) {
+                                                            badge.textContent = checked.length;
+                                                            badge.classList.remove('d-none');
                                                         } else {
-                                                            commissionBlock.classList.add('d-none');
-                                                            selects.forEach(s => s.removeAttribute('required'));
-                                                            orderNumInput.removeAttribute('required');
-                                                            orderDateInput.removeAttribute('required');
+                                                            badge.classList.add('d-none');
                                                         }
-
-                                                        if (isPerStudent) companyBlock.classList.add('d-none');
-                                                        else companyBlock.classList.remove('d-none');
-
-                                                        new bootstrap.Modal(document.getElementById('reportSetupModal')).show();
                                                     }
-
-                                                    // ==========================================
-                                                    // РЕЗУЛЬТАТЫ ТЕСТОВ
-                                                    // ==========================================
-                                                    function openStudentPushModal(studentId, courseId, groupId, fullName) {
-                                                        document.getElementById('modalStudentName').innerText = fullName;
-                                                        const tableBody = document.getElementById('modalAttemptsTableBody');
-                                                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Загрузка данных...</td></tr>';
-
-                                                        new bootstrap.Modal(document.getElementById('studentReportModal')).show();
-
-                                                       fetch(`/Report/GetStudentTestAttempts?studentId=${studentId}&courseId=${courseId}&groupId=${groupId}`)
-                                                            .then(response => response.json())
-                                                            .then(data => {
-                                                                tableBody.innerHTML = '';
-                                                                if (data.length === 0) {
-                                                                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Попыток сдачи тестов не найдено.</td></tr>';
-                                                                    return;
-                                                                }
-                                                                data.forEach(attempt => {
-                                                                    let statusBadge = `<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>В процессе</span>`;
-                                                                    if (attempt.status === 'Passed' || attempt.status === 'Success' || attempt.status === 'Completed') {
-                                                                        statusBadge = `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Сдано</span>`;
-                                                                    } else if (attempt.status === 'Failed') {
-                                                                        statusBadge = `<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Не сдано</span>`;
-                                                                    } else if (attempt.status === 'Abandoned') {
-                                                                        statusBadge = `<span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i>Аннулирован</span>`;
-                                                                    }
-
-                                                                    tableBody.insertAdjacentHTML('beforeend', `
-                                                                                                                                                                                                                                                                                                                                                                            <tr>
-                                                                                                                                                                                                                                                                                                                                                                                <td class="fw-bold text-dark">${attempt.testName}</td>
-                                                                                                                                                                                                                                                                                                                                                                                <td>${statusBadge}</td>
-                                                                                                                                                                                                                                                                                                                                                                                <td><span class="fw-bold text-primary">${attempt.scorePercentage}%</span></td>
-                                                                                                                                                                                                                                                                                                                                                                                <td>${attempt.correctAnswersCount} / ${attempt.totalQuestionsCount}</td>
-                                                                                                                                                                                                                                                                                                                                                                                <td class="text-muted small">${attempt.finishedAt}</td>
-                                                                                                                                                                                                                                                                                                                                                                                <td class="text-center">
-                                                                                                                                                                                                                                                                                                                                                                                    <a href="/Report/DownloadTestResult?attemptId=${attempt.id}" class="btn btn-sm btn-outline-primary rounded-3" title="Скачать протокол">
-                                                                                                                                                                                                                                                                                                                                                                                        <i class="bi bi-download"></i>
-                                                                                                                                                                                                                                                                                                                                                                                    </a>
-                                                                                                                                                                                                                                                                                                                                                                                </td>
-                                                                                                                                                                                                                                                                                                                                                                            </tr>
-                                                                                                                                                                                                                                                                                                                                                                        `);
-                                                                });
-                                                            })
-                                                            .catch(() => {
-                                                                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Ошибка загрузки данных.</td></tr>';
-                                                            });
-                                                    }
-
-                                                    // ==========================================
-                                                    // ЗАГРУЗКА ИЗ МИНТРУДА (Excel)
-                                                    // ==========================================
-                                                    function openImportModal() {
-                                                        document.getElementById('mintrudFileInput').value = '';
-                                                        new bootstrap.Modal(document.getElementById('importMintrudModal')).show();
-                                                    }
-
-                                                    async function importMintrudNumbers() {
-                                                        const fileInput = document.getElementById('mintrudFileInput');
-                                                        const btn = document.getElementById('btnImportMintrud');
-
-                                                        if (fileInput.files.length === 0) {
-                                                            showToast('Выберите файл для загрузки!', 'danger');
-                                                            return;
+            
+                                                    // Синхронизируем чекбокс "Выбрать все"
+                                                    const selectAll = document.getElementById('selectAllGroups');
+                                                    if (selectAll) {
+                                                        const visibleCheckboxes = Array.from(document.querySelectorAll('.group-checkbox')).filter(cb => {
+                                                            const groupItem = cb.closest('.group-item');
+                                                            return groupItem && groupItem.style.display !== 'none';
+                                                        });
+                                                        if (visibleCheckboxes.length > 0) {
+                                                            selectAll.checked = visibleCheckboxes.every(cb => cb.checked);
+                                                        } else {
+                                                            selectAll.checked = false;
                                                         }
+                                                    }
+                                                }
 
+                                                function getSelectedGroupIds() {
+                                                    return Array.from(document.querySelectorAll('.group-checkbox:checked')).map(cb => parseInt(cb.value));
+                                                }
+
+                                                // ==========================================
+                                                // ГЕНЕРАЦИЯ XML ПО ВЫБРАННЫМ ГРУППАМ
+                                                // ==========================================
+                                                async function generateMintrudXml() {
+                                                    const groupIds = getSelectedGroupIds();
+                                                    if (groupIds.length === 0) {
+                                                        showToast('Выберите хотя бы одну группу для формирования шаблона', 'danger');
+                                                        return;
+                                                    }
+
+                                                    try {
                                                         const formData = new FormData();
-                                                        formData.append('excelFile', fileInput.files[0]);
+                                                        groupIds.forEach(id => formData.append('groupIds', id));
 
-                                                        btn.disabled = true;
-                                                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Загрузка...';
+                                                        const response = await fetch('/Report/ExportGroupsToMintrudXml', {
+                                                            method: 'POST',
+                                                            body: formData
+                                                        });
 
-                                                        try {
-                                                            const response = await fetch('/Report/ImportMintrudNumbers', { method: 'POST', body: formData });
-                                                            const result = await response.json();
-                                                            bootstrap.Modal.getInstance(document.getElementById('importMintrudModal')).hide();
-
-                                                            if (result.success) {
-                                                                showToast(result.message, 'success');
-                                                                setTimeout(() => window.location.reload(), 2000);
-                                                            } else {
-                                                                showToast(result.message, 'danger');
+                                                        if (response.ok) {
+                                                            const blob = await response.blob();
+                                                            let filename = `EISOT_Группы.xml`;
+                                                            const disposition = response.headers.get('Content-Disposition');
+                                                            if (disposition && disposition.includes('filename=')) {
+                                                                const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                                                                if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
                                                             }
-                                                        } catch (err) {
-                                                            bootstrap.Modal.getInstance(document.getElementById('importMintrudModal')).hide();
-                                                            showToast('Ошибка сети при загрузке файла.', 'danger');
-                                                        } finally {
-                                                            btn.disabled = false;
-                                                            btn.innerHTML = '<i class="bi bi-upload me-1"></i> Загрузить';
+                                                            const url = window.URL.createObjectURL(blob);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = filename;
+                                                            document.body.appendChild(a);
+                                                            a.click();
+                                                            a.remove();
+                                                            window.URL.revokeObjectURL(url);
+                                                            showToast('XML-файл успешно сформирован!', 'success');
+                                                        } else {
+                                                            const errorJson = await response.json();
+                                                            showToast(errorJson.message || 'Ошибка формирования XML', 'danger');
                                                         }
+                                                    } catch (err) {
+                                                        showToast('Ошибка сети при формировании XML', 'danger');
+                                                    }
+                                                }
+
+                                                // ==========================================
+                                                // ПРИСВОЕНИЕ НОМЕРОВ (одиночное)
+                                                // ==========================================
+                                                let currentAssignGroupId = null;
+
+                                                function openAssignModal(groupId) {
+                                                    currentAssignGroupId = groupId;
+                                                    new bootstrap.Modal(document.getElementById('assignCertificatesModal')).show();
+                                                }
+
+                                                document.getElementById('confirmAssignBtn').addEventListener('click', async function () {
+                                                    if (!currentAssignGroupId) return;
+                                                    this.disabled = true;
+                                                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка...';
+
+                                                    try {
+                                                        const response = await fetch(`/Report/AssignCertificates?groupId=${currentAssignGroupId}`, { method: 'POST' });
+                                                        const result = await response.json();
+                                                        bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
+
+                                                        if (result.success) {
+                                                            showToast(result.message, 'success');
+                                                            setTimeout(() => window.location.reload(), 1500);
+                                                        } else {
+                                                            showToast("Ошибка: " + result.message, 'danger');
+                                                        }
+                                                    } catch (err) {
+                                                        bootstrap.Modal.getInstance(document.getElementById('assignCertificatesModal')).hide();
+                                                        showToast("Ошибка сети при попытке присвоения номеров.", 'danger');
+                                                    } finally {
+                                                        this.disabled = false;
+                                                        this.innerHTML = '<i class="bi bi-check-lg me-1"></i> Присвоить';
+                                                    }
+                                                });
+
+                                                // ==========================================
+                                                // КОМИССИЯ (Tom Select) + ОТЧЕТЫ
+                                                // ==========================================
+                                                const commissionData = [
+                                                                                                                                                                                                                                                                                                                                                                                                                                                    @foreach (var c in commission)
+                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @: { value: '@c.Id', text: '@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(c.DisplayName)' },
+                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                ];
+
+                                                let tsChairman, tsMember1, tsMember2;
+
+                                                document.addEventListener("DOMContentLoaded", function () {
+                                                    const selectConfig = {
+                                                        options: commissionData,
+                                                        valueField: 'value',
+                                                        labelField: 'text',
+                                                        searchField: ['text'],
+                                                        create: true,
+                                                        createOnBlur: true,
+                                                        persist: false,
+                                                        plugins: ['dropdown_input']
+                                                    };
+                                                    tsChairman = new TomSelect('#selectChairman', selectConfig);
+                                                    tsMember1 = new TomSelect('#selectMember1', selectConfig);
+                                                    tsMember2 = new TomSelect('#selectMember2', selectConfig);
+
+                                                    updateGroupsPagination();
+                                                });
+
+                                                function openReportSetupModal(groupConfigId, templateId, requiresCommission, isPerStudent) {
+                                                    document.getElementById('modalGroupConfigId').value = groupConfigId;
+                                                    document.getElementById('modalTemplateId').value = templateId;
+                                                    document.getElementById('checkboxSplitByCompany').checked = false;
+
+                                                    const commissionBlock = document.getElementById('commissionFieldsBlock');
+                                                    const companyBlock = document.getElementById('checkboxSplitByCompany').closest('.p-3');
+                                                    const selects = [document.getElementById('selectChairman'), document.getElementById('selectMember1'), document.getElementById('selectMember2')];
+                                                    const orderNumInput = document.getElementById('inputCommissionOrderNumber');
+                                                    const orderDateInput = document.getElementById('inputCommissionOrderDate');
+
+                                                    if (requiresCommission) {
+                                                        commissionBlock.classList.remove('d-none');
+                                                        selects.forEach(s => s.setAttribute('required', 'required'));
+                                                        orderNumInput.setAttribute('required', 'required');
+                                                        orderDateInput.setAttribute('required', 'required');
+                                                        orderNumInput.value = "";
+                                                        orderDateInput.value = "";
+                                                        if (tsChairman) { tsChairman.clear(); tsMember1.clear(); tsMember2.clear(); }
+                                                    } else {
+                                                        commissionBlock.classList.add('d-none');
+                                                        selects.forEach(s => s.removeAttribute('required'));
+                                                        orderNumInput.removeAttribute('required');
+                                                        orderDateInput.removeAttribute('required');
                                                     }
 
-                                                    // ==========================================
-                                                    // ВЫГРУЗКА ДЛЯ ФИС ФРДО (Excel)
-                                                    // ==========================================
-                                                    async function exportFrdo() {
-                                                        const btn = document.getElementById('btnExportFrdo');
-            
-                                                        // Защита от двойного клика
-                                                        if (btn.classList.contains('loading')) return;
+                                                    if (isPerStudent) companyBlock.classList.add('d-none');
+                                                    else companyBlock.classList.remove('d-none');
 
-                                                        const groupIds = getSelectedGroupIds();
-                                                        if (groupIds.length === 0) {
-                                                            showToast('Выберите хотя бы одну группу для выгрузки', 'danger');
-                                                            return;
-                                                        }
+                                                    new bootstrap.Modal(document.getElementById('reportSetupModal')).show();
+                                                }
 
-                                                        // Сохраняем оригинальное состояние
-                                                        const originalLabel = document.getElementById('frdoBtnLabel').textContent;
-                                                        const originalSublabel = document.getElementById('frdoBtnSublabel').textContent;
-                                                        const originalIcon = document.getElementById('frdoBtnIcon').outerHTML;
+                                                // ==========================================
+                                                // РЕЗУЛЬТАТЫ ТЕСТОВ
+                                                // ==========================================
+                                                function openStudentPushModal(studentId, courseId, groupId, fullName) {
+                                                    document.getElementById('modalStudentName').innerText = fullName;
+                                                    const tableBody = document.getElementById('modalAttemptsTableBody');
+                                                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Загрузка данных...</td></tr>';
 
-                                                        // Включаем режим загрузки
-                                                        btn.classList.add('loading');
-                                                        document.getElementById('frdoBtnLabel').textContent = 'Формируется...';
-                                                        document.getElementById('frdoBtnSublabel').textContent = 'Подождите';
-                                                        document.getElementById('frdoBtnIcon').outerHTML = '<span class="spinner-border spinner-border-sm text-white" role="status" id="frdoBtnIcon"></span>';
+                                                    new bootstrap.Modal(document.getElementById('studentReportModal')).show();
 
-                                                        try {
-                                                            const formData = new FormData();
-                                                            groupIds.forEach(id => formData.append('groupIds', id));
-
-                                                            const response = await fetch('/Report/ExportGroupsToFrdoExcel', {
-                                                                method: 'POST',
-                                                                body: formData
-                                                            });
-
-                                                            if (response.ok) {
-                                                                const blob = await response.blob();
-                                                                let filename = `Отчет_ФРДО_${new Date().toISOString().split('T')[0]}.xlsx`;
-                                                                const disposition = response.headers.get('Content-Disposition');
-                                                                if (disposition && disposition.includes('filename=')) {
-                                                                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                                                                    if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
+                                                    fetch(`/Report/GetStudentTestAttempts?studentId=${studentId}&courseId=${courseId}&groupId=${groupId}`)
+                                                        .then(response => response.json())
+                                                        .then(data => {
+                                                            tableBody.innerHTML = '';
+                                                            if (data.length === 0) {
+                                                                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Попыток сдачи тестов не найдено.</td></tr>';
+                                                                return;
+                                                            }
+                                                            data.forEach(attempt => {
+                                                                let statusBadge = `<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>В процессе</span>`;
+                                                                if (attempt.status === 'Passed' || attempt.status === 'Success' || attempt.status === 'Completed') {
+                                                                    statusBadge = `<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Сдано</span>`;
+                                                                } else if (attempt.status === 'Failed') {
+                                                                    statusBadge = `<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Не сдано</span>`;
+                                                                } else if (attempt.status === 'Abandoned') {
+                                                                    statusBadge = `<span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i>Аннулирован</span>`;
                                                                 }
-                                                                const url = window.URL.createObjectURL(blob);
-                                                                const a = document.createElement('a');
-                                                                a.href = url;
-                                                                a.download = filename;
-                                                                document.body.appendChild(a);
-                                                                a.click();
-                                                                a.remove();
-                                                                window.URL.revokeObjectURL(url);
-                                                                showToast('Excel-файл для ФИС ФРДО успешно сформирован!', 'success');
-                                                            } else {
-                                                                const errorJson = await response.json();
-                                                                showToast(errorJson.message || 'Ошибка формирования Excel-файла', 'danger');
-                                                            }
-                                                        } catch (err) {
-                                                            showToast('Ошибка сети при формировании Excel-файла', 'danger');
-                                                        } finally {
-                                                            // Возвращаем исходное состояние кнопки
-                                                            btn.classList.remove('loading');
-                                                            document.getElementById('frdoBtnLabel').textContent = originalLabel;
-                                                            document.getElementById('frdoBtnSublabel').textContent = originalSublabel;
-                                                            document.getElementById('frdoBtnIcon').outerHTML = originalIcon;
-                                                        }
-                                                    }
 
-                                                    // ==========================================
-                                                    // ВЫГРУЗКА СТАТИСТИКИ (Excel)
-                                                    // ==========================================
-                                                    async function exportStatistics() {
-                                                        const btn = document.getElementById('btnExportStats');
-            
-                                                        // Защита от двойного клика
-                                                        if (btn.classList.contains('loading')) return;
-
-                                                        const groupIds = getSelectedGroupIds();
-                                                        if (groupIds.length === 0) {
-                                                            showToast('Выберите хотя бы одну группу для выгрузки статистики', 'danger');
-                                                            return;
-                                                        }
-
-                                                        // Сохраняем оригинальное состояние
-                                                        const originalLabel = document.getElementById('statsBtnLabel').textContent;
-                                                        const originalSublabel = document.getElementById('statsBtnSublabel').textContent;
-                                                        const originalIcon = document.getElementById('statsBtnIcon').outerHTML;
-
-                                                        // Включаем режим загрузки
-                                                        btn.classList.add('loading');
-                                                        document.getElementById('statsBtnLabel').textContent = 'Формируется...';
-                                                        document.getElementById('statsBtnSublabel').textContent = 'Подождите';
-                                                        document.getElementById('statsBtnIcon').outerHTML = '<span class="spinner-border spinner-border-sm text-white" role="status" id="statsBtnIcon"></span>';
-
-                                                        try {
-                                                            const formData = new FormData();
-                                                            groupIds.forEach(id => formData.append('groupIds', id));
-
-                                                            const response = await fetch('/Report/ExportGroupsStatistics', {
-                                                                method: 'POST',
-                                                                body: formData
+                                                                tableBody.insertAdjacentHTML('beforeend', `
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td class="fw-bold text-dark">${attempt.testName}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td>${statusBadge}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td><span class="fw-bold text-primary">${attempt.scorePercentage}%</span></td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td>${attempt.correctAnswersCount} / ${attempt.totalQuestionsCount}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td class="text-muted small">${attempt.finishedAt}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td class="text-center">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <a href="/Report/DownloadTestResult?attemptId=${attempt.id}" class="btn btn-sm btn-outline-primary rounded-3" title="Скачать протокол">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <i class="bi bi-download"></i>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </a>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                `);
                                                             });
+                                                        })
+                                                        .catch(() => {
+                                                            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Ошибка загрузки данных.</td></tr>';
+                                                        });
+                                                }
 
-                                                            if (response.ok) {
-                                                                const blob = await response.blob();
-                                                                let filename = `Статистика_по_группам_${new Date().toISOString().split('T')[0]}.xlsx`;
-                                                                const disposition = response.headers.get('Content-Disposition');
-                                                                if (disposition && disposition.includes('filename=')) {
-                                                                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                                                                    if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
-                                                                }
-                                                                const url = window.URL.createObjectURL(blob);
-                                                                const a = document.createElement('a');
-                                                                a.href = url;
-                                                                a.download = filename;
-                                                                document.body.appendChild(a);
-                                                                a.click();
-                                                                a.remove();
-                                                                window.URL.revokeObjectURL(url);
-                                                                showToast('Статистика успешно сформирована!', 'success');
-                                                            } else {
-                                                                const errorJson = await response.json();
-                                                                showToast(errorJson.message || 'Ошибка формирования статистики', 'danger');
-                                                            }
-                                                        } catch (err) {
-                                                            showToast('Ошибка сети при формировании статистики', 'danger');
-                                                        } finally {
-                                                            // Возвращаем исходное состояние кнопки
-                                                            btn.classList.remove('loading');
-                                                            document.getElementById('statsBtnLabel').textContent = originalLabel;
-                                                            document.getElementById('statsBtnSublabel').textContent = originalSublabel;
-                                                            document.getElementById('statsBtnIcon').outerHTML = originalIcon;
-                                                        }
+                                                // ==========================================
+                                                // ЗАГРУЗКА ИЗ МИНТРУДА (Excel)
+                                                // ==========================================
+                                                function openImportModal() {
+                                                    document.getElementById('mintrudFileInput').value = '';
+                                                    new bootstrap.Modal(document.getElementById('importMintrudModal')).show();
+                                                }
+
+                                                async function importMintrudNumbers() {
+                                                    const fileInput = document.getElementById('mintrudFileInput');
+                                                    const btn = document.getElementById('btnImportMintrud');
+
+                                                    if (fileInput.files.length === 0) {
+                                                        showToast('Выберите файл для загрузки!', 'danger');
+                                                        return;
                                                     }
 
-                                                        // Открытие модалки отчисления с курса
-    window.prepareRemoveFromCourse = function(studentId, configId, fullName) {
-        document.getElementById('removeFromCourseStudentId').value = studentId;
-        document.getElementById('removeFromCourseConfigId').value = configId;
-        document.getElementById('removeFromCourseNameText').textContent = fullName;
+                                                    const formData = new FormData();
+                                                    formData.append('excelFile', fileInput.files[0]);
+
+                                                    btn.disabled = true;
+                                                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Загрузка...';
+
+                                                    try {
+                                                        const response = await fetch('/Report/ImportMintrudNumbers', { method: 'POST', body: formData });
+                                                        const result = await response.json();
+                                                        bootstrap.Modal.getInstance(document.getElementById('importMintrudModal')).hide();
+
+                                                        if (result.success) {
+                                                            showToast(result.message, 'success');
+                                                            setTimeout(() => window.location.reload(), 2000);
+                                                        } else {
+                                                            showToast(result.message, 'danger');
+                                                        }
+                                                    } catch (err) {
+                                                        bootstrap.Modal.getInstance(document.getElementById('importMintrudModal')).hide();
+                                                        showToast('Ошибка сети при загрузке файла.', 'danger');
+                                                    } finally {
+                                                        btn.disabled = false;
+                                                        btn.innerHTML = '<i class="bi bi-upload me-1"></i> Загрузить';
+                                                    }
+                                                }
+
+                                                // ==========================================
+                                                // ВЫГРУЗКА ДЛЯ ФИС ФРДО (Excel)
+                                                // ==========================================
+                                                async function exportFrdo() {
+                                                    const btn = document.getElementById('btnExportFrdo');
+            
+                                                    // Защита от двойного клика
+                                                    if (btn.classList.contains('loading')) return;
+
+                                                    const groupIds = getSelectedGroupIds();
+                                                    if (groupIds.length === 0) {
+                                                        showToast('Выберите хотя бы одну группу для выгрузки', 'danger');
+                                                        return;
+                                                    }
+
+                                                    // Сохраняем оригинальное состояние
+                                                    const originalLabel = document.getElementById('frdoBtnLabel').textContent;
+                                                    const originalSublabel = document.getElementById('frdoBtnSublabel').textContent;
+                                                    const originalIcon = document.getElementById('frdoBtnIcon').outerHTML;
+
+                                                    // Включаем режим загрузки
+                                                    btn.classList.add('loading');
+                                                    document.getElementById('frdoBtnLabel').textContent = 'Формируется...';
+                                                    document.getElementById('frdoBtnSublabel').textContent = 'Подождите';
+                                                    document.getElementById('frdoBtnIcon').outerHTML = '<span class="spinner-border spinner-border-sm text-white" role="status" id="frdoBtnIcon"></span>';
+
+                                                    try {
+                                                        const formData = new FormData();
+                                                        groupIds.forEach(id => formData.append('groupIds', id));
+
+                                                        const response = await fetch('/Report/ExportGroupsToFrdoExcel', {
+                                                            method: 'POST',
+                                                            body: formData
+                                                        });
+
+                                                        if (response.ok) {
+                                                            const blob = await response.blob();
+                                                            let filename = `Отчет_ФРДО_${new Date().toISOString().split('T')[0]}.xlsx`;
+                                                            const disposition = response.headers.get('Content-Disposition');
+                                                            if (disposition && disposition.includes('filename=')) {
+                                                                const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                                                                if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
+                                                            }
+                                                            const url = window.URL.createObjectURL(blob);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = filename;
+                                                            document.body.appendChild(a);
+                                                            a.click();
+                                                            a.remove();
+                                                            window.URL.revokeObjectURL(url);
+                                                            showToast('Excel-файл для ФИС ФРДО успешно сформирован!', 'success');
+                                                        } else {
+                                                            const errorJson = await response.json();
+                                                            showToast(errorJson.message || 'Ошибка формирования Excel-файла', 'danger');
+                                                        }
+                                                    } catch (err) {
+                                                        showToast('Ошибка сети при формировании Excel-файла', 'danger');
+                                                    } finally {
+                                                        // Возвращаем исходное состояние кнопки
+                                                        btn.classList.remove('loading');
+                                                        document.getElementById('frdoBtnLabel').textContent = originalLabel;
+                                                        document.getElementById('frdoBtnSublabel').textContent = originalSublabel;
+                                                        document.getElementById('frdoBtnIcon').outerHTML = originalIcon;
+                                                    }
+                                                }
+
+                                                // ==========================================
+                                                // ВЫГРУЗКА СТАТИСТИКИ (Excel)
+                                                // ==========================================
+                                                async function exportStatistics() {
+                                                    const btn = document.getElementById('btnExportStats');
+            
+                                                    // Защита от двойного клика
+                                                    if (btn.classList.contains('loading')) return;
+
+                                                    const groupIds = getSelectedGroupIds();
+                                                    if (groupIds.length === 0) {
+                                                        showToast('Выберите хотя бы одну группу для выгрузки статистики', 'danger');
+                                                        return;
+                                                    }
+
+                                                    // Сохраняем оригинальное состояние
+                                                    const originalLabel = document.getElementById('statsBtnLabel').textContent;
+                                                    const originalSublabel = document.getElementById('statsBtnSublabel').textContent;
+                                                    const originalIcon = document.getElementById('statsBtnIcon').outerHTML;
+
+                                                    // Включаем режим загрузки
+                                                    btn.classList.add('loading');
+                                                    document.getElementById('statsBtnLabel').textContent = 'Формируется...';
+                                                    document.getElementById('statsBtnSublabel').textContent = 'Подождите';
+                                                    document.getElementById('statsBtnIcon').outerHTML = '<span class="spinner-border spinner-border-sm text-white" role="status" id="statsBtnIcon"></span>';
+
+                                                    try {
+                                                        const formData = new FormData();
+                                                        groupIds.forEach(id => formData.append('groupIds', id));
+
+                                                        const response = await fetch('/Report/ExportGroupsStatistics', {
+                                                            method: 'POST',
+                                                            body: formData
+                                                        });
+
+                                                        if (response.ok) {
+                                                            const blob = await response.blob();
+                                                            let filename = `Статистика_по_группам_${new Date().toISOString().split('T')[0]}.xlsx`;
+                                                            const disposition = response.headers.get('Content-Disposition');
+                                                            if (disposition && disposition.includes('filename=')) {
+                                                                const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                                                                if (match && match[1]) filename = decodeURIComponent(match[1].replace(/['"]/g, ''));
+                                                            }
+                                                            const url = window.URL.createObjectURL(blob);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = filename;
+                                                            document.body.appendChild(a);
+                                                            a.click();
+                                                            a.remove();
+                                                            window.URL.revokeObjectURL(url);
+                                                            showToast('Статистика успешно сформирована!', 'success');
+                                                        } else {
+                                                            const errorJson = await response.json();
+                                                            showToast(errorJson.message || 'Ошибка формирования статистики', 'danger');
+                                                        }
+                                                    } catch (err) {
+                                                        showToast('Ошибка сети при формировании статистики', 'danger');
+                                                    } finally {
+                                                        // Возвращаем исходное состояние кнопки
+                                                        btn.classList.remove('loading');
+                                                        document.getElementById('statsBtnLabel').textContent = originalLabel;
+                                                        document.getElementById('statsBtnSublabel').textContent = originalSublabel;
+                                                        document.getElementById('statsBtnIcon').outerHTML = originalIcon;
+                                                    }
+                                                }
+
+                                                // Открытие модалки отчисления с курса
+                                                window.prepareRemoveFromCourse = function (studentId, configId, fullName) {
+                                                    document.getElementById('removeFromCourseStudentId').value = studentId;
+                                                    document.getElementById('removeFromCourseConfigId').value = configId;
+                                                    document.getElementById('removeFromCourseNameText').textContent = fullName;
         
-        new bootstrap.Modal(document.getElementById('removeFromCourseModal')).show();
-    };
+                                                    new bootstrap.Modal(document.getElementById('removeFromCourseModal')).show();
+                                                };
 
-    // Обработчик подтверждения
-    document.getElementById('confirmRemoveFromCourseBtn').addEventListener('click', async function() {
-        const studentId = document.getElementById('removeFromCourseStudentId').value;
-        const configId = document.getElementById('removeFromCourseConfigId').value;
-        const btn = this;
+                                                // Обработчик подтверждения
+                                                document.getElementById('confirmRemoveFromCourseBtn').addEventListener('click', async function () {
+                                                    const studentId = document.getElementById('removeFromCourseStudentId').value;
+                                                    const configId = document.getElementById('removeFromCourseConfigId').value;
+                                                    const btn = this;
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                                                    btn.disabled = true;
+                                                    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-        const formData = new FormData();
-        formData.append('studentId', studentId);
-        formData.append('configId', configId);
+                                                    const formData = new FormData();
+                                                    formData.append('studentId', studentId);
+                                                    formData.append('configId', configId);
 
-        try {
-            const response = await fetch('/Users/RemoveFromCourse', { method: 'POST', body: formData });
-            const result = await response.json();
+                                                    try {
+                                                        const response = await fetch('/Users/RemoveFromCourse', { method: 'POST', body: formData });
+                                                        const result = await response.json();
 
-            if (result.success) {
-                bootstrap.Modal.getInstance(document.getElementById('removeFromCourseModal')).hide();
-                // Вызываем уведомление, если на странице есть showToast, иначе - fallback
-                if (typeof showToast === 'function') {
-                    showToast('Студент отчислен с курса', 'success');
-                }
-                // Перезагружаем страницу, чтобы данные в таблице обновились
-                setTimeout(() => window.location.reload(), 800);
-            } else {
-                if (typeof showToast === 'function') {
-                    showToast(result.message, 'danger');
-                } else {
-                    alert(result.message);
-                }
-                btn.disabled = false;
-                btn.textContent = 'Отчислить';
-            }
-        } catch (err) {
-            if (typeof showToast === 'function') {
-                showToast('Ошибка сети при отчислении.', 'danger');
-            } else {
-                alert('Ошибка сети.');
-            }
-            btn.disabled = false;
-            btn.textContent = 'Отчислить';
-        }
-    });
-                                                </script>
-                                            }
+                                                        if (result.success) {
+                                                            bootstrap.Modal.getInstance(document.getElementById('removeFromCourseModal')).hide();
+                                                            // Вызываем уведомление, если на странице есть showToast, иначе - fallback
+                                                            if (typeof showToast === 'function') {
+                                                                showToast('Студент отчислен с курса', 'success');
+                                                            }
+                                                            // Перезагружаем страницу, чтобы данные в таблице обновились
+                                                            setTimeout(() => window.location.reload(), 800);
+                                                        } else {
+                                                            if (typeof showToast === 'function') {
+                                                                showToast(result.message, 'danger');
+                                                            } else {
+                                                                alert(result.message);
+                                                            }
+                                                            btn.disabled = false;
+                                                            btn.textContent = 'Отчислить';
+                                                        }
+                                                    } catch (err) {
+                                                        if (typeof showToast === 'function') {
+                                                            showToast('Ошибка сети при отчислении.', 'danger');
+                                                        } else {
+                                                            alert('Ошибка сети.');
+                                                        }
+                                                        btn.disabled = false;
+                                                        btn.textContent = 'Отчислить';
+                                                    }
+                                                });
+
+                                                // ==========================================
+                                                // ГЕНЕРАЦИЯ ОТЧЁТА (через fetch + blob, с тостами при ошибке)
+                                                // ==========================================
+                                                document.getElementById('btnGenerateReport').addEventListener('click', async function () {
+                                                    const btn = this;
+                                                    const form = document.getElementById('reportSetupForm');
+
+                                                    // Базовая проверка на required-поля (TomSelect/inputs)
+                                                    if (!form.checkValidity()) {
+                                                        form.reportValidity();
+                                                        return;
+                                                    }
+
+                                                    const originalHtml = btn.innerHTML;
+                                                    btn.disabled = true;
+                                                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Формирование...';
+
+                                                    try {
+                                                        const formData = new FormData(form);
+                                                        // hidden-поля с id в HTML имеют name — FormData их подхватит
+                                                        // но на всякий случай, если id есть, а name нет:
+                                                        // (у вас есть name="groupConfigId", name="templateId" — ок)
+
+                                                        const response = await fetch('/Report/GenerateCourseReport', {
+                                                            method: 'POST',
+                                                            body: formData
+                                                        });
+
+                                                        if (response.ok) {
+                                                            // Скачиваем файл
+                                                            const blob = await response.blob();
+
+                                                            // Имя файла из Content-Disposition
+                                                            let filename = 'Отчет.docx';
+                                                            const disposition = response.headers.get('Content-Disposition');
+                                                            if (disposition) {
+                                                                const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+                                                                if (utf8Match && utf8Match[1]) {
+                                                                    filename = decodeURIComponent(utf8Match[1]);
+                                                                } else {
+                                                                    const simpleMatch = disposition.match(/filename="?([^";]+)"?/i);
+                                                                    if (simpleMatch && simpleMatch[1]) filename = simpleMatch[1];
+                                                                }
+                                                            }
+
+                                                            const url = window.URL.createObjectURL(blob);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = filename;
+                                                            document.body.appendChild(a);
+                                                            a.click();
+                                                            a.remove();
+                                                            window.URL.revokeObjectURL(url);
+
+                                                            showToast('Отчёт успешно сформирован!', 'success');
+
+                                                            // Закрываем модал
+                                                            bootstrap.Modal.getInstance(document.getElementById('reportSetupModal')).hide();
+                                                        } else {
+                                                            // Ошибка — читаем JSON
+                                                            let message = 'Ошибка формирования отчёта';
+                                                            try {
+                                                                const errorJson = await response.json();
+                                                                message = errorJson.message || message;
+                                                            } catch { /* если тело не JSON */ }
+
+                                                            showToast(message, 'danger');
+                                                        }
+                                                    } catch (err) {
+                                                        console.error('Ошибка генерации:', err);
+                                                        showToast('Ошибка сети при формировании отчёта', 'danger');
+                                                    } finally {
+                                                        btn.disabled = false;
+                                                        btn.innerHTML = originalHtml;
+                                                    }
+                                                });
+                                            </script>
+                                        }

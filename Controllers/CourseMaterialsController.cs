@@ -222,7 +222,6 @@ public class CourseMaterialsController : Controller
     }
 
     // POST: /CourseMaterials/Delete/5
-    // Асинхронное удаление элемента курса с пересчетом порядка Order
     [HttpPost]
     [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Delete(int id)
@@ -238,8 +237,44 @@ public class CourseMaterialsController : Controller
 
         try
         {
-            // Если это был файл (PDF, Видео, Картинка или Файл задания) — физически удаляем его с диска сервера
-            if (!string.IsNullOrEmpty(material.ContentOrPath) && material.ContentOrPath.StartsWith("/uploads/"))
+            // ============================================================
+            // 1. SCORM — удаляем ВСЮ папку пакета (index.html + imsmanifest + медиа)
+            // ============================================================
+            if (material.Type == MaterialType.Scorm
+                && !string.IsNullOrEmpty(material.ContentOrPath)
+                && material.ContentOrPath.StartsWith("/uploads/materials/scorm/"))
+            {
+                // Путь: /uploads/materials/scorm/{folderName}/{entryPoint...}
+                var parts = material.ContentOrPath.Split('/');
+                if (parts.Length > 4)
+                {
+                    string folderName = parts[4];
+
+                    // Защита от path traversal
+                    if (!string.IsNullOrEmpty(folderName)
+                        && !folderName.Contains("..")
+                        && !folderName.Contains("\\")
+                        && !folderName.Contains("/"))
+                    {
+                        string scormFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", "scorm", folderName);
+                        if (Directory.Exists(scormFolder))
+                        {
+                            try
+                            {
+                                Directory.Delete(scormFolder, recursive: true);
+                            }
+                            catch
+                            {
+                                // Файл занят (например, открыт в iframe кем-то ещё) — не роняем удаление материала
+                            }
+                        }
+                    }
+                }
+            }
+            // ============================================================
+            // 2. Обычные файлы (PDF, Видео, Картинка, Задание)
+            // ============================================================
+            else if (!string.IsNullOrEmpty(material.ContentOrPath) && material.ContentOrPath.StartsWith("/uploads/"))
             {
                 // Для заданий отсекаем путь к файлу перед разделителем |||
                 string filePath = material.Type == MaterialType.Assignment
@@ -253,10 +288,38 @@ public class CourseMaterialsController : Controller
                 }
             }
 
+            // ============================================================
+            // 3. Картинки вариантов ответов теста (иначе копятся на диске)
+            // ============================================================
+            if (material.Type == MaterialType.Test)
+            {
+                var testQuestions = await _context.TestQuestions
+                    .Include(q => q.Answers)
+                    .Where(q => q.CourseMaterialId == material.Id)
+                    .ToListAsync();
+
+                foreach (var q in testQuestions)
+                {
+                    foreach (var a in q.Answers)
+                    {
+                        if (!string.IsNullOrEmpty(a.ImageUrl) && a.ImageUrl.StartsWith("/uploads/"))
+                        {
+                            string imgPath = Path.Combine(_env.WebRootPath, a.ImageUrl.TrimStart('/'));
+                            if (System.IO.File.Exists(imgPath))
+                            {
+                                try { System.IO.File.Delete(imgPath); } catch { }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Удаление из БД (каскадно удалятся TestQuestions / TestAnswerOptions,
+            // т.к. они привязаны к CourseMaterialId и являются зависимыми)
             _context.CourseMaterials.Remove(material);
             await _context.SaveChangesAsync();
 
-            // Магия пересчета: сдвигаем порядок всех последующих элементов курса назад на 1
+            // Пересчёт порядка: сдвигаем все последующие материалы курса на -1
             var remainingMaterials = await _context.CourseMaterials
                 .Where(m => m.CourseId == courseId && m.Order > deletedOrder)
                 .ToListAsync();
@@ -293,7 +356,7 @@ public class CourseMaterialsController : Controller
             if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, id, groupId.Value))
                 return this.ForbidSmart("Нет доступа к этому материалу.");
         }
-    
+
         var m = await _context.CourseMaterials.FindAsync(id);
         if (m == null) return NotFound();
 
@@ -337,6 +400,90 @@ public class CourseMaterialsController : Controller
             questionsCountToUse = m.QuestionsCountToUse,
             themeId = m.ThemeId
         });
+    }
+
+    // =================================================================================
+    // СКАЧИВАНИЕ МАТЕРИАЛА (PDF, видео, изображение, SCORM-пакет как ZIP)
+    // =================================================================================
+    [HttpGet]
+    [Authorize(Roles = "Админ,Главный_Админ")]
+    public async Task<IActionResult> DownloadMaterial(int id)
+    {
+        var material = await _context.CourseMaterials.FindAsync(id);
+        if (material == null) return NotFound("Материал не найден.");
+
+        if (string.IsNullOrEmpty(material.ContentOrPath))
+            return NotFound("У этого материала нет файла.");
+
+        // Безопасное имя файла из названия материала
+        string SafeName(string title, string fallback)
+        {
+            string s = System.Text.RegularExpressions.Regex.Replace(title, @"[\\/:*?""<>|]", "").Trim();
+            return string.IsNullOrEmpty(s) ? fallback : s;
+        }
+
+        // ============================================================
+        // 1. SCORM — упаковываем папку в ZIP на лету
+        // ============================================================
+        if (material.Type == MaterialType.Scorm)
+        {
+            if (!material.ContentOrPath.StartsWith("/uploads/materials/scorm/"))
+                return NotFound("Некорректный путь к SCORM-пакету.");
+
+            var parts = material.ContentOrPath.Split('/');
+            if (parts.Length < 5) return NotFound();
+
+            string folderName = parts[4];
+            if (folderName.Contains("..") || folderName.Contains("/") || folderName.Contains("\\"))
+                return BadRequest("Некорректное имя папки SCORM.");
+
+            string folder = Path.Combine(_env.WebRootPath, "uploads", "materials", "scorm", folderName);
+            if (!Directory.Exists(folder))
+                return NotFound("Папка SCORM не найдена на диске.");
+
+            using var ms = new MemoryStream();
+            using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, true))
+            {
+                foreach (var file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories))
+                {
+                    string rel = Path.GetRelativePath(folder, file).Replace('\\', '/');
+                    zip.CreateEntryFromFile(file, rel, CompressionLevel.Optimal);
+                }
+            }
+
+            string fileName = SafeName(material.Title, $"scorm_{id}") + ".zip";
+            var cd = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+            {
+                FileNameStar = fileName
+            };
+            Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.ContentDisposition] = cd.ToString();
+
+            return File(ms.ToArray(), "application/zip");
+        }
+
+        // ============================================================
+        // 2. PDF / Видео / Изображение — прямой файл
+        // ============================================================
+        if (material.Type != MaterialType.Pdf
+            && material.Type != MaterialType.Video
+            && material.Type != MaterialType.Image)
+        {
+            return BadRequest("Скачивание этого типа материала не поддерживается.");
+        }
+
+        // Внешние ссылки не скачиваем через этот эндпоинт
+        if (!material.ContentOrPath.StartsWith("/uploads/"))
+            return BadRequest("Внешние ссылки нужно скачивать напрямую по URL.");
+
+        string absPath = Path.Combine(_env.WebRootPath, material.ContentOrPath.TrimStart('/'));
+        if (!System.IO.File.Exists(absPath))
+            return NotFound("Файл не найден на диске.");
+
+        string ext = Path.GetExtension(absPath).ToLower();
+        string downloadName = SafeName(material.Title, $"material_{id}") + ext;
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(absPath);
+        return File(bytes, "application/octet-stream", downloadName);
     }
 
     // POST: /CourseMaterials/Edit

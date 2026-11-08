@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SdoApp.Services;
 
 namespace SdoApp.Controllers;
 
@@ -354,14 +355,18 @@ public class GroupsController : Controller
         });
     }
 
-    // POST: /Groups/SaveGroupSkeleton
     [HttpPost]
     public async Task<IActionResult> SaveGroupSkeleton(int groupId, List<int> studentIds, List<int> courseIds, List<int> companyIds)
     {
+        await using var tx = await _context.Database.BeginTransactionAsync();
         try
         {
             var group = await _context.Groups.FindAsync(groupId);
-            if (group == null) return Json(new { success = false, message = "Группа не найдена!" });
+            if (group == null)
+            {
+                await tx.RollbackAsync();
+                return Json(new { success = false, message = "Группа не найдена!" });
+            }
 
             // 1. Обновляем список студентов в группе
             var oldStudents = await _context.GroupStudents.Where(s => s.GroupId == groupId).ToListAsync();
@@ -389,8 +394,7 @@ public class GroupsController : Controller
                         {
                             GroupId = groupId,
                             CourseId = cId,
-                            // Инициализируем списком всех текущих студентов группы (чтобы галочки стояли)
-                            AllowedStudentIds = studentIds != null ? string.Join(",", studentIds) : "", 
+                            AllowedStudentIds = studentIds != null ? string.Join(",", studentIds) : "",
                             ProtocolNumber = group.GroupNumber,
                             CourseStartDate = group.StartDate,
                             CourseEndDate = group.EndDate
@@ -412,8 +416,7 @@ public class GroupsController : Controller
 
             await _context.SaveChangesAsync();
 
-                        // 3.5. АВТОМАТИЧЕСКОЕ РАСПРЕДЕЛЕНИЕ НОВЫХ СТУДЕНТОВ НА ВСЕ КУРСЫ
-            // Логика: если у студента нет ни одной галочки в этой группе, ставим её на все курсы.
+            // 3.5. Автоматическое распределение новых студентов на все курсы
             var actualStudents = await _context.GroupStudents
                 .Where(gs => gs.GroupId == groupId)
                 .Select(gs => gs.StudentId)
@@ -429,40 +432,34 @@ public class GroupsController : Controller
 
                 foreach (var sId in actualStudents)
                 {
-                    // Проверяем, есть ли студент хотя бы в одном курсе
-                    bool isAssignedToAnyCourse = actualConfigs.Any(cfg => 
-                    {
-                        if (string.IsNullOrWhiteSpace(cfg.AllowedStudentIds)) return false;
-                        var ids = cfg.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                        return ids.Contains(sId.ToString());
-                    });
+                    bool isAssignedToAnyCourse = actualConfigs.Any(cfg =>
+                        AccessService.IsStudentAllowed(cfg.AllowedStudentIds, sId));
 
-                    // Если он вообще нигде не отмечен, добавляем его во ВСЕ курсы
-                    if (!isAssignedToAnyCourse)
+                    if (isAssignedToAnyCourse) continue;
+
+                    foreach (var cfg in actualConfigs)
                     {
-                        foreach (var cfg in actualConfigs)
+                        if (cfg.AllowedStudentIds == null) continue;
+                        if (string.IsNullOrWhiteSpace(cfg.AllowedStudentIds)) continue;
+
+                        var ids = cfg.AllowedStudentIds
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(int.Parse)
+                            .ToList();
+
+                        if (!ids.Contains(sId))
                         {
-                            var idsList = string.IsNullOrWhiteSpace(cfg.AllowedStudentIds) 
-                                ? new List<string>() 
-                                : cfg.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
-
-                            if (!idsList.Contains(sId.ToString()))
-                            {
-                                idsList.Add(sId.ToString());
-                                cfg.AllowedStudentIds = string.Join(",", idsList);
-                            }
+                            ids.Add(sId);
+                            cfg.AllowedStudentIds = string.Join(",", ids);
+                            hasChanges = true;
                         }
-                        hasChanges = true;
                     }
                 }
 
-                if (hasChanges)
-                {
-                    await _context.SaveChangesAsync();
-                }
+                if (hasChanges) await _context.SaveChangesAsync();
             }
 
-            // 4. АВТОМАТИЧЕСКОЕ ПРИСВОЕНИЕ НОМЕРОВ МИНТРУДА (просто числа: 1, 2, 3...)
+            // 4. Автоматическое присвоение номеров Минтруда
             var actualStudentIds = await _context.GroupStudents
                 .Where(gs => gs.GroupId == groupId)
                 .Select(gs => gs.StudentId)
@@ -478,7 +475,6 @@ public class GroupsController : Controller
 
             if (mintrudConfigs.Any() && actualStudentIds.Any())
             {
-                // Ищем максимальный существующий номер Минтруда (просто число)
                 var existingMtNumbers = await _context.CourseProgresses
                     .Where(p => p.MintrudNumber != null)
                     .Select(p => p.MintrudNumber)
@@ -516,26 +512,24 @@ public class GroupsController : Controller
                             _context.CourseProgresses.Add(progress);
                         }
 
-                        // Присваиваем ТОЛЬКО если номера еще нет
                         if (string.IsNullOrEmpty(progress.MintrudNumber))
                         {
-                            progress.MintrudNumber = nextMt.ToString(); // Просто "1", "2", "3"
+                            progress.MintrudNumber = nextMt.ToString();
                             nextMt++;
                             anyChanged = true;
                         }
                     }
                 }
 
-                if (anyChanged)
-                {
-                    await _context.SaveChangesAsync();
-                }
+                if (anyChanged) await _context.SaveChangesAsync();
             }
 
+            await tx.CommitAsync();
             return Json(new { success = true });
         }
         catch (Exception ex)
         {
+            await tx.RollbackAsync();
             return Json(new { success = false, message = $"Ошибка сохранения костяка: {ex.Message}" });
         }
     }
@@ -593,7 +587,7 @@ public class GroupsController : Controller
         return Json(filteredCompanies);
     }
 
-       // GET: /Groups/DownloadAccesses/5
+    // GET: /Groups/DownloadAccesses/5
     [HttpGet]
     public async Task<IActionResult> DownloadAccesses(int id)
     {

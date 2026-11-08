@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
+using SdoApp.Services;
 
 namespace SdoApp.Controllers;
 
@@ -67,24 +68,14 @@ public class DashboardController : Controller
                 // Фильтр: курс виден, пока не истёк доступ к материалам (или дата окончания группы)
         // + НОВОЕ: проверка, что студент реально допущен к курсу (AllowedStudentIds)
         var allCourses = groupCourses
-            .Where(gcc =>
-            {
-                // 1. Проверка сроков
-                var effectiveEnd = gcc.Group!.MaterialAccessDate ?? gcc.Group.EndDate;
-                if (effectiveEnd.Date < today) return false;
+    .Where(gcc =>
+    {
+        var effectiveEnd = gcc.Group!.MaterialAccessDate ?? gcc.Group.EndDate;
+        if (effectiveEnd.Date < today) return false;
 
-                // 2. Проверка допуска
-                // Если строка null, значит это курс, созданный до внедрения галочек (доступен всем)
-                if (gcc.AllowedStudentIds == null) return true; 
-                
-                // Если строка пустая, значит галочки сняты со всех
-                if (string.IsNullOrWhiteSpace(gcc.AllowedStudentIds)) return false;
-
-                // Иначе проверяем, есть ли ID студента в списке
-                var ids = gcc.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
-                return ids.Contains(studentId);
-            })
-            .ToList();
+        return AccessService.IsStudentAllowed(gcc.AllowedStudentIds, studentId);
+    })
+    .ToList();
 
         // Так как БД чистая, просто берем прогресс по ключу (GroupId + CourseId)
         var progressList = await _context.CourseProgresses

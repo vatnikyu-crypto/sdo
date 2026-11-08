@@ -16,6 +16,7 @@ using System.Data;
 using MiniExcelLibs.OpenXml;
 using ClosedXML.Excel;
 using SdoApp.Models.ViewModels;
+using SdoApp.Services;
 
 namespace SdoApp.Controllers;
 
@@ -338,7 +339,6 @@ public class UsersController : Controller
         return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Шаблон_импорта_слушателей.xlsx");
     }
 
-    // POST: /Users/Import
     [HttpPost]
     public async Task<IActionResult> Import(IFormFile excelFile)
     {
@@ -362,6 +362,11 @@ public class UsersController : Controller
         {
             if (int.TryParse(mt, out int n) && n > globalMaxMt) globalMaxMt = n;
         }
+
+        // Вся операция импорта — в одной транзакции.
+        // Если упадёт на любой строке — откатятся ВСЕ строки, включая уже обработанные.
+        // Ошибки разбора отдельных строк (валидация) — отлавливаются внутри цикла и НЕ роняют транзакцию.
+        await using var tx = await _context.Database.BeginTransactionAsync();
 
         try
         {
@@ -451,7 +456,6 @@ public class UsersController : Controller
                                 studentToProcess.Department = string.IsNullOrEmpty(department) ? null : department;
                                 studentToProcess.CompanyId = company?.Id;
                                 studentToProcess.Position = string.IsNullOrEmpty(position) ? null : position;
-                                // ВАЖНО: гарантируем, что роль — Обучающийся
                                 studentToProcess.Role = UserRole.Обучающийся;
 
                                 _context.Users.Update(studentToProcess);
@@ -486,7 +490,7 @@ public class UsersController : Controller
                                     BirthDate = birthDate,
                                     Snils = string.IsNullOrEmpty(snils) ? null : snils,
                                     Department = string.IsNullOrEmpty(department) ? null : department,
-                                    Role = UserRole.Обучающийся, // ← гарантируем роль
+                                    Role = UserRole.Обучающийся,
                                     CompanyId = company?.Id,
                                     Position = string.IsNullOrEmpty(position) ? null : position
                                 };
@@ -496,17 +500,14 @@ public class UsersController : Controller
 
                             await _context.SaveChangesAsync();
 
-                            // 4. МАГИЯ АВТОМАТИЧЕСКОГО ЗАЧИСЛЕНИЯ В ГРУППУ И НА КУРСЫ
+                            // Зачисление в группу и на курсы
                             if (targetGroup != null)
                             {
-                                // Разрешаем зачисление, если это физлицо (company == null)
-                                // ИЛИ если компания этого юзера привязана к данной группе потока обучения
                                 bool isAllowedToGroup = company == null || await _context.GroupCompanies
                                     .AnyAsync(gc => gc.GroupId == targetGroup.Id && gc.CompanyId == company.Id);
 
                                 if (isAllowedToGroup)
                                 {
-                                    // Добавляем в группу, если его там еще нет
                                     bool alreadyInGroup = await _context.GroupStudents
                                         .AnyAsync(gs => gs.GroupId == targetGroup.Id && gs.StudentId == studentToProcess.Id);
 
@@ -520,7 +521,6 @@ public class UsersController : Controller
                                         await _context.SaveChangesAsync();
                                     }
 
-                                    // ВАЖНО: Получаем актуальный список ВСЕХ студентов группы (включая нового)
                                     var allGroupStudentIds = await _context.GroupStudents
                                         .Where(gs => gs.GroupId == targetGroup.Id)
                                         .Select(gs => gs.StudentId)
@@ -533,31 +533,36 @@ public class UsersController : Controller
 
                                     foreach (var config in courseConfigs)
                                     {
-                                        // Получаем текущий список допущенных ID
-                                        var allowedIds = string.IsNullOrEmpty(config.AllowedStudentIds)
-                                            ? new List<int>()
-                                            : config.AllowedStudentIds.Split(',').Select(int.Parse).ToList();
-
-                                        // ГЛАВНОЕ ИСПРАВЛЕНИЕ:
-                                        // Если список пустой (значит, по умолчанию были допущены ВСЕ),
-                                        // то заполняем его всеми текущими студентами группы.
-                                        if (!allowedIds.Any())
+                                        // Семантика AllowedStudentIds:
+                                        // null = все, "" = никто, "1,2,5" = явный список
+                                        if (config.AllowedStudentIds == null)
                                         {
-                                            allowedIds = new List<int>(allGroupStudentIds);
-                                            config.AllowedStudentIds = string.Join(",", allowedIds);
-                                            _context.GroupCourseConfigs.Update(config);
+                                            // null = все — новый студент автоматически допущен, ничего не делаем
                                         }
-                                        // Если список не пустой, но нового студента там нет — просто добавляем его
-                                        else if (!allowedIds.Contains(studentToProcess.Id))
+                                        else if (string.IsNullOrWhiteSpace(config.AllowedStudentIds))
                                         {
-                                            allowedIds.Add(studentToProcess.Id);
-                                            config.AllowedStudentIds = string.Join(",", allowedIds);
-                                            _context.GroupCourseConfigs.Update(config);
+                                            // "" = никто — не трогаем
+                                        }
+                                        else
+                                        {
+                                            var ids = config.AllowedStudentIds
+                                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                .Select(int.Parse)
+                                                .ToList();
+
+                                            if (!ids.Contains(studentToProcess.Id))
+                                            {
+                                                ids.Add(studentToProcess.Id);
+                                                config.AllowedStudentIds = string.Join(",", ids);
+                                                _context.GroupCourseConfigs.Update(config);
+                                            }
                                         }
 
-                                        // 4.2. Создаем запись в прогрессе для этого курса
+                                        // Прогресс-запись
                                         var progress = await _context.CourseProgresses
-                                            .FirstOrDefaultAsync(p => p.StudentId == studentToProcess.Id && p.CourseId == config.CourseId && p.GroupId == targetGroup.Id);
+                                            .FirstOrDefaultAsync(p => p.StudentId == studentToProcess.Id
+                                                                   && p.CourseId == config.CourseId
+                                                                   && p.GroupId == targetGroup.Id);
 
                                         if (progress == null)
                                         {
@@ -570,7 +575,7 @@ public class UsersController : Controller
                                             _context.CourseProgresses.Add(progress);
                                         }
 
-                                        // 4.3. Если курс Минтруда — присваиваем номер
+                                        // Номер Минтруда
                                         if (config.Course != null && config.Course.MintrudProgramId != null)
                                         {
                                             if (string.IsNullOrEmpty(progress.MintrudNumber))
@@ -583,27 +588,31 @@ public class UsersController : Controller
                                     await _context.SaveChangesAsync();
                                 }
                             }
+
                             successCount++;
                         }
                         catch (Exception innerEx)
                         {
+                            // Ошибка разбора одной строки — НЕ роняем транзакцию, пропускаем строку
                             errorCount++;
                             errorMessages.Add($"Строка {row.RowNumber()}: Сбой разбора данных ({innerEx.Message}).");
                         }
                     }
                 }
             }
+
+            await tx.CommitAsync();
+            return Json(new { success = true, successCount, errorCount, errors = errorMessages });
         }
         catch (Exception ex)
         {
+            await tx.RollbackAsync();
             return Json(new { success = false, message = "Критическая ошибка чтения файла: " + ex.Message });
         }
-
-        return Json(new { success = true, successCount, errorCount, errors = errorMessages });
     }
 
 
-        // GET: /Users/Details/5
+    // GET: /Users/Details/5
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
@@ -634,19 +643,8 @@ public class UsersController : Controller
             {
                 Group = g,
                 Courses = configs
-                    .Where(c => c.GroupId == g.Id)
-                    // ФИЛЬТР: оставляем только те курсы, на которые он записан
-                    .Where(c => 
-                    {
-                        // Если поле null (курс только создан), считаем что доступен всем
-                        if (c.AllowedStudentIds == null) return true; 
-                        
-                        // Если поле пустое, значит доступ никому не выдан
-                        if (string.IsNullOrWhiteSpace(c.AllowedStudentIds)) return false; 
-
-                        var ids = c.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
-                        return ids.Contains(id); 
-                    })
+    .Where(c => c.GroupId == g.Id)
+    .Where(c => AccessService.IsStudentAllowed(c.AllowedStudentIds, id))
                     .Select(c => new CourseAccessViewModel
                     {
                         Course = c.Course!,
@@ -701,41 +699,46 @@ public class UsersController : Controller
         }
     }
 
-    // POST: /Users/RemoveFromCourse
     [HttpPost]
     public async Task<IActionResult> RemoveFromCourse(int studentId, int configId)
     {
         try
         {
-            var config = await _context.GroupCourseConfigs
-                .FirstOrDefaultAsync(c => c.Id == configId);
-
+            var config = await _context.GroupCourseConfigs.FirstOrDefaultAsync(c => c.Id == configId);
             if (config == null) return Json(new { success = false, message = "Курс не найден" });
 
-            List<int> allowedIds;
-            if (string.IsNullOrWhiteSpace(config.AllowedStudentIds))
+            // null = все → материализуем список всех, исключая студента
+            if (config.AllowedStudentIds == null)
             {
-                // Если список был пуст (значит, допущены все студенты группы), 
-                // нужно собрать всех студентов группы, кроме отчисляемого, и записать в AllowedStudentIds
-                var allStudentIds = await _context.GroupStudents
+                var allIds = await _context.GroupStudents
                     .Where(gs => gs.GroupId == config.GroupId)
                     .Select(gs => gs.StudentId)
                     .ToListAsync();
 
-                allowedIds = allStudentIds.Where(sid => sid != studentId).ToList();
+                var newIds = allIds.Where(sid => sid != studentId).ToList();
+                // Если после удаления никого не осталось — оставляем "" (никто)
+                config.AllowedStudentIds = newIds.Any() ? string.Join(",", newIds) : "";
             }
+            // "" = никто → удалять нечего
+            else if (string.IsNullOrWhiteSpace(config.AllowedStudentIds))
+            {
+                return Json(new { success = true });
+            }
+            // Явный список → убираем студента
             else
             {
-                // Если список уже был, просто убираем оттуда студента
-                allowedIds = config.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(int.Parse).ToList();
-                allowedIds.Remove(studentId);
+                var ids = config.AllowedStudentIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse)
+                    .ToList();
+
+                if (ids.Contains(studentId)) ids.Remove(studentId);
+
+                config.AllowedStudentIds = ids.Any() ? string.Join(",", ids) : "";
             }
 
-            config.AllowedStudentIds = string.Join(",", allowedIds);
             _context.GroupCourseConfigs.Update(config);
             await _context.SaveChangesAsync();
-
             return Json(new { success = true });
         }
         catch (Exception ex)
