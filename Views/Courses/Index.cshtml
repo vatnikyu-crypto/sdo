@@ -129,6 +129,61 @@
         transform: scale(0.95);
         transition: opacity 0.3s ease, transform 0.3s ease;
     }
+
+    .toast-container-custom {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .custom-toast {
+        min-width: 300px;
+        max-width: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        border-left: 6px solid #ccc;
+    }
+
+    .custom-toast.success {
+        border-left-color: #198754;
+    }
+
+    .custom-toast.danger {
+        border-left-color: #dc3545;
+    }
+
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes fadeOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+    }
 </style>
 
 <!-- 1. ВЕРХНЯЯ ПАНЕЛЬ С КНОПКОЙ СОЗДAНИЯ -->
@@ -138,10 +193,17 @@
             <i class="bi bi-journal-bookmark-fill text-primary fs-3"></i> Курсы
         </h3>
     </div>
-    <a href="/Courses/Create"
-       class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3">
-        <i class="bi bi-plus-lg"></i> Создать курс
-    </a>
+    <div class="d-flex gap-2">
+        <button type="button"
+                class="btn btn-outline-primary px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3"
+                data-bs-toggle="modal" data-bs-target="#importCourseModal">
+            <i class="bi bi-upload"></i> Импорт
+        </button>
+        <a href="/Courses/Create"
+           class="btn btn-brand px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 rounded-3">
+            <i class="bi bi-plus-lg"></i> Создать курс
+        </a>
+    </div>
 </div>
 
 <!-- 2. ИНСТРУМЕНТЫ ФИЛЬТРАЦИИ И ПОИСКА -->
@@ -212,7 +274,6 @@
                         </div>
                     </div>
 
-                    <!-- 3. Кнопки действий (Три кнопки в ряд) -->
                     <!-- 3. Кнопки действий (Четыре кнопки в ряд) -->
                     <div class="d-flex gap-2 flex-shrink-0 mt-3 mt-md-0">
                         <!-- Шестеренка (Наполнение) -->
@@ -220,6 +281,13 @@
                            title="Наполнение курса" onclick="event.stopPropagation();">
                             <i class="bi bi-gear-fill"></i>
                         </a>
+
+                        <!-- НОВОЕ: Скачать курс как ZIP -->
+                        <button type="button" class="btn btn-action btn-outline-success"
+                                title="Скачать курс как ZIP (полный бэкап)"
+                                onclick="event.stopPropagation(); exportCourse(@course.Id, this)">
+                            <i class="bi bi-download"></i>
+                        </button>
 
                         <!-- Дублировать -->
                         <button type="button" class="btn btn-action btn-outline-primary" title="Дублировать курс"
@@ -290,310 +358,612 @@
                 </div>
                 <h5 class="fw-bold text-dark mb-2">Дублирование курса</h5>
                 <p class="text-muted small mb-0">Будет создана <b>полная копия</b> курса:</p>
-                <p class="text-muted small mb-1">карточка, темы, материалы, тесты (с вопросами), шаблоны документов и все файлы.</p>
-                <p id="duplicateCourseNameText" class="fw-bold text-primary mb-4"></p>
+                <p class="text-muted small mb-1">карточка, темы, материалы, тесты (с вопросами), шаблоны документов и
+                    все файлы.</p>
+                    <p id="duplicateCourseNameText" class="fw-bold text-primary mb-4"></p>
 
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
-                            data-bs-dismiss="modal">Отмена</button>
-                    <button id="confirmDuplicateCourseBtn" type="button"
-                            class="btn btn-primary px-4 fw-bold w-50 rounded-3">Дублировать</button>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-light px-4 fw-bold border text-secondary w-50 rounded-3"
+                                data-bs-dismiss="modal">Отмена</button>
+                        <button id="confirmDuplicateCourseBtn" type="button"
+                                class="btn btn-primary px-4 fw-bold w-50 rounded-3">Дублировать</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<script>
-    let currentPage = 1;
-const gridContainer = document.getElementById('coursesGridContainer');
-const pageSizeSelect = document.getElementById('pageSizeSelect');
-const searchInput = document.getElementById('courseTableSearchInput');
-
-let pageSize = parseInt(pageSizeSelect.value);
-
-function updateCoursePagination() {
-    const cards = Array.from(gridContainer.querySelectorAll('.course-card-wrapper'));
-    const searchText = searchInput.value.trim().toLowerCase();
-
-    let filteredCards = cards;
-    if (searchText.length > 0) {
-        filteredCards = cards.filter(card => {
-            const title = card.querySelector('.course-title-text')?.textContent?.toLowerCase() ?? "";
-            const description = card.querySelector('.course-description')?.textContent?.toLowerCase() ?? "";
-            return title.includes(searchText) || description.includes(searchText);
-        });
-    }
-
-    const totalCards = filteredCards.length;
-
-    if (totalCards === 0) {
-        cards.forEach(card => card.style.display = 'none');
-        document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 курсов';
-        document.getElementById('paginationButtons').innerHTML = '';
-
-        let noMessage = document.getElementById('noCoursesMessage');
-        if (!noMessage && cards.length > 0) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.id = 'noCoursesMessage';
-            emptyDiv.className = 'col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm';
-            emptyDiv.innerHTML = '<i class="bi bi-search text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">По вашему запросу ничего не найдено</h5>';
-            gridContainer.appendChild(emptyDiv);
-        }
-        return;
-    }
-
-    const noMessage = document.getElementById('noCoursesMessage');
-    if (noMessage && cards.length > 0) { noMessage.remove(); }
-
-    const totalPages = Math.ceil(totalCards / pageSize);
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalCards);
-
-    cards.forEach(card => card.style.display = 'none');
-    filteredCards.forEach((card, index) => {
-        if (index >= startIndex && index < endIndex) {
-            card.style.display = '';
-        }
-    });
-
-    document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalCards} курсов`;
-
-    const paginationContainer = document.getElementById('paginationButtons');
-    paginationContainer.innerHTML = '';
-
-    const prevLi = document.createElement('li');
-    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-    prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
-    if (currentPage > 1) {
-        prevLi.addEventListener('click', () => { currentPage--; updateCoursePagination(); });
-    }
-    paginationContainer.appendChild(prevLi);
-
-    for (let i = 1; i <= totalPages; i++) {
-        const li = document.createElement('li');
-        li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-        li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
-        li.addEventListener('click', () => { currentPage = i; updateCoursePagination(); });
-        paginationContainer.appendChild(li);
-    }
-
-    const nextLi = document.createElement('li');
-    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-    nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
-    if (currentPage < totalPages) {
-        nextLi.addEventListener('click', () => { currentPage++; updateCoursePagination(); });
-    }
-    paginationContainer.appendChild(nextLi);
-}
-
-searchInput.addEventListener('input', function () {
-    currentPage = 1;
-    updateCoursePagination();
-});
-
-pageSizeSelect.addEventListener('change', function () {
-    pageSize = parseInt(this.value);
-    currentPage = 1;
-    updateCoursePagination();
-});
-
-// =====================================================================
-// ЛОГИКА АСИНХРОННОГО AJAX-УДАЛЕНИЯ КУРСА (без изменений)
-// =====================================================================
-let courseIdToDelete = null;
-
-function prepareDeleteCourse(id, courseTitle) {
-    courseIdToDelete = id;
-    document.getElementById('deleteCourseNameText').textContent = `«${courseTitle}»`;
-}
-
-document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async function () {
-    if (!courseIdToDelete) return;
-
-    try {
-        const response = await fetch(`/Courses/Delete/${courseIdToDelete}`, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
-
-            const cardWrapper = document.getElementById(`course-card-${courseIdToDelete}`);
-            if (cardWrapper) {
-                cardWrapper.classList.add('fade-out');
-                setTimeout(() => {
-                    cardWrapper.remove();
-
-                    const cards = gridContainer.querySelectorAll('.course-card-wrapper');
-                    if (cards.length === 0) {
-                        gridContainer.innerHTML = `<div id="noCoursesMessage" class="col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm"><i class="bi bi-journal-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">В системе пока нет созданных курсов</h5></div>`;
-                    }
-                    updateCoursePagination();
-                }, 300);
-            }
-        } else {
-            alert('Внимание: ' + result.message);
-            document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
-        }
-    } catch (error) {
-        console.error('Ошибка удаления курса:', error);
-        alert('Не удалось связаться с сервером для удаления курса.');
-    }
-});
-
-// =====================================================================
-// НОВОЕ: ЛОГИКА ДУБЛИРОВАНИЯ КУРСА
-// =====================================================================
-let courseIdToDuplicate = null;
-
-function prepareDuplicateCourse(id, courseTitle) {
-    courseIdToDuplicate = id;
-    document.getElementById('duplicateCourseNameText').textContent = `«${courseTitle}»`;
-}
-
-document.getElementById('confirmDuplicateCourseBtn').addEventListener('click', async function () {
-    if (!courseIdToDuplicate) return;
-
-    const btn = this;
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Копирование...';
-
-    try {
-        const response = await fetch(`/Courses/Duplicate/${courseIdToDuplicate}`, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // Закрываем модалку
-            document.querySelector('#duplicateCourseModal [data-bs-dismiss="modal"]').click();
-
-            // Удаляем сообщение "нет курсов", если оно было
-            const noMsg = document.getElementById('noCoursesMessage');
-            if (noMsg) noMsg.remove();
-
-            // Создаём и вставляем HTML новой карточки в начало грида
-            const newCardHtml = buildCourseCardHtml(result.course);
-            gridContainer.insertAdjacentHTML('afterbegin', newCardHtml);
-
-            // Вешаем обработчики на новую карточку (без inline onclick)
-            const newCard = document.getElementById(`course-card-${result.course.id}`);
-            if (newCard) attachHandlersToNewCard(newCard);
-
-            currentPage = 1;
-            updateCoursePagination();
-        } else {
-            alert('Ошибка: ' + result.message);
-            document.querySelector('#duplicateCourseModal [data-bs-dismiss="modal"]').click();
-        }
-    } catch (error) {
-        console.error('Ошибка дублирования курса:', error);
-        alert('Не удалось связаться с сервером для дублирования курса.');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        courseIdToDuplicate = null;
-    }
-});
-
-// Строит HTML одной карточки курса (без inline onclick — обработчики вешаются отдельно)
-function buildCourseCardHtml(course) {
-    const esc = (str) => {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    };
-
-    const title = esc(course.title);
-    const description = esc(course.description);
-    const imageUrl = esc(course.imageUrl);
-    const createdAt = esc(course.createdAt);
-    const materialsCount = course.materialsCount || 0;
-
-    const descriptionHtml = description
-        ? `<p class="text-muted small mb-2 course-description text-truncate" style="max-width: 100%;">${description}</p>`
-        : '';
-
-    return `
-        <div class="col course-card-wrapper" id="course-card-${course.id}" data-id="${course.id}">
-            <div class="course-list-card shadow-sm d-flex flex-column flex-md-row align-items-md-center gap-3"
-                 onclick="window.location.href='/CourseMaterials/Index?courseId=${course.id}'"
-                 style="cursor: pointer;">
-                <div class="course-thumbnail flex-shrink-0">
-                    <img src="${imageUrl}" alt="Обложка курса"
-                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://w3.org\\' width=\\'100%\\' height=\\'100%\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%234e73df\\'/><text x=\\'50%\\' y=\\'55%\\' font-family=\\'sans-serif\\' font-weight=\\'bold\\' font-size=\\'14\\' fill=\\'white\\' text-anchor=\\'middle\\'>СДО</text></svg>';">
+    <!-- МОДАЛЬНОЕ ОКНО ИМПОРТА КУРСА -->
+    <div class="modal fade" id="importCourseModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-light border-0 py-3 rounded-top-4">
+                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                        <i class="bi bi-upload text-primary"></i> Импорт курса
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="flex-grow-1 min-w-0 pe-md-3">
-                    <h5 class="fw-bold course-title-text mb-1" title="${title}">${title}</h5>
-                    ${descriptionHtml}
-                    <div class="d-flex flex-wrap gap-3 align-items-center mt-2 mt-md-0">
-                        <span class="text-secondary small fw-semibold">
-                            <i class="bi bi-collection-play me-1"></i> Элементов: ${materialsCount}
-                        </span>
-                        <span class="text-muted small">
-                            <i class="bi bi-calendar3 me-1"></i> ${createdAt}
-                        </span>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Выберите ZIP-архив, ранее экспортированный из СДО. Курс будет добавлен как <b>новый</b> —
+                        существующие курсы не пострадают.
+                    </p>
+
+                    <!-- DROP ZONE -->
+                    <div id="importDropZone" class="rounded-3 p-4 text-center"
+                         style="border: 2px dashed #cbd5e1; background: #fafbff; cursor: pointer; transition: all 0.2s;">
+                        <i class="bi bi-cloud-upload fs-1 text-primary mb-2 d-block"></i>
+                        <div class="fw-bold text-dark">Перетащите ZIP сюда или нажмите для выбора</div>
+                        <small class="text-muted">Только .zip до 500 МБ</small>
+                        <input type="file" id="importCourseFile" accept=".zip" class="d-none" />
+                    </div>
+
+                    <!-- Имя выбранного файла -->
+                    <div class="mt-2 small text-primary fw-bold" id="importFileName"></div>
+
+                    <!-- ПРОГРЕСС-БАР -->
+                    <div id="importProgressWrapper" class="mt-3 d-none">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted fw-bold" id="importProgressText">Загрузка...</small>
+                            <small class="text-muted fw-bold" id="importProgressPercent">0%</small>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div id="importProgressBar"
+                                 class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                 style="width: 0%;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="d-flex gap-2 flex-shrink-0 mt-3 mt-md-0">
-                    <a href="/CourseMaterials/Index?courseId=${course.id}" class="btn btn-action btn-brand" title="Наполнение курса" onclick="event.stopPropagation();">
-                        <i class="bi bi-gear-fill"></i>
-                    </a>
-                    <button type="button" class="btn btn-action btn-outline-primary" title="Дублировать курс" data-action="duplicate">
-                        <i class="bi bi-copy"></i>
+                <div class="modal-footer bg-light border-0 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-light border fw-bold rounded-3" data-bs-dismiss="modal">
+                        Отмена
                     </button>
-                    <a href="/Courses/Edit/${course.id}" class="btn btn-action btn-outline-primary" title="Редактировать карточку" onclick="event.stopPropagation();">
-                        <i class="bi bi-pencil-square"></i>
-                    </a>
-                    <button type="button" class="btn btn-action btn-outline-danger" title="Удалить учебный курс" data-action="delete">
-                        <i class="bi bi-trash"></i>
+                    <button type="button" id="btnStartImport" class="btn btn-brand fw-bold px-4 rounded-3">
+                        <i class="bi bi-upload"></i> Импортировать
                     </button>
                 </div>
             </div>
         </div>
-    `;
-}
+    </div>
+    <script>
+        let currentPage = 1;
+        const gridContainer = document.getElementById('coursesGridContainer');
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        const searchInput = document.getElementById('courseTableSearchInput');
 
-// Вешает обработчики на свежесозданную карточку (дублирование + удаление через data-action)
-function attachHandlersToNewCard(cardElement) {
-    const id = parseInt(cardElement.dataset.id);
-    const titleEl = cardElement.querySelector('.course-title-text');
-    const title = titleEl ? titleEl.textContent : '';
+        let pageSize = parseInt(pageSizeSelect.value);
 
-    const dupBtn = cardElement.querySelector('[data-action="duplicate"]');
-    if (dupBtn) {
-        dupBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            prepareDuplicateCourse(id, title);
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('duplicateCourseModal')).show();
+        function updateCoursePagination() {
+            const cards = Array.from(gridContainer.querySelectorAll('.course-card-wrapper'));
+            const searchText = searchInput.value.trim().toLowerCase();
+
+            let filteredCards = cards;
+            if (searchText.length > 0) {
+                filteredCards = cards.filter(card => {
+                    const title = card.querySelector('.course-title-text')?.textContent?.toLowerCase() ?? "";
+                    const description = card.querySelector('.course-description')?.textContent?.toLowerCase() ?? "";
+                    return title.includes(searchText) || description.includes(searchText);
+                });
+            }
+
+            const totalCards = filteredCards.length;
+
+            if (totalCards === 0) {
+                cards.forEach(card => card.style.display = 'none');
+                document.getElementById('paginationInfo').textContent = 'Показано 0-0 из 0 курсов';
+                document.getElementById('paginationButtons').innerHTML = '';
+
+                let noMessage = document.getElementById('noCoursesMessage');
+                if (!noMessage && cards.length > 0) {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.id = 'noCoursesMessage';
+                    emptyDiv.className = 'col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm';
+                    emptyDiv.innerHTML = '<i class="bi bi-search text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">По вашему запросу ничего не найдено</h5>';
+                    gridContainer.appendChild(emptyDiv);
+                }
+                return;
+            }
+
+            const noMessage = document.getElementById('noCoursesMessage');
+            if (noMessage && cards.length > 0) { noMessage.remove(); }
+
+            const totalPages = Math.ceil(totalCards / pageSize);
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalCards);
+
+            cards.forEach(card => card.style.display = 'none');
+            filteredCards.forEach((card, index) => {
+                if (index >= startIndex && index < endIndex) {
+                    card.style.display = '';
+                }
+            });
+
+            document.getElementById('paginationInfo').textContent = `Показано ${startIndex + 1}-${endIndex} из ${totalCards} курсов`;
+
+            const paginationContainer = document.getElementById('paginationButtons');
+            paginationContainer.innerHTML = '';
+
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
+            if (currentPage > 1) {
+                prevLi.addEventListener('click', () => { currentPage--; updateCoursePagination(); });
+            }
+            paginationContainer.appendChild(prevLi);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+                li.addEventListener('click', () => { currentPage = i; updateCoursePagination(); });
+                paginationContainer.appendChild(li);
+            }
+
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
+            if (currentPage < totalPages) {
+                nextLi.addEventListener('click', () => { currentPage++; updateCoursePagination(); });
+            }
+            paginationContainer.appendChild(nextLi);
+        }
+
+        searchInput.addEventListener('input', function () {
+            currentPage = 1;
+            updateCoursePagination();
         });
-    }
 
-    const delBtn = cardElement.querySelector('[data-action="delete"]');
-    if (delBtn) {
-        delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            prepareDeleteCourse(id, title);
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteCourseModal')).show();
+        pageSizeSelect.addEventListener('change', function () {
+            pageSize = parseInt(this.value);
+            currentPage = 1;
+            updateCoursePagination();
         });
-    }
-}
 
-document.addEventListener("DOMContentLoaded", function () {
-    updateCoursePagination();
-});
-</script>
+        // =====================================================================
+        // ЛОГИКА АСИНХРОННОГО AJAX-УДАЛЕНИЯ КУРСА (без изменений)
+        // =====================================================================
+        let courseIdToDelete = null;
+
+        function prepareDeleteCourse(id, courseTitle) {
+            courseIdToDelete = id;
+            document.getElementById('deleteCourseNameText').textContent = `«${courseTitle}»`;
+        }
+
+        document.getElementById('confirmDeleteCourseBtn').addEventListener('click', async function () {
+            if (!courseIdToDelete) return;
+
+            try {
+                const response = await fetch(`/Courses/Delete/${courseIdToDelete}`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
+
+                    const cardWrapper = document.getElementById(`course-card-${courseIdToDelete}`);
+                    if (cardWrapper) {
+                        cardWrapper.classList.add('fade-out');
+                        setTimeout(() => {
+                            cardWrapper.remove();
+
+                            const cards = gridContainer.querySelectorAll('.course-card-wrapper');
+                            if (cards.length === 0) {
+                                gridContainer.innerHTML = `<div id="noCoursesMessage" class="col-12 w-100 text-center py-5 bg-white border rounded-4 shadow-sm"><i class="bi bi-journal-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i><h5 class="fw-bold text-dark">В системе пока нет созданных курсов</h5></div>`;
+                            }
+                            updateCoursePagination();
+                        }, 300);
+                    }
+                } else {
+                    alert('Внимание: ' + result.message);
+                    document.querySelector('#deleteCourseModal [data-bs-dismiss="modal"]').click();
+                }
+            } catch (error) {
+                console.error('Ошибка удаления курса:', error);
+                alert('Не удалось связаться с сервером для удаления курса.');
+            }
+        });
+
+        // =====================================================================
+        // НОВОЕ: ЛОГИКА ДУБЛИРОВАНИЯ КУРСА
+        // =====================================================================
+        let courseIdToDuplicate = null;
+
+        function prepareDuplicateCourse(id, courseTitle) {
+            courseIdToDuplicate = id;
+            document.getElementById('duplicateCourseNameText').textContent = `«${courseTitle}»`;
+        }
+
+        document.getElementById('confirmDuplicateCourseBtn').addEventListener('click', async function () {
+            if (!courseIdToDuplicate) return;
+
+            const btn = this;
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Копирование...';
+
+            try {
+                const response = await fetch(`/Courses/Duplicate/${courseIdToDuplicate}`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Закрываем модалку
+                    document.querySelector('#duplicateCourseModal [data-bs-dismiss="modal"]').click();
+
+                    // Удаляем сообщение "нет курсов", если оно было
+                    const noMsg = document.getElementById('noCoursesMessage');
+                    if (noMsg) noMsg.remove();
+
+                    // Создаём и вставляем HTML новой карточки в начало грида
+                    const newCardHtml = buildCourseCardHtml(result.course);
+                    gridContainer.insertAdjacentHTML('afterbegin', newCardHtml);
+
+                    // Вешаем обработчики на новую карточку (без inline onclick)
+                    const newCard = document.getElementById(`course-card-${result.course.id}`);
+                    if (newCard) attachHandlersToNewCard(newCard);
+
+                    currentPage = 1;
+                    updateCoursePagination();
+                } else {
+                    alert('Ошибка: ' + result.message);
+                    document.querySelector('#duplicateCourseModal [data-bs-dismiss="modal"]').click();
+                }
+            } catch (error) {
+                console.error('Ошибка дублирования курса:', error);
+                alert('Не удалось связаться с сервером для дублирования курса.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                courseIdToDuplicate = null;
+            }
+        });
+
+        // Строит HTML одной карточки курса (без inline onclick — обработчики вешаются отдельно)
+        function buildCourseCardHtml(course) {
+            const esc = (str) => {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            };
+
+            const title = esc(course.title);
+            const description = esc(course.description);
+            const imageUrl = esc(course.imageUrl);
+            const createdAt = esc(course.createdAt);
+            const materialsCount = course.materialsCount || 0;
+
+            const descriptionHtml = description
+                ? `<p class="text-muted small mb-2 course-description text-truncate" style="max-width: 100%;">${description}</p>`
+                : '';
+
+            return `
+                                    <div class="col course-card-wrapper" id="course-card-${course.id}" data-id="${course.id}">
+                                        <div class="course-list-card shadow-sm d-flex flex-column flex-md-row align-items-md-center gap-3"
+                                             onclick="window.location.href='/CourseMaterials/Index?courseId=${course.id}'"
+                                             style="cursor: pointer;">
+                                            <div class="course-thumbnail flex-shrink-0">
+                                                <img src="${imageUrl}" alt="Обложка курса"
+                                                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://w3.org\\' width=\\'100%\\' height=\\'100%\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%234e73df\\'/><text x=\\'50%\\' y=\\'55%\\' font-family=\\'sans-serif\\' font-weight=\\'bold\\' font-size=\\'14\\' fill=\\'white\\' text-anchor=\\'middle\\'>СДО</text></svg>';">
+                                            </div>
+                                            <div class="flex-grow-1 min-w-0 pe-md-3">
+                                                <h5 class="fw-bold course-title-text mb-1" title="${title}">${title}</h5>
+                                                ${descriptionHtml}
+                                                <div class="d-flex flex-wrap gap-3 align-items-center mt-2 mt-md-0">
+                                                    <span class="text-secondary small fw-semibold">
+                                                        <i class="bi bi-collection-play me-1"></i> Элементов: ${materialsCount}
+                                                    </span>
+                                                    <span class="text-muted small">
+                                                        <i class="bi bi-calendar3 me-1"></i> ${createdAt}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-2 flex-shrink-0 mt-3 mt-md-0">
+                                                <a href="/CourseMaterials/Index?courseId=${course.id}" class="btn btn-action btn-brand" title="Наполнение курса" onclick="event.stopPropagation();">
+                                                    <i class="bi bi-gear-fill"></i>
+                                                </a>
+                                                <<button type="button" class="btn btn-action btn-outline-success"
+                        title="Скачать курс как ZIP (полный бэкап)"
+                        data-action="export">
+                    <i class="bi bi-download"></i>
+                </button>
+                                                <button type="button" class="btn btn-action btn-outline-primary" title="Дублировать курс" data-action="duplicate">
+                                                    <i class="bi bi-copy"></i>
+                                                </button>
+                                                <a href="/Courses/Edit/${course.id}" class="btn btn-action btn-outline-primary" title="Редактировать карточку" onclick="event.stopPropagation();">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-action btn-outline-danger" title="Удалить учебный курс" data-action="delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+        }
+
+        // Вешает обработчики на свежесозданную карточку (дублирование + удаление через data-action)
+        function attachHandlersToNewCard(cardElement) {
+            const id = parseInt(cardElement.dataset.id);
+            const titleEl = cardElement.querySelector('.course-title-text');
+            const title = titleEl ? titleEl.textContent : '';
+
+            const dupBtn = cardElement.querySelector('[data-action="duplicate"]');
+            if (dupBtn) {
+                dupBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    prepareDuplicateCourse(id, title);
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('duplicateCourseModal')).show();
+                });
+            }
+
+            const delBtn = cardElement.querySelector('[data-action="delete"]');
+            if (delBtn) {
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    prepareDeleteCourse(id, title);
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteCourseModal')).show();
+                });
+            }
+
+            const exportBtn = cardElement.querySelector('[data-action="export"]');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    exportCourse(id, exportBtn);
+                });
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            updateCoursePagination();
+        });
+
+        // =====================================================================
+        // ЭКСПОРТ КУРСА В ZIP С ИНДИКАТОРОМ ЗАГРУЗКИ
+        // =====================================================================
+        async function exportCourse(id, btn) {
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+            try {
+                const response = await fetch(`/Courses/ExportCourse/${id}`);
+
+                if (!response.ok) {
+                    notify('Ошибка при экспорте курса', 'danger');
+                    return;
+                }
+
+                // Извлекаем имя файла из Content-Disposition (у нас FileNameStar с русским именем)
+                const cd = response.headers.get('Content-Disposition') || '';
+                let fileName = `Course_${id}.zip`;
+
+                // RFC 5987: filename*=UTF-8''%D0%9C%D0%BE%D0%B9%20%D0%BA%D1%83%D1%80%D1%81.zip
+                const utf8Match = cd.match(/filename\*=UTF-8''([^;]+)/i);
+                if (utf8Match && utf8Match[1]) {
+                    fileName = decodeURIComponent(utf8Match[1]);
+                } else {
+                    const simpleMatch = cd.match(/filename="?([^";]+)"?/i);
+                    if (simpleMatch && simpleMatch[1]) fileName = simpleMatch[1];
+                }
+
+                // Скачиваем через Blob
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                notify('Курс успешно экспортирован', 'success');
+            } catch (err) {
+                console.error('Ошибка экспорта:', err);
+                notify('Ошибка сети при экспорте', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        // Универсальный notify (использует showToast, если он есть на странице)
+        function notify(message, type) {
+            if (typeof showToast === 'function') {
+                showToast(message, type);
+            } else {
+                alert(message);
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container-custom';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = `custom-toast ${type}`;
+            const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger';
+            toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem;">${message}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+        // =====================================================================
+        // ИМПОРТ КУРСА ИЗ ZIP — drag-n-drop + прогресс-бар (XHR)
+        // =====================================================================
+        const importDropZone = document.getElementById('importDropZone');
+        const importFileInput = document.getElementById('importCourseFile');
+        const importFileName = document.getElementById('importFileName');
+        const importProgressWrapper = document.getElementById('importProgressWrapper');
+        const importProgressBar = document.getElementById('importProgressBar');
+        const importProgressText = document.getElementById('importProgressText');
+        const importProgressPercent = document.getElementById('importProgressPercent');
+
+        // Клик по зоне → открываем системный диалог
+        importDropZone.addEventListener('click', () => importFileInput.click());
+
+        // Выбор через диалог
+        importFileInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) showSelectedFile(this.files[0]);
+        });
+
+        // === DRAG-N-DROP ===
+        ['dragenter', 'dragover'].forEach(evt => {
+            importDropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                importDropZone.style.borderColor = 'var(--brand-primary)';
+                importDropZone.style.background = '#f0f4ff';
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            importDropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                importDropZone.style.borderColor = '#cbd5e1';
+                importDropZone.style.background = '#fafbff';
+            });
+        });
+
+        importDropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer?.files;
+            if (!files || !files.length) return;
+
+            const file = files[0];
+            if (!file.name.toLowerCase().endsWith('.zip')) {
+                notify('Можно загрузить только ZIP-архив', 'danger');
+                return;
+            }
+
+            // Присваиваем файл в input через DataTransfer (чтобы работала валидация)
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            importFileInput.files = dt.files;
+
+            showSelectedFile(file);
+        });
+
+        function showSelectedFile(file) {
+            const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+            importFileName.textContent = `📦 ${file.name} (${sizeMb} МБ)`;
+            importProgressWrapper.classList.add('d-none'); // сбрасываем прогресс от предыдущей попытки
+            importProgressBar.style.width = '0%';
+            importProgressBar.classList.remove('bg-success');
+            importProgressBar.classList.add('bg-primary');
+        }
+
+        // === ОТПРАВКА ЧЕРЕЗ XMLHttpRequest (для прогресса upload) ===
+        document.getElementById('btnStartImport').addEventListener('click', function () {
+            if (!importFileInput.files || !importFileInput.files[0]) {
+                notify('Выберите ZIP-файл', 'danger');
+                return;
+            }
+
+            const file = importFileInput.files[0];
+            const btn = this;
+            const originalHtml = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Импорт...';
+            importProgressWrapper.classList.remove('d-none');
+            importProgressBar.style.width = '0%';
+            importProgressBar.classList.remove('bg-success');
+            importProgressBar.classList.add('bg-primary');
+            importProgressText.textContent = 'Загрузка...';
+            importProgressPercent.textContent = '0%';
+
+            const formData = new FormData();
+            formData.append('zipFile', file);
+
+            const xhr = new XMLHttpRequest();
+
+            // Прогресс передачи файла на сервер
+            xhr.upload.addEventListener('progress', (e) => {
+                if (!e.lengthComputable) return;
+                const percent = Math.round((e.loaded / e.total) * 100);
+                importProgressBar.style.width = percent + '%';
+                importProgressPercent.textContent = percent + '%';
+                importProgressText.textContent = `Загрузка... ${(e.loaded / 1024 / 1024).toFixed(1)} / ${(e.total / 1024 / 1024).toFixed(1)} МБ`;
+            });
+
+            // Загрузка завершена — ждём ответа сервера (он распаковывает ZIP)
+            xhr.upload.addEventListener('load', () => {
+                importProgressBar.style.width = '100%';
+                importProgressPercent.textContent = '100%';
+                importProgressText.textContent = 'Обработка на сервере...';
+                importProgressBar.classList.remove('progress-bar-animated');
+            });
+
+            // Сервер ответил
+            xhr.addEventListener('load', () => {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        importProgressBar.classList.remove('bg-primary');
+                        importProgressBar.classList.add('bg-success');
+                        importProgressText.textContent = 'Готово!';
+                        notify('Курс успешно импортирован!', 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('importCourseModal')).hide();
+                        setTimeout(() => window.location.href = `/CourseMaterials/Index?courseId=${data.courseId}`, 800);
+                    } else {
+                        importProgressBar.classList.remove('bg-primary');
+                        importProgressBar.classList.add('bg-danger');
+                        importProgressText.textContent = 'Ошибка';
+                        notify('Ошибка: ' + data.message, 'danger');
+                    }
+                } catch (err) {
+                    notify('Ошибка разбора ответа сервера', 'danger');
+                } finally {
+                    resetImportButton(btn, originalHtml);
+                }
+            });
+
+            // Ошибка сети
+            xhr.addEventListener('error', () => {
+                importProgressBar.classList.remove('bg-primary');
+                importProgressBar.classList.add('bg-danger');
+                importProgressText.textContent = 'Ошибка сети';
+                notify('Ошибка сети при импорте', 'danger');
+                resetImportButton(btn, originalHtml);
+            });
+
+            xhr.open('POST', '/Courses/ImportCourse', true);
+            xhr.send(formData);
+        });
+
+        function resetImportButton(btn, originalHtml) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            importProgressBar.classList.add('progress-bar-animated'); // возвращаем анимацию для следующего раза
+        }
+
+        // Сброс состояния при закрытии модала
+        document.getElementById('importCourseModal').addEventListener('hidden.bs.modal', function () {
+            importFileInput.value = '';
+            importFileName.textContent = '';
+            importProgressWrapper.classList.add('d-none');
+            importProgressBar.style.width = '0%';
+            importProgressBar.classList.remove('bg-success', 'bg-danger');
+            importProgressBar.classList.add('bg-primary', 'progress-bar-animated');
+        });
+    </script>
