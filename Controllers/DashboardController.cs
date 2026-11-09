@@ -5,6 +5,7 @@ using SdoApp.Data;
 using SdoApp.Models;
 using SdoApp.Services;
 using SdoApp.Helpers;
+using SdoApp.Models.ViewModels;
 
 namespace SdoApp.Controllers;
 
@@ -26,7 +27,44 @@ public class DashboardController : Controller
     }
 
     [Authorize(Roles = "Админ")]
-    public IActionResult Admin() => View();
+    public async Task<IActionResult> Admin()
+    {
+        var today = DateTime.UtcNow.Date;
+
+        var model = new AdminDashboardViewModel
+        {
+            // 1. Считаем KPI (используем CountAsync для скорости)
+            TotalStudents = await _context.Users.CountAsync(u => u.Role == UserRole.Обучающийся),
+            PendingAssignmentsCount = await _context.StudentSubmissions.CountAsync(s => s.Status == SubmissionStatus.OnReview),
+            OpenTicketsCount = await _context.SupportTickets.CountAsync(t => t.Status == TicketStatus.Открыто),
+            ActiveCoursesCount = await _context.Courses.CountAsync(),
+
+            // 2. Берем 5 последних непроверенных заданий
+            PendingAssignments = await _context.StudentSubmissions
+                .Include(s => s.Student)
+                .Include(s => s.CourseMaterial).ThenInclude(m => m.Course)
+                .Where(s => s.Status == SubmissionStatus.OnReview)
+                .OrderByDescending(s => s.UpdatedAt)
+                .Take(5)
+                .ToListAsync(),
+
+            // 3. Берем 6 последних записей из журнала аудита
+            RecentAuditLogs = await _context.AuditLogs
+                .Include(l => l.User)
+                .OrderByDescending(l => l.Timestamp)
+                .Take(6)
+                .ToListAsync(),
+
+            // 4. Считаем сданные и проваленные тесты для графика
+            PassedTests = await _context.TestAttempts
+                .CountAsync(a => a.Status == AttemptStatus.Passed && a.FinishedAt >= today),
+
+            FailedTests = await _context.TestAttempts
+                .CountAsync(a => a.Status == AttemptStatus.Failed && a.FinishedAt >= today)
+        };
+
+        return View(model);
+    }
 
     [Authorize(Roles = "Админ")]
     public async Task<IActionResult> AdminUsers()
