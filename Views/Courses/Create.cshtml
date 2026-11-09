@@ -105,7 +105,7 @@
      style="max-width: 800px; border-radius: 16px; border: 1px solid var(--brand-gray);">
     <div class="card-body p-4 p-md-5">
         <form asp-action="Create" asp-controller="Courses" method="post" enctype="multipart/form-data">
-            
+            @Html.AntiForgeryToken()
             @if (!ViewData.ModelState.IsValid)
             {
                 <div class="alert alert-danger border-0 small py-2 mb-4 rounded-3" role="alert">

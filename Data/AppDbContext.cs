@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<CourseDocumentTemplate> CourseDocumentTemplates => Set<CourseDocumentTemplate>();
     public DbSet<CommissionMember> CommissionMembers => Set<CommissionMember>();
     public DbSet<CourseTheme> CourseThemes => Set<CourseTheme>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -185,5 +186,27 @@ public class AppDbContext : DbContext
             new MintrudProgram { Id = 27, Code = "ИД46В_23", NumberProgram = "28", Name = "Безопасные методы и приемы работ с ручным инструментом, в том числе с пиротехническим" },
             new MintrudProgram { Id = 28, Code = "ИД46В_24", NumberProgram = "29", Name = "Безопасные методы и приемы работ в театрах" }
         );
+
+        // 1. Студент не может быть добавлен в одну и ту же группу дважды
+        modelBuilder.Entity<GroupStudent>()
+            .HasIndex(gs => new { gs.GroupId, gs.StudentId })
+            .IsUnique();
+
+        // 2. Один и тот же курс нельзя привязать к группе дважды
+        modelBuilder.Entity<GroupCourseConfig>()
+            .HasIndex(gcc => new { gcc.GroupId, gcc.CourseId })
+            .IsUnique();
+
+        // 3. Прогресс по курсу должен быть один для конкретного студента в конкретной группе
+        modelBuilder.Entity<CourseProgress>()
+            .HasIndex(cp => new { cp.StudentId, cp.CourseId, cp.GroupId })
+            .IsUnique();
+
+        // 4. У студента не может быть ДВУХ активных (InProgress) попыток прохождения одного теста.
+        // (Завершенные попытки Passed/Failed могут повторяться, поэтому используем HasFilter)
+        modelBuilder.Entity<TestAttempt>()
+            .HasIndex(ta => new { ta.StudentId, ta.CourseMaterialId, ta.GroupId })
+            .HasFilter("Status = 0") // 0 = InProgress
+            .IsUnique();
     }
 }

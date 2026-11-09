@@ -17,10 +17,12 @@ namespace SdoApp.Controllers;
 public class GroupsController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly AuditService _auditService;
 
-    public GroupsController(AppDbContext context)
+    public GroupsController(AppDbContext context, AuditService auditService)
     {
         _context = context;
+        _auditService = auditService;
     }
 
     // GET: /Groups/Index
@@ -67,6 +69,7 @@ public class GroupsController : Controller
             };
 
             _context.Groups.Add(newGroup);
+            await _auditService.LogAsync("Create", "Group", newGroup.Id, $"Создана группа №{newGroup.GroupNumber} - {newGroup.Title}");
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -152,6 +155,7 @@ public class GroupsController : Controller
 
             // Удаляем саму группу (связи удалятся каскадно)
             _context.Groups.Remove(group);
+            await _auditService.LogAsync("Delete", "Group", group.Id, $"Удалена группа №{group.GroupNumber} - {group.Title}");
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }
@@ -525,6 +529,7 @@ public class GroupsController : Controller
             }
 
             await tx.CommitAsync();
+            await _auditService.LogAsync("Update", "Group", groupId, $"Обновлен состав группы (студенты, курсы, компании)");
             return Json(new { success = true });
         }
         catch (Exception ex)

@@ -16,6 +16,7 @@
 wwwroot/uploads/
 
 backups/
+Logs/
 
 # Логи и кэш
 *.log

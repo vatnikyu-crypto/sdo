@@ -579,8 +579,7 @@
                                 else if (m.Type == SdoApp.Models.MaterialType.Image) { subLabel = "Схема"; }
                                 else if (m.Type == SdoApp.Models.MaterialType.Scorm)
                                 {
-                                    customClass = "scorm-card"; subLabel =
- "SCORM-курс";
+                                    customClass = "scorm-card"; subLabel = "SCORM-курс";
                                 }
 
                                 <button class="sidebar-material-btn material-item-btn @customClass" data-id="@m.Id"
@@ -700,10 +699,19 @@
 
         try {
             const response = await fetch(`/CourseMaterials/GetMaterialData/${id}?groupId=@ViewBag.GroupId`);
+            
+            // 403 — нет доступа
             if (response.status === 403) {
-                container.innerHTML = '<div class="alert alert-warning border-0 shadow-sm">Нет доступа к этому материалу.</div>';
+                bodyContainer.innerHTML = '<div class="alert alert-warning border-0 shadow-sm">Нет доступа к этому материалу.</div>';
                 return;
             }
+            
+            // 404, 500 и другие ошибки
+            if (!response.ok) {
+                bodyContainer.innerHTML = `<div class="alert alert-danger border-0 shadow-sm"><i class="bi bi-exclamation-triangle-fill me-2"></i> Ошибка загрузки материала (код: ${response.status}).</div>`;
+                return;
+            }
+
             const rawData = await response.json();
 
             const data = {};
@@ -756,7 +764,10 @@
 
                 // СТУЧИМСЯ В КОНТРОЛЛЕР Assignments
                 fetch(`/Assignments/GetState?materialId=${id}&groupId=@ViewBag.GroupId`)
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error('Network response was not ok');
+                        return res.json();
+                    })
                     .then(state => {
                         const area = document.getElementById('studentAssignmentArea');
                         const actionBtn = document.getElementById('mainSubmitWorkBtn');
@@ -800,6 +811,10 @@
                             area.innerHTML = chatHtml + `<div class="alert alert-success border d-flex justify-content-between align-items-center m-0"><span><i class="bi bi-check-circle-fill me-1"></i> <b>Проверка завершена!</b></span><h4 class="m-0 fw-bold text-success">Балл: ${state.grade}</h4></div>`;
                             actionBtn.classList.add('d-none');
                         }
+                    })
+                    .catch(err => {
+                        const area = document.getElementById('studentAssignmentArea');
+                        if (area) area.innerHTML = '<div class="alert alert-danger border small m-0">Не удалось загрузить статус задания.</div>';
                     });
             }
             else if (mType === 4) { // Тест
@@ -851,7 +866,10 @@
                 `;
 
                 fetch(`/StudentTest/GetTestState?materialId=${id}&groupId=@ViewBag.GroupId`)
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error('Network response was not ok');
+                        return res.json();
+                    })
                     .then(state => {
                         const tbody = document.getElementById('testAttemptsTableBody');
                         const actionContainer = document.getElementById('testActionContainer');
@@ -893,12 +911,17 @@
                         } else {
                             actionContainer.innerHTML = `<button onclick="confirmAndStartTest(${id}, '${cleanTitle}')" class="btn btn-success fw-bold px-4 py-3 shadow shadow-sm d-inline-flex align-items-center gap-2 w-100 justify-content-center" style="border-radius:30px; font-size:1rem;"><i class="bi bi-rocket-takeoff fs-5"></i> ЗАПУСТИТЬ ТЕСТ</button>`;
                         }
+                    })
+                    .catch(err => {
+                        const tbody = document.getElementById('testAttemptsTableBody');
+                        if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Ошибка сети. Не удалось загрузить тест.</td></tr>`;
                     });
             }
             else if (mType === 6) { // SCORM
                 bodyContainer.innerHTML = `<div class="shadow rounded-3 overflow-hidden w-100 bg-white flex-grow-1" style="min-height: 70vh;"><iframe src="${fileUrl}" width="100%" height="100%" style="border:none; min-height: 70vh;" allowfullscreen></iframe></div>`;
             }
         } catch (err) {
+            console.error(err);
             bodyContainer.innerHTML = '<div class="alert alert-danger m-3"><i class="bi bi-exclamation-triangle-fill me-2"></i> Не удалось отобразить контент элемента.</div>';
         }
     }

@@ -91,8 +91,7 @@ public class StudentTestController : Controller
 
     private int GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst("UserId")?.Value;
-        return int.TryParse(userIdClaim, out int userId) ? userId : 0;
+        return User.GetUserId();
     }
 
     [HttpGet]

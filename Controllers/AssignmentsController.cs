@@ -19,11 +19,13 @@ public class AssignmentsController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
-    public AssignmentsController(AppDbContext context, IWebHostEnvironment env)
+    public AssignmentsController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     [HttpGet]
@@ -69,17 +71,26 @@ public class AssignmentsController : Controller
     [HttpPost]
     public async Task<IActionResult> SubmitPage([FromForm] AssignmentSubmitViewModel model)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                   ?? User.FindFirst("UserId")?.Value;
-    if (!int.TryParse(userIdClaim, out int studentId)) return Unauthorized();
+        int studentId = User.GetUserId();
+        if (studentId == 0) return Unauthorized();
 
-    if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, model.MaterialId, model.GroupId))
-        return this.ForbidSmart("Нет доступа к этому заданию.");
+        if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, model.MaterialId, model.GroupId))
+            return this.ForbidSmart("Нет доступа к этому заданию.");
 
         if (string.IsNullOrWhiteSpace(model.StudentComment) && model.SubmissionFile == null)
         {
             TempData["ErrorMessage"] = "Напишите текст ответа или прикрепите файл!";
             return RedirectToAction("SubmitPage", new { materialId = model.MaterialId, groupId = model.GroupId });
+        }
+
+        // === НОВОЕ: Проверка на безопасное расширение ===
+        if (model.SubmissionFile != null && model.SubmissionFile.Length > 0)
+        {
+            if (!FileValidationHelper.IsAllowed(model.SubmissionFile, FileValidationHelper.SafeDocumentExtensions))
+            {
+                TempData["ErrorMessage"] = "Недопустимый формат файла! Разрешены: документы, картинки, архивы.";
+                return RedirectToAction("SubmitPage", new { materialId = model.MaterialId, groupId = model.GroupId });
+            }
         }
 
         try
@@ -134,6 +145,7 @@ public class AssignmentsController : Controller
                 CreatedAt = DateTime.UtcNow
             };
             _context.SubmissionMessages.Add(message);
+            await _auditService.LogAsync("Create", "StudentSubmission", submission.Id, $"Студент отправил работу на проверку (Материал ID: {model.MaterialId})");
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Работа успешно отправлена на проверку!";
@@ -150,11 +162,11 @@ public class AssignmentsController : Controller
     [HttpGet]
     public async Task<IActionResult> GetState(int materialId, int groupId)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("UserId")?.Value;
-        if (!int.TryParse(userIdClaim, out int studentId)) return Unauthorized();
+        int studentId = User.GetUserId();
+        if (studentId == 0) return Unauthorized();
 
         if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, materialId, groupId))
-        return this.ForbidSmart("Нет доступа к этому материалу.");
+            return this.ForbidSmart("Нет доступа к этому материалу.");
 
         var submission = await _context.StudentSubmissions
             .Include(s => s.Messages)

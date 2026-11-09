@@ -13,7 +13,7 @@
     
     <!-- Самая обычная HTML форма, без JS -->
     <form method="post" enctype="multipart/form-data">
-        
+        @Html.AntiForgeryToken()
         <div style="margin-bottom: 10px;">
             <label>Material ID (введи 1):</label><br>
             <input type="number" name="materialId" value="1" required />

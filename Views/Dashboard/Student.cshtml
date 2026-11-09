@@ -231,7 +231,7 @@
             // ⚠️ Только даты группы (CourseStartDate/CourseEndDate — отчётные, не для студента)
             var startDate   = config.Group?.StartDate;
             var endDate     = config.Group?.EndDate;
-            var accessUntil = config.Group?.MaterialAccessDate;
+            var accessUntil = config.Group?.MaterialAccessDate ?? config.Group?.EndDate;
 
             // Курс ещё не начался, но уже доступен (фича «видно заранее»)
             bool isUpcoming = startDate.HasValue && startDate.Value.Date > DateTime.Today;

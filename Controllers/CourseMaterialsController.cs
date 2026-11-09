@@ -20,11 +20,14 @@ public class CourseMaterialsController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
-    public CourseMaterialsController(AppDbContext context, IWebHostEnvironment env)
+
+    public CourseMaterialsController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     // GET: /CourseMaterials/Index?courseId=5
@@ -59,6 +62,7 @@ public class CourseMaterialsController : Controller
 
         var theme = new CourseTheme { CourseId = courseId, Title = title.Trim(), Order = nextOrder };
         _context.CourseThemes.Add(theme);
+        await _auditService.LogAsync("Create", "Theme", theme.Id, $"Создана тема: {theme.Title} (Курс ID: {courseId})");
         await _context.SaveChangesAsync();
         return Json(new { success = true });
     }
@@ -165,6 +169,7 @@ public class CourseMaterialsController : Controller
         };
 
         _context.CourseMaterials.Add(newMaterial);
+        await _auditService.LogAsync("Create", "Material", newMaterial.Id, $"Добавлен материал: {newMaterial.Title} (Тип: {newMaterial.Type})");
         await _context.SaveChangesAsync();
         return Json(new { success = true });
     }
@@ -329,6 +334,7 @@ public class CourseMaterialsController : Controller
                 rm.Order--;
                 _context.CourseMaterials.Update(rm);
             }
+            await _auditService.LogAsync("Delete", "Material", material.Id, $"Удален материал: {material.Title} (Тип: {material.Type})");
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -602,6 +608,7 @@ public class CourseMaterialsController : Controller
         }
 
         _context.CourseMaterials.Update(material);
+        await _auditService.LogAsync("Update", "Material", material.Id, $"Изменен материал: {material.Title}");
         await _context.SaveChangesAsync();
         return Json(new { success = true });
     }

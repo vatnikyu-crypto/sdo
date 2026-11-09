@@ -135,6 +135,7 @@
 
 <!-- ГЛАВНАЯ ФОРМА -->
 <form asp-action="Edit" asp-controller="Courses" method="post" enctype="multipart/form-data">
+@Html.AntiForgeryToken()
     <input type="hidden" name="id" value="@ViewBag.Id" />
 
     @if (!ViewData.ModelState.IsValid)

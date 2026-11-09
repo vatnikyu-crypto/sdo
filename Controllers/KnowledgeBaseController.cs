@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
 using SdoApp.Services;
+using SdoApp.Helpers;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,12 +18,14 @@ namespace SdoApp.Controllers;
 public class KnowledgeBaseController : Controller
 {
     private readonly AppDbContext _context;
-    private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
+    private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
-    public KnowledgeBaseController(AppDbContext context, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
+    public KnowledgeBaseController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     // =================================================================
@@ -51,23 +54,12 @@ public class KnowledgeBaseController : Controller
         // =================================================================
 
         // Проверяем вообще ВСЕ возможные варианты, где может лежать ID
-        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                     ?? User.FindFirst("Id")?.Value
-                     ?? User.FindFirst("UserId")?.Value;
+        int studentId = User.GetUserId();
 
-        // Если в клеймах пусто, но ты сохранял ID в сам Identity.Name (так часто делают)
-        if (string.IsNullOrEmpty(userIdStr))
+        // Если ID не найден (битая кука или сессия), отправляем на страницу входа
+        if (studentId == 0)
         {
-            userIdStr = User.Identity?.Name;
-        }
-
-        // Если вообще ничего не нашли, давай временно не будем выкидывать на Logout, 
-        // а вернем ошибку в JSON, чтобы ты увидел её на экране вместо редиректа!
-        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int studentId))
-        {
-            return Content($"<h3 style='color:red; font-family:sans-serif; text-align:center; margin-top:50px;'>" +
-                           $"Ошибка СДО: Не удалось определить ID авторизованного пользователя!<br/>" +
-                           $"Проверь, как записывается Id в AuthController.</h3>");
+            return RedirectToAction("Login", "Auth");
         }
 
         var today = DateTime.Today;
@@ -142,6 +134,11 @@ public class KnowledgeBaseController : Controller
             return Json(new { success = false, message = "Ошибка: Номер документа и Полное наименование обязательны!" });
         }
 
+        if (!FileValidationHelper.IsAllowed(docFile, FileValidationHelper.KnowledgeBaseExtensions))
+        {
+            return Json(new { success = false, message = "Недопустимый формат. Разрешены только: pdf, docx, xlsx, txt, zip, rar." });
+        }
+
         string savedFilePath = string.Empty;
         string extension = Path.GetExtension(docFile.FileName).ToLower();
 
@@ -192,6 +189,7 @@ public class KnowledgeBaseController : Controller
         try
         {
             _context.KnowledgeBaseDocuments.Add(newDoc);
+            await _auditService.LogAsync("Create", "KnowledgeBase", newDoc.Id, $"Загружен документ в БЗ: {newDoc.Title}");
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }
@@ -222,6 +220,11 @@ public class KnowledgeBaseController : Controller
         // Если админ прикрепил НОВЫЙ файл, заменяем старый
         if (docFile != null && docFile.Length > 0)
         {
+            if (!FileValidationHelper.IsAllowed(docFile, FileValidationHelper.KnowledgeBaseExtensions))
+            {
+                return Json(new { success = false, message = "Недопустимый формат нового файла." });
+            }
+
             string extension = Path.GetExtension(docFile.FileName).ToLower();
             double sizeInMb = Math.Round((double)docFile.Length / (1024 * 1024), 2);
 
@@ -268,6 +271,7 @@ public class KnowledgeBaseController : Controller
         try
         {
             _context.KnowledgeBaseDocuments.Update(doc);
+            await _auditService.LogAsync("Update", "KnowledgeBase", doc.Id, $"Изменен документ БЗ: {doc.Title}");
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }
@@ -301,6 +305,7 @@ public class KnowledgeBaseController : Controller
 
             // Удаляем запись из базы SQLite
             _context.KnowledgeBaseDocuments.Remove(doc);
+            await _auditService.LogAsync("Delete", "KnowledgeBase", doc.Id, $"Удален документ БЗ: {doc.Title}");    
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });

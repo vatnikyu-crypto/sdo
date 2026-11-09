@@ -25,12 +25,14 @@ public class UsersController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
     // Внедряем контекст базы данных через конструктор
-    public UsersController(AppDbContext context, IWebHostEnvironment env)
+    public UsersController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     // ГЕТ: /Users/Index
@@ -162,6 +164,7 @@ public class UsersController : Controller
 
         // Шаг 7. Сохранение транзакции в SQLite
         _context.Users.Add(newStudent);
+        await _auditService.LogAsync("Create", "User", newStudent.Id, $"Создан слушатель: {lastName} {firstName} (Логин: {generatedLogin})");
         await _context.SaveChangesAsync();
 
         // Успешно создали — возвращаем админа к обновленной таблице
@@ -187,6 +190,7 @@ public class UsersController : Controller
         }
 
         _context.Users.Remove(user);
+        await _auditService.LogAsync("Delete", "User", user.Id, $"Удален слушатель: {user.LastName} {user.FirstName} (Логин: {user.Login})");
         await _context.SaveChangesAsync();
 
         return Json(new { success = true, message = "Слушатель успешно удален." });
@@ -317,6 +321,7 @@ public class UsersController : Controller
         }
 
         _context.Users.Update(student);
+        await _auditService.LogAsync("Update", "User", student.Id, $"Изменены данные слушателя: {lastName} {firstName}");
         await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
@@ -602,6 +607,7 @@ public class UsersController : Controller
             }
 
             await tx.CommitAsync();
+            await _auditService.LogAsync("Import", "System", null, $"Импорт пользователей из Excel. Успешно: {successCount}, Ошибок: {errorCount}");
             return Json(new { success = true, successCount, errorCount, errors = errorMessages });
         }
         catch (Exception ex)
@@ -738,6 +744,7 @@ public class UsersController : Controller
             }
 
             _context.GroupCourseConfigs.Update(config);
+            await _auditService.LogAsync("Update", "CourseAccess", studentId, $"Студент отчислен с курса (ConfigID: {configId})");
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }

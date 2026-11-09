@@ -11,6 +11,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using SdoApp.Helpers;
+using SdoApp.Services;
 
 namespace SdoApp.Controllers;
 
@@ -18,12 +19,14 @@ namespace SdoApp.Controllers;
 public class SupportController : Controller
 {
     private readonly AppDbContext _context;
-    private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
+    private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
-    public SupportController(AppDbContext context, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
+    public SupportController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     // GET: /Support/StudentIndex (ОБНОВЛЕННЫЙ)
@@ -101,6 +104,14 @@ public class SupportController : Controller
             {
                 return Json(new { success = false, message = $"Ошибка: Общий размер файлов ({Math.Round(totalSizeMb, 2)} МБ) превышает лимит в 15 МБ!" });
             }
+
+            foreach (var f in files)
+            {
+                if (!FileValidationHelper.IsAllowed(f, FileValidationHelper.SafeDocumentExtensions))
+                {
+                    return Json(new { success = false, message = $"Файл «{f.FileName}» имеет недопустимый формат. Разрешены: pdf, doc, xls, архивы, картинки." });
+                }
+            }
         }
 
         var ticket = new SupportTicket
@@ -151,6 +162,8 @@ public class SupportController : Controller
             }
             await _context.SaveChangesAsync();
         }
+
+        await _auditService.LogAsync("Create", "SupportTicket", ticket.Id, $"Создано обращение в техподдержку");
 
         return Json(new { success = true });
     }
@@ -217,12 +230,11 @@ public class SupportController : Controller
     [HttpPost]
     public async Task<IActionResult> SendAdminReply(int ticketId, string text, IFormFile? replyFile)
     {
-        var senderIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                           ?? User.FindFirst("Id")?.Value
-                           ?? User.FindFirst("UserId")?.Value;
-
-        if (string.IsNullOrEmpty(senderIdStr) || !int.TryParse(senderIdStr, out int senderId))
+        int senderId = User.GetUserId();
+        if (senderId == 0)
+        {
             return Json(new { success = false, message = "Ошибка: Авторизация пользователя истекла!" });
+        }
 
         var ticket = await _context.SupportTickets.FindAsync(ticketId);
         if (ticket == null)
@@ -237,6 +249,14 @@ public class SupportController : Controller
 
         if (string.IsNullOrWhiteSpace(text) && replyFile == null)
             return Json(new { success = false, message = "Ошибка: Напишите текст сообщения или прикрепите файл!" });
+
+        if (replyFile != null && replyFile.Length > 0)
+        {
+            if (!FileValidationHelper.IsAllowed(replyFile, FileValidationHelper.SafeDocumentExtensions))
+            {
+                return Json(new { success = false, message = "Недопустимый формат файла!" });
+            }
+        }
 
         // 4. Формируем сообщение
         var message = new SupportMessage
@@ -303,6 +323,8 @@ public class SupportController : Controller
         ticket.UpdatedAt = DateTime.UtcNow;
 
         _context.SupportTickets.Update(ticket);
+
+        await _auditService.LogAsync("Update", "SupportTicket", ticket.Id, $"Обращение техподдержки закрыто");
         await _context.SaveChangesAsync();
 
         return Json(new { success = true });

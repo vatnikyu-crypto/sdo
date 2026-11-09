@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
+using SdoApp.Services;
+
 using System;
 using System.IO;
 using System.Linq;
@@ -16,11 +18,13 @@ namespace SdoApp.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly AuditService _auditService;
 
-        public SuperAdminController(AppDbContext context, IWebHostEnvironment env)
+        public SuperAdminController(AppDbContext context, IWebHostEnvironment env, AuditService auditService) 
         {
             _context = context;
             _env = env;
+            _auditService = auditService;
         }
 
         // ==================== СУЩЕСТВУЮЩИЕ МЕТОДЫ ====================
@@ -51,6 +55,7 @@ namespace SdoApp.Controllers
 
             model.Role = UserRole.Админ;
             _context.Users.Add(model);
+            await _auditService.LogAsync("Create", "User", model.Id, $"Создан новый Администратор: {model.Login}");
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -84,6 +89,7 @@ namespace SdoApp.Controllers
                 admin.Password = newPassword;
 
             _context.Users.Update(admin);
+            await _auditService.LogAsync("Update", "User", admin.Id, $"Изменены данные Администратора: {admin.Login}");
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -98,6 +104,7 @@ namespace SdoApp.Controllers
             try
             {
                 _context.Users.Remove(admin);
+                await _auditService.LogAsync("Delete", "User", admin.Id, $"Удален Администратор: {admin.Login}");
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });
             }
@@ -147,6 +154,8 @@ namespace SdoApp.Controllers
                 {
                     try { old.Delete(); } catch { /* пропускаем, если занят */ }
                 }
+
+                await _auditService.LogAsync("System", "Database", null, $"Создана резервная копия БД: {fileName}");
 
                 return Json(new
                 {

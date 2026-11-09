@@ -1,0 +1,137 @@
+@model SdoApp.Models.ViewModels.AuditLogsViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Журнал аудита";
+}
+
+<div class="mb-4 mt-2 d-flex justify-content-between align-items-end flex-wrap gap-3">
+    <div>
+        <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-primary fs-3"></i> Журнал аудита
+        </h3>
+        <p class="text-muted small mb-0">Всего записей: <strong>@Model.TotalItems</strong>. Показаны последние действия.</p>
+    </div>
+    
+    <!-- Форма поиска -->
+    <form method="get" asp-action="Index" class="d-flex gap-2" style="max-width: 400px; width: 100%;">
+        <div class="input-group shadow-sm rounded-3 overflow-hidden border">
+            <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" name="searchString" value="@Model.SearchString" class="form-control border-0 shadow-none" 
+                   placeholder="Поиск по ФИО, действию, описанию..." />
+            <button type="submit" class="btn btn-primary fw-bold px-3">Найти</button>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.SearchString))
+        {
+            <a href="/AuditLogs/Index" class="btn btn-outline-secondary shadow-sm d-flex align-items-center" title="Сбросить">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        }
+    </form>
+</div>
+
+<div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle m-0 text-nowrap">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4" style="width: 160px;">Дата и время</th>
+                    <th style="width: 200px;">Пользователь</th>
+                    <th style="width: 120px;">Действие</th>
+                    <th>Описание</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Logs.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                            По вашему запросу ничего не найдено.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var log in Model.Logs)
+                    {
+                        var userFio = log.User != null ? $"{log.User.LastName} {log.User.FirstName}" : "Система / Гость";
+                        var actionClass = "bg-secondary";
+                        if (log.Action == "Delete") actionClass = "bg-danger";
+                        if (log.Action == "Login") actionClass = "bg-success";
+                        if (log.Action == "LoginFailed") actionClass = "bg-warning text-dark";
+                        if (log.Action == "Update") actionClass = "bg-primary";
+                        if (log.Action == "Export") actionClass = "bg-info text-dark";
+
+                        <tr>
+                            <td class="ps-4 text-muted small">
+                                @log.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">@userFio</div>
+                                <span class="text-muted small">ID: @log.UserId</span>
+                            </td>
+                            <td>
+                                <span class="badge @actionClass">@log.Action</span>
+                            </td>
+                            <td class="text-wrap" style="min-width: 300px;">
+                                @log.Description
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Блок пагинации (показывается только если страниц больше 1) -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+            <div class="small text-muted fw-bold">
+                Страница @Model.CurrentPage из @Model.TotalPages
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm m-0">
+                    <!-- Назад -->
+                    <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="?page=@(Model.CurrentPage - 1)&searchString=@Model.SearchString">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+
+                    <!-- Номера страниц (умные, чтобы не рисовать 1000 кнопок) -->
+                    @{
+                        int startPage = Math.Max(1, Model.CurrentPage - 2);
+                        int endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                        
+                        if (startPage > 1)
+                        {
+                            <li class="page-item"><a class="page-link" href="?page=1&searchString=@Model.SearchString">1</a></li>
+                            if (startPage > 2) { <li class="page-item disabled"><span class="page-link">...</span></li> }
+                        }
+
+                        for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" href="?page=@i&searchString=@Model.SearchString">@i</a>
+                            </li>
+                        }
+
+                        if (endPage < Model.TotalPages)
+                        {
+                            if (endPage < Model.TotalPages - 1) { <li class="page-item disabled"><span class="page-link">...</span></li> }
+                            <li class="page-item"><a class="page-link" href="?page=@Model.TotalPages&searchString=@Model.SearchString">@Model.TotalPages</a></li>
+                        }
+                    }
+
+                    <!-- Вперед -->
+                    <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="?page=@(Model.CurrentPage + 1)&searchString=@Model.SearchString">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

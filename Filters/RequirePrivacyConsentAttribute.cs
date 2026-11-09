@@ -28,16 +28,10 @@ public class RequirePrivacyConsentAttribute : ActionFilterAttribute
             path.StartsWith("/js") || 
             path.StartsWith("/lib") || 
             path.StartsWith("/images") || 
-            path.StartsWith("/uploads"))
+            path.StartsWith("/uploads") ||
+            path.StartsWith("/support/getstudentunreadcount"))
         {
             await next();
-            return;
-        }
-
-        // 3. AJAX-запросы не редиректим (для них вернёт 403)
-        if (httpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        {
-            context.Result = new StatusCodeResult(403);
             return;
         }
 
@@ -52,9 +46,23 @@ public class RequirePrivacyConsentAttribute : ActionFilterAttribute
         var db = httpContext.RequestServices.GetRequiredService<AppDbContext>();
         var dbUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
 
-        // 5. Если не согласен — редирект на страницу согласия
+        // 5. Если не согласен — блокируем
         if (dbUser != null && !dbUser.IsPrivacyAccepted)
         {
+            // 3. AJAX-запросы не редиректим (возвращаем 403 + JSON для перехватчика)
+            if (httpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                httpContext.Response.StatusCode = 403;
+                context.Result = new JsonResult(new
+                {
+                    success = false,
+                    message = "Требуется согласие с политикой конфиденциальности.",
+                    redirectUrl = "/Consent"
+                });
+                return;
+            }
+
+            // Обычный переход — редирект на страницу согласия
             var returnUrl = httpContext.Request.Path + httpContext.Request.QueryString;
             context.Result = new RedirectResult($"/Consent?returnUrl={Uri.EscapeDataString(returnUrl)}");
             return;

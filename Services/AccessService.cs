@@ -12,28 +12,13 @@ public static class AccessService
     {
         var material = await context.CourseMaterials
             .AsNoTracking()
+            .Select(m => new { m.Id, m.CourseId })
             .FirstOrDefaultAsync(m => m.Id == materialId);
+
         if (material == null) return false;
 
-        var config = await context.GroupCourseConfigs
-            .AsNoTracking()
-            .Include(c => c.Group)
-            .FirstOrDefaultAsync(c => c.GroupId == groupId && c.CourseId == material.CourseId);
-        if (config?.Group == null) return false;
-
-        // 1. Студент в группе?
-        bool inGroup = await context.GroupStudents
-            .AnyAsync(gs => gs.GroupId == groupId && gs.StudentId == studentId);
-        if (!inGroup) return false;
-
-        // 2. Даты (access-дата имеет приоритет)
-        var today = DateTime.Today;
-        var effectiveEnd = config.Group.MaterialAccessDate ?? config.Group.EndDate;
-        if (today > effectiveEnd.Date) return false;
-        if (today < config.Group.StartDate.Date) return false;
-
-        // 3. AllowedStudentIds
-        return IsStudentAllowed(config.AllowedStudentIds, studentId);
+        // Вся проверка (членство, даты, AllowedStudentIds) — в одном месте
+        return await HasAccessToCourseAsync(context, studentId, material.CourseId, groupId);
     }
 
     /// <summary>Проверка доступа к курсу в целом (для открытия страницы StudentView).</summary>
@@ -55,7 +40,7 @@ public static class AccessService
         var today = DateTime.Today;
         var effectiveEnd = config.Group.MaterialAccessDate ?? config.Group.EndDate;
         if (today > effectiveEnd.Date) return false;
-        if (today < config.Group.StartDate.Date) return false;
+
 
         // 3. Индивидуальный допуск
         return IsStudentAllowed(config.AllowedStudentIds, studentId);

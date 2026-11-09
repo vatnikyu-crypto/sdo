@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
+using SdoApp.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,12 +14,14 @@ namespace SdoApp.Controllers;
 public class CompaniesController : Controller
 {
     private readonly AppDbContext _context;
-     private readonly IWebHostEnvironment _env;
+    private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
-    public CompaniesController(AppDbContext context, IWebHostEnvironment env)
+    public CompaniesController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     // GET: /Companies/Index
@@ -98,6 +101,7 @@ public class CompaniesController : Controller
             };
 
             _context.Companies.Add(newCompany);
+            await _auditService.LogAsync("Create", "Company", newCompany.Id, $"Создана компания: {newCompany.Name} (ИНН: {newCompany.Inn})");
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -190,6 +194,7 @@ public class CompaniesController : Controller
             }
 
             _context.Companies.Update(company);
+            await _auditService.LogAsync("Update", "Company", company.Id, $"Изменена компания: {company.Name}");
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -230,6 +235,7 @@ public class CompaniesController : Controller
             }
 
             _context.Companies.Remove(company);
+            await _auditService.LogAsync("Delete", "Company", company.Id, $"Удалена компания: {company.Name}");
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }

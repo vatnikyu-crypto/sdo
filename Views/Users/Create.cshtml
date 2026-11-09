@@ -131,7 +131,7 @@
 <!-- КАРТОЧКА С ФОРМОЙ -->
 <div class="card card-custom p-4 mb-5" style="max-width: 900px;">
     <form asp-action="Create" asp-controller="Users" method="post">
-
+        @Html.AntiForgeryToken()
         <!-- Блок ошибок валидации -->
         @if (!ViewData.ModelState.IsValid)
         {

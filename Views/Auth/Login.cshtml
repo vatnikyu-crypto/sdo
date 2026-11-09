@@ -1,10 +1,13 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    Layout = null; 
+    Layout = null;
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <meta name="csrf-token" content="@csrfToken" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Вход в систему | АНО ДПО "Энергетик"</title>
@@ -237,7 +240,7 @@
     </style>
 </head>
 <body>
-
+    @await Html.PartialAsync("_FetchInterceptor")
     <div class="login-container">
         
         <!-- ЛЕВАЯ ПАНЕЛЬ (Брендинг) -->
@@ -329,10 +332,12 @@
             btnSpinner.classList.remove('d-none');
 
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 const response = await fetch('/Auth/Login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': csrfToken
                     },
                     body: JSON.stringify({ username: usernameInput, password: passwordInput })
                 });

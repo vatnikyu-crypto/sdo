@@ -246,6 +246,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="/AuditLogs/Index">
+                    <i class="bi bi-shield-check"></i> Журнал аудита
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="/KnowledgeBase/Index">
                     <i class="bi bi-book"></i> База знаний
                 </a>
@@ -348,54 +353,54 @@
     
     @await RenderSectionAsync("Scripts", required: false)
     <script>
-    // УНИВЕРСАЛЬНОЕ ЗАПОМИНАНИЕ НАСТРОЕК ДЛЯ ВСЕХ ТАБЛИЦ
-    document.addEventListener("DOMContentLoaded", function () {
-        // Берем текущий URL как уникальный ключ (например, '/Users/Index')
-        const pageKey = window.location.pathname;
+            // УНИВЕРСАЛЬНОЕ ЗАПОМИНАНИЕ НАСТРОЕК ДЛЯ ВСЕХ ТАБЛИЦ
+            document.addEventListener("DOMContentLoaded", function () {
+                // Берем текущий URL как уникальный ключ (например, '/Users/Index')
+                const pageKey = window.location.pathname;
 
-        // ==========================================
-        // 1. ВЫПАДАЮЩИЙ СПИСОК (Размер страницы)
-        // ==========================================
-        // Ищем select, у которого в id есть "pageSize" или "PageSize"
-        const pageSizeSelect = document.querySelector('select[id*="ageSize"], select[id*="PageSize"]');
+                // ==========================================
+                // 1. ВЫПАДАЮЩИЙ СПИСОК (Размер страницы)
+                // ==========================================
+                // Ищем select, у которого в id есть "pageSize" или "PageSize"
+                const pageSizeSelect = document.querySelector('select[id*="ageSize"], select[id*="PageSize"]');
         
-        if (pageSizeSelect) {
-            const savedSize = localStorage.getItem(pageKey + '_pageSize');
+                if (pageSizeSelect) {
+                    const savedSize = localStorage.getItem(pageKey + '_pageSize');
             
-            // Если есть сохраненное значение — ставим его и триггерим событие change
-            if (savedSize) {
-                pageSizeSelect.value = savedSize;
-                pageSizeSelect.dispatchEvent(new Event('change'));
-            }
+                    // Если есть сохраненное значение — ставим его и триггерим событие change
+                    if (savedSize) {
+                        pageSizeSelect.value = savedSize;
+                        pageSizeSelect.dispatchEvent(new Event('change'));
+                    }
             
-            // Сохраняем при каждом изменении
-            pageSizeSelect.addEventListener('change', function () {
-                localStorage.setItem(pageKey + '_pageSize', this.value);
-            });
-        }
+                    // Сохраняем при каждом изменении
+                    pageSizeSelect.addEventListener('change', function () {
+                        localStorage.setItem(pageKey + '_pageSize', this.value);
+                    });
+                }
 
-        // ==========================================
-        // 2. ПОЛЕ ПОИСКА (Search)
-        // ==========================================
-        // Ищем текстовый инпут, у которого в id есть "earch" (search, Search)
-        const searchInput = document.querySelector('input[type="text"][id*="earch"]');
+                // ==========================================
+                // 2. ПОЛЕ ПОИСКА (Search)
+                // ==========================================
+                // Ищем текстовый инпут, у которого в id есть "earch" (search, Search)
+                const searchInput = document.querySelector('input[type="text"][id*="earch"]');
         
-        if (searchInput) {
-            const savedSearch = localStorage.getItem(pageKey + '_search');
+                if (searchInput) {
+                    const savedSearch = localStorage.getItem(pageKey + '_search');
             
-            // Если есть сохраненный текст — вставляем и триггерим событие input для фильтрации
-            if (savedSearch) {
-                searchInput.value = savedSearch;
-                searchInput.dispatchEvent(new Event('input'));
-            }
+                    // Если есть сохраненный текст — вставляем и триггерим событие input для фильтрации
+                    if (savedSearch) {
+                        searchInput.value = savedSearch;
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
             
-            // Сохраняем при каждом вводе символа
-            searchInput.addEventListener('input', function () {
-                localStorage.setItem(pageKey + '_search', this.value);
+                    // Сохраняем при каждом вводе символа
+                    searchInput.addEventListener('input', function () {
+                        localStorage.setItem(pageKey + '_search', this.value);
+                    });
+                }
             });
-        }
-    });
-</script>
+    </script>
 </body>
 
 </html>

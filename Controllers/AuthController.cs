@@ -4,16 +4,21 @@ using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
+using SdoApp.Services;
+using SdoApp.Helpers;
 
 namespace SdoApp.Controllers;
 
 public class AuthController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly AuditService _auditService;
 
-    public AuthController(AppDbContext context)
+    public AuthController(AppDbContext context, AuditService auditService)
     {
         _context = context;
+        _auditService = auditService;
     }
 
     // GET: /Auth/Login?login=test7226&password=y4dRBKPFyn
@@ -39,6 +44,7 @@ public class AuthController : Controller
 
     // POST: /Auth/Login (Для обычного входа через форму на сайте)
     [HttpPost]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
         if (model == null || string.IsNullOrWhiteSpace(model.Username) || string.IsNullOrWhiteSpace(model.Password))
@@ -54,6 +60,7 @@ public class AuthController : Controller
             // Авторизуем пользователя
             await SignInUser(user);
 
+
             // Формируем URL для редиректа (как у тебя было в JS)
             string redirectUrl = user.Role switch
             {
@@ -61,11 +68,14 @@ public class AuthController : Controller
                 UserRole.Админ => "/Dashboard/Admin",
                 _ => "/Dashboard/Student"
             };
-
+            await _auditService.LogAsync("Login", "System", user.Id, "Успешный вход в систему", user.Id);
             return Json(new { success = true, redirectUrl = redirectUrl, message = "Успешный вход!" });
         }
-
-        return Json(new { success = false, message = "Неверный логин или пароль!" });
+        else
+        {
+            await _auditService.LogAsync("LoginFailed", "System", null, $"Неудачная попытка входа (логин: {model.Username})");
+            return Json(new { success = false, message = "Неверный логин или пароль!" });
+        }
     }
 
     // Вспомогательный метод для создания куки (чтобы не дублировать код)
@@ -92,6 +102,8 @@ public class AuthController : Controller
     [HttpGet]
     public async Task<IActionResult> Logout()
     {
+        int userId = User.GetUserId();
+        if (userId > 0) await _auditService.LogAsync("Logout", "System", userId, "Выход из системы");
         await HttpContext.SignOutAsync("Cookies");
         return RedirectToAction("Login");
     }

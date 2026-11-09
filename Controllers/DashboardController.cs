@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SdoApp.Data;
 using SdoApp.Models;
 using SdoApp.Services;
+using SdoApp.Helpers;
 
 namespace SdoApp.Controllers;
 
@@ -18,7 +19,7 @@ public class DashboardController : Controller
     }
 
     [Authorize(Roles = "Главный_Админ")]
-    public IActionResult SuperAdmin() 
+    public IActionResult SuperAdmin()
     {
         // Перенаправляем на новый контроллер
         return RedirectToAction("Index", "SuperAdmin");
@@ -40,9 +41,8 @@ public class DashboardController : Controller
     [Authorize(Roles = "Обучающийся")]
     public async Task<IActionResult> Student()
     {
-        var userIdClaim = User.FindFirst("UserId")?.Value;
-        if (userIdClaim == null) return RedirectToAction("Login", "Auth");
-        int studentId = int.Parse(userIdClaim);
+        int studentId = User.GetUserId();
+        if (studentId == 0) return RedirectToAction("Login", "Auth");
 
         var student = await _context.Users
            .Include(u => u.Company)
@@ -65,7 +65,7 @@ public class DashboardController : Controller
             .ToListAsync();
 
         // Фильтр: курс виден, пока не истёк доступ к материалам (или дата окончания группы).
-                // Фильтр: курс виден, пока не истёк доступ к материалам (или дата окончания группы)
+        // Фильтр: курс виден, пока не истёк доступ к материалам (или дата окончания группы)
         // + НОВОЕ: проверка, что студент реально допущен к курсу (AllowedStudentIds)
         var allCourses = groupCourses
     .Where(gcc =>

@@ -10,6 +10,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using SdoApp.Services;
 
 namespace SdoApp.Controllers;
 
@@ -18,11 +19,13 @@ public class CoursesController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
-    public CoursesController(AppDbContext context, IWebHostEnvironment env)
+    public CoursesController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     // GET: /Courses/Index
@@ -126,6 +129,7 @@ public class CoursesController : Controller
         };
 
         _context.Courses.Add(newCourse);
+        await _auditService.LogAsync("Create", "Course", newCourse.Id, $"Создан курс: {newCourse.Title}");
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
@@ -182,7 +186,7 @@ public class CoursesController : Controller
             // так как они привязаны к этому CourseId!
             _context.Courses.Remove(course);
             await _context.SaveChangesAsync();
-
+            await _auditService.LogAsync("Delete", "Course", course.Id, $"Удален курс: {course.Title}");
             return Json(new { success = true });
         }
         catch (Exception ex)
@@ -689,6 +693,7 @@ public class CoursesController : Controller
                             SortOrder = t.TryGetProperty("SortOrder", out var so) ? so.GetInt32() : 0
                         });
                     }
+                    await _auditService.LogAsync("Import", "Course", newCourse.Id, $"Импортирован курс из ZIP: {newCourse.Title}");
                     await _context.SaveChangesAsync();
                 }
 
@@ -992,6 +997,7 @@ public class CoursesController : Controller
         course.RecertificationMonths = recertificationMonths;
 
         _context.Courses.Update(course);
+        await _auditService.LogAsync("Update", "Course", course.Id, $"Изменены настройки курса: {course.Title}");
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
@@ -1172,6 +1178,8 @@ public class CoursesController : Controller
                     SortOrder = template.SortOrder
                 });
             }
+
+            await _auditService.LogAsync("Create", "Course", newCourse.Id, $"Дублирован курс: {source.Title} -> {newCourse.Title}");
             await _context.SaveChangesAsync();
 
             await tx.CommitAsync();

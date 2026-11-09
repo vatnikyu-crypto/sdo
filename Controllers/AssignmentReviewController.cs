@@ -15,11 +15,14 @@ public class AssignmentReviewController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
-    public AssignmentReviewController(AppDbContext context, IWebHostEnvironment env)
+
+    public AssignmentReviewController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     [HttpGet]
@@ -102,6 +105,7 @@ public class AssignmentReviewController : Controller
             }
 
             submission.UpdatedAt = DateTime.UtcNow;
+            await _auditService.LogAsync("Update", "StudentSubmission", submission.Id, $"Проверено задание. Оценка: {grade?.ToString() ?? "Без оценки"}. Статус: {submission.Status}");
             await _context.SaveChangesAsync();
 
             // 3. Пересчитываем прогресс, если задание закрыто

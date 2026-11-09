@@ -1,40 +1,67 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    // Генерируем токен для текущего пользователя
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<!-- Мета-тег, откуда JS будет брать токен -->
+<meta name="csrf-token" content="@csrfToken" />
+
 <script>
     (function() {
-        const originalFetch = window.fetch;
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = tokenMeta ? tokenMeta.getAttribute('content') : null;
 
+        const originalFetch = window.fetch;
         window.fetch = async function(url, options) {
             options = options || {};
+            options.headers = options.headers || {};
 
-            // === 1. Ставим X-Requested-With, чтобы ForbidSmart понял, что это AJAX ===
-            if (!options.headers) {
-                options.headers = {};
-            }
-            if (options.headers instanceof Headers) {
-                if (!options.headers.has('X-Requested-With')) {
-                    options.headers.set('X-Requested-With', 'XMLHttpRequest');
-                }
-            } else if (Array.isArray(options.headers)) {
-                if (!options.headers.some(h => String(h[0]).toLowerCase() === 'x-requested-with')) {
-                    options.headers.push(['X-Requested-With', 'XMLHttpRequest']);
-                }
-            } else {
+            // 1. Сообщаем серверу, что это AJAX (для фильтров)
+            if (!(options.headers instanceof Headers) && !Array.isArray(options.headers)) {
                 if (!options.headers['X-Requested-With']) {
                     options.headers['X-Requested-With'] = 'XMLHttpRequest';
                 }
             }
 
+            // 2. Если это POST/PUT/DELETE — добавляем CSRF-токен
+            const method = (options.method || 'GET').toUpperCase();
+            if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method) && csrfToken) {
+                if (options.headers instanceof Headers) {
+                    options.headers.set('RequestVerificationToken', csrfToken);
+                } else if (Array.isArray(options.headers)) {
+                    options.headers.push(['RequestVerificationToken', csrfToken]);
+                } else {
+                    options.headers['RequestVerificationToken'] = csrfToken;
+                }
+            }
+
             const response = await originalFetch.call(this, url, options);
 
-            // === 2. Обработка 403: редирект на кастомную страницу ===
+            // 3. Обработка 403 (Нет доступа)
             if (response.status === 403) {
                 try {
                     const clone = response.clone();
                     const data = await clone.json();
-                    if (data.redirectUrl) {
+                    // Защита от бесконечного цикла: если мы уже на странице согласия, не редиректим
+                    if (data.redirectUrl && !window.location.pathname.toLowerCase().startsWith('/consent')) {
                         window.location.href = data.redirectUrl;
                         return response;
                     }
-                } catch { /* ignore */ }
+                } catch { }
+            }
+            
+            // 4. Обработка 400 (CSRF-токен протух или отсутствует)
+            if (response.status === 400) {
+                try {
+                    const clone = response.clone();
+                    const text = await clone.text();
+                    if (text.includes('antiforgery') || text.includes('Bad Request')) {
+                        alert('Сессия устарела. Страница будет перезагружена для обновления токена.');
+                        window.location.reload();
+                        return response;
+                    }
+                } catch { }
             }
 
             return response;

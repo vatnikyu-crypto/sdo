@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SdoApp.Data;
+using SdoApp.Helpers;
 
 namespace SdoApp.Controllers;
 
@@ -17,8 +18,8 @@ public class ConsentController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(string? returnUrl)
     {
-        var userIdClaim = User.FindFirst("UserId")?.Value;
-        if (!int.TryParse(userIdClaim, out int userId))
+        int userId = User.GetUserId();
+        if (userId == 0)
             return RedirectToAction("Login", "Auth");
 
         var user = await _context.Users.FindAsync(userId);

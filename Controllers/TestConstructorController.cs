@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SdoApp.Services;
 
 namespace SdoApp.Controllers;
 
@@ -16,12 +17,14 @@ public class TestConstructorController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly AuditService _auditService;
 
     // Внедряем IWebHostEnvironment для работы с путями загрузки файлов
-    public TestConstructorController(AppDbContext context, IWebHostEnvironment env)
+    public TestConstructorController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
     {
         _context = context;
         _env = env;
+        _auditService = auditService;
     }
 
     // GET: /TestConstructor/Index?testId=5
@@ -92,6 +95,7 @@ public class TestConstructorController : Controller
                 _context.TestAnswerOptions.Add(option);
             }
 
+            await _auditService.LogAsync("Create", "TestQuestion", newQuestion.Id, $"Добавлен вопрос в тест ID {testId}");
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }
@@ -120,6 +124,7 @@ public class TestConstructorController : Controller
 
             _context.TestAnswerOptions.RemoveRange(options);
             _context.TestQuestions.Remove(question);
+            await _auditService.LogAsync("Delete", "TestQuestion", question.Id, $"Удален вопрос из теста: {question.QuestionText}");
             await _context.SaveChangesAsync();
             return Json(new { success = true });
         }
@@ -319,6 +324,8 @@ public class TestConstructorController : Controller
         int errorCount = 0;
         var errors = new List<string>();
 
+        await using var tx = await _context.Database.BeginTransactionAsync();
+
         try
         {
             using var stream = new MemoryStream();
@@ -377,11 +384,13 @@ public class TestConstructorController : Controller
                     await _context.SaveChangesAsync();
                 }
             }
-
+            await tx.CommitAsync();
+            await _auditService.LogAsync("Import", "TestQuestion", testId, $"Импорт вопросов из Excel. Успешно: {successCount}");
             return Json(new { success = true, successCount, errorCount, errors });
         }
         catch (Exception ex)
         {
+            await tx.RollbackAsync();
             return Json(new { success = false, message = $"Критическая ошибка при импорте: {ex.Message}" });
         }
     }
