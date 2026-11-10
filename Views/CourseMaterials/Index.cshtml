@@ -314,12 +314,11 @@
 }
 @if (canDownload)
 {
-    <a href="/CourseMaterials/DownloadMaterial/@m.Id"
-       class="btn btn-sm btn-light border text-success"
-       title="Скачать файл на компьютер"
-       onclick="event.stopPropagation();">
+    <button type="button" class="btn btn-sm btn-light border text-success"
+            onclick="event.stopPropagation(); downloadMaterial(@m.Id, this)"
+            title="Скачать файл на компьютер">
         <i class="bi bi-download"></i>
-    </a>
+    </button>
 }
                                                                         <button class="btn btn-sm btn-light border text-secondary"
                                                                                 onclick="prepareEditMaterial(@m.Id)" data-bs-toggle="modal"
@@ -387,12 +386,11 @@
 }
 @if (canDownloadOrphan)
 {
-    <a href="/CourseMaterials/DownloadMaterial/@m.Id"
-       class="btn btn-sm btn-light border text-success"
-       title="Скачать файл на компьютер"
-       onclick="event.stopPropagation();">
+    <button type="button" class="btn btn-sm btn-light border text-success"
+            onclick="event.stopPropagation(); downloadMaterial(@m.Id, this)"
+            title="Скачать файл на компьютер">
         <i class="bi bi-download"></i>
-    </a>
+    </button>
 }
                                                                     <button class="btn btn-sm btn-light border text-secondary"
                                                                             onclick="prepareEditMaterial(@m.Id)" data-bs-toggle="modal"
@@ -1206,4 +1204,66 @@ bool CanDownloadMaterial(SdoApp.Models.CourseMaterial m)
                                                             await fetch('/CourseMaterials/ChangeOrder', { method: 'POST', body: params });
                                                             window.location.reload();
                                                         }
+                                                            // =====================================================================
+    // СКАЧИВАНИЕ МАТЕРИАЛА С ИНДИКАТОРОМ ЗАГРУЗКИ
+    // =====================================================================
+    async function downloadMaterial(id, btn) {
+        // Сохраняем исходный вид кнопки
+        const originalHtml = btn.innerHTML;
+        
+        // Блокируем кнопку и показываем спиннер
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+        try {
+            // Запрашиваем файл у сервера
+            const response = await fetch(`/CourseMaterials/DownloadMaterial/${id}`);
+
+            if (!response.ok) {
+                throw new Error('Ошибка сервера при скачивании');
+            }
+
+            // Получаем бинарные данные (Blob)
+            const blob = await response.blob();
+
+            // Достаем имя файла из заголовков сервера
+            let fileName = `material_${id}`;
+            const cd = response.headers.get('Content-Disposition') || '';
+            
+            const utf8Match = cd.match(/filename\*=UTF-8''([^;]+)/i);
+            if (utf8Match && utf8Match[1]) {
+                fileName = decodeURIComponent(utf8Match[1]);
+            } else {
+                const simpleMatch = cd.match(/filename="?([^";]+)"?/i);
+                if (simpleMatch && simpleMatch[1]) fileName = simpleMatch[1];
+            }
+
+            // Инициируем скачивание средствами браузера
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Показываем успешный тост (если функция тостов есть на странице)
+            if (typeof showToast === 'function') {
+                showToast('Скачивание началось!', 'success');
+            }
+
+        } catch (error) {
+            console.error('Ошибка скачивания:', error);
+            if (typeof showToast === 'function') {
+                showToast('Не удалось скачать файл. Попробуйте еще раз.', 'danger');
+            } else {
+                alert('Не удалось скачать файл.');
+            }
+        } finally {
+            // Возвращаем кнопку в исходное состояние
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
                                                     </script>

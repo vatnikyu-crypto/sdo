@@ -125,7 +125,7 @@ public class ReportExportService
         if (errors.Any()) return (false, string.Join(" ", errors), null, "");
         if (!studentsToExport.Any()) return (false, "Нет данных для выгрузки.", null, "");
 
-        string templatePath = Path.Combine(_env.WebRootPath, "fis-frdo.xlsx");
+        string templatePath = Path.Combine(_env.WebRootPath, "templates", "fis-frdo.xlsx");
         if (!File.Exists(templatePath)) return (false, "Файл шаблона fis-frdo.xlsx не найден.", null, "");
 
         using var workbook = new XLWorkbook(templatePath);

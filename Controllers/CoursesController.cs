@@ -113,7 +113,7 @@ public class CoursesController : Controller
         else
         {
             // Если картинка не выбрана, ставим заглушку
-            savedImageUrl = "/uploads/courses/default-course.jpeg";
+            savedImageUrl = "/default-course.png";
         }
 
         // Создаем новый курс с привязкой к программе Минтруда
@@ -173,7 +173,7 @@ public class CoursesController : Controller
             }
 
             // 2. УДАЛЕНИЕ ОБЛОЖКИ КУРСА
-            if (!string.IsNullOrEmpty(course.ImageUrl) && !course.ImageUrl.Contains("default-course.jpeg"))
+            if (!string.IsNullOrEmpty(course.ImageUrl) && !course.ImageUrl.Contains("default-course.png"))
             {
                 string absoluteImagePath = Path.Combine(_env.WebRootPath, course.ImageUrl.TrimStart('/'));
                 if (System.IO.File.Exists(absoluteImagePath))
@@ -341,7 +341,7 @@ public class CoursesController : Controller
             // ============================================================
             if (!string.IsNullOrEmpty(course.ImageUrl)
                 && course.ImageUrl.StartsWith("/uploads/")
-                && !course.ImageUrl.Contains("default-course.jpeg"))
+                && !course.ImageUrl.Contains("default-course.png"))
             {
                 AddFileToZip(zip, course.ImageUrl, addedEntries);
             }
@@ -516,7 +516,7 @@ public class CoursesController : Controller
                 if (!string.IsNullOrEmpty(oldImageUrl))
                 {
                     newCourse.ImageUrl = await ImportFileFromZipAsync(
-                        archive, oldImageUrl, "uploads/courses", "default-course.jpeg", importedPaths);
+                        archive, oldImageUrl, "uploads/courses", "default-course.png", importedPaths);
                 }
 
                 _context.Courses.Add(newCourse);
@@ -883,7 +883,7 @@ public class CoursesController : Controller
                     await imageFile.CopyToAsync(fileStream);
                 }
 
-                if (!string.IsNullOrEmpty(course.ImageUrl) && !course.ImageUrl.Contains("default-course.jpeg"))
+                if (!string.IsNullOrEmpty(course.ImageUrl) && !course.ImageUrl.Contains("default-course.png"))
                 {
                     string oldPath = Path.Combine(_env.WebRootPath, course.ImageUrl.TrimStart('/'));
                     if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);

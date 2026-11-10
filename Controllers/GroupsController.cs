@@ -18,11 +18,13 @@ public class GroupsController : Controller
 {
     private readonly AppDbContext _context;
     private readonly AuditService _auditService;
+    private readonly IConfiguration _config;
 
-    public GroupsController(AppDbContext context, AuditService auditService)
+    public GroupsController(AppDbContext context, AuditService auditService, IConfiguration config)
     {
         _context = context;
         _auditService = auditService;
+        _config = config;
     }
 
     // GET: /Groups/Index
@@ -708,7 +710,8 @@ public class GroupsController : Controller
                 string escapedLogin = Uri.EscapeDataString(user.Login ?? "");
                 string escapedPassword = Uri.EscapeDataString(user.Password ?? "");
 
-                string authUrl = $"http://localhost:5018/Auth/Login?login={escapedLogin}&password={escapedPassword}";
+                string baseUrl = _config["AppSettings:BaseUrl"] ?? $"{Request.Scheme}://{Request.Host}";
+                string authUrl = $"{baseUrl}/Auth/Login?login={escapedLogin}&password={escapedPassword}";
 
                 worksheet.Cell(row, 1).Value = user.LastName ?? "";
                 worksheet.Cell(row, 2).Value = user.FirstName ?? "";

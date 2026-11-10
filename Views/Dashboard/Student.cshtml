@@ -247,7 +247,7 @@
                 <a href="/CourseMaterials/StudentView?courseId=@config.CourseId&groupId=@config.GroupId" class="course-card-link">
                     <div class="card h-100 course-student-card shadow-sm d-flex flex-column">
                         <div>
-                            <img src="@(string.IsNullOrEmpty(config.Course?.ImageUrl) ? "/uploads/courses/default-course.jpg" : config.Course.ImageUrl)"
+                            <img src="@(string.IsNullOrEmpty(config.Course?.ImageUrl) ? "/default-course.png" : config.Course.ImageUrl)"
                                  class="card-img-top course-cover-img" alt="Обложка курса" />
 
                             <div class="p-3 pb-2">

@@ -28,13 +28,15 @@ public class ReportController : Controller
     private readonly ReportExportService _exportService;
     private readonly DocumentGenerationService _docService;
     private readonly AuditService _auditService;
+    private readonly IConfiguration _config;
 
-    public ReportController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
+    public ReportController(AppDbContext context, IWebHostEnvironment env, AuditService auditService, IConfiguration config)
     {
         _context = context;
         _exportService = new ReportExportService(context, env);
         _docService = new DocumentGenerationService(env.WebRootPath);
         _auditService = auditService;
+        _config = config;
     }
 
     // 1. Главная страница
@@ -121,7 +123,7 @@ public class ReportController : Controller
         var member1 = await ResolveCommissionMemberAsync(member1Input);
         var member2 = await ResolveCommissionMemberAsync(member2Input);
 
-        string baseUrl = $"{Request.Scheme}://{Request.Host}";
+        string baseUrl = _config["AppSettings:BaseUrl"] ?? $"{Request.Scheme}://{Request.Host}";
         var groups = studentDataList.GroupBy(s => s.User.Company?.Name ?? "Частное лицо").ToList();
 
         if (!splitByCompany)
@@ -188,9 +190,9 @@ public class ReportController : Controller
         }
     }
 
-    // 3. Присвоение номеров
+        // 3. Присвоение номеров
     [HttpPost]
-    public async Task<IActionResult> AssignCertificates(int groupId)
+    public async Task<IActionResult> AssignCertificates(int groupId, bool useSameNumberForGroup = false)
     {
         var group = await _context.Groups.Include(g => g.GroupStudents).FirstOrDefaultAsync(g => g.Id == groupId);
         if (group == null) return Json(new { success = false, message = "Группа не найдена." });
@@ -199,8 +201,20 @@ public class ReportController : Controller
         if (!configs.Any()) return Json(new { success = false, message = "В группе нет курсов." });
 
         var allowedMintrudIds = new[] { 8, 10 };
+        
+        // Проверка на запрещенные курсы Минтруда
         if (configs.Any(c => c.Course != null && c.Course.MintrudProgramId != null && !allowedMintrudIds.Contains(c.Course.MintrudProgramId.Value)))
-            return Json(new { success = false, message = "Присвоение внутренних номеров заблокировано (есть курсы Минтруда)." });
+            return Json(new { success = false, message = "Присвоение внутренних номеров заблокировано (есть курсы Минтруда, кроме Высоты/ОЗП)." });
+
+        // Если включен ползунок "Один номер на все", то курсов Минтруда вообще быть не должно
+        if (useSameNumberForGroup)
+        {
+            bool hasAnyMintrud = configs.Any(c => c.Course != null && c.Course.MintrudProgramId != null);
+            if (hasAnyMintrud)
+            {
+                return Json(new { success = false, message = "Групповое присвоение (один номер на все) доступно только для внутренних курсов. В группе есть курсы Минтруда — отключите ползунок." });
+            }
+        }
 
         int targetYear = group.EndDate.Year;
         var existingCertsForYear = await _context.CourseProgresses.Include(p => p.Group).Where(p => !string.IsNullOrEmpty(p.CertificateNumber) && p.CertificateNumber.Contains("-") && p.Group != null && p.Group.EndDate.Year == targetYear).Select(p => p.CertificateNumber).ToListAsync();
@@ -215,36 +229,119 @@ public class ReportController : Controller
         int mtMaxSeq = 0;
         foreach (var mt in mtNumbers) { if (int.TryParse(mt, out int n) && n > mtMaxSeq) mtMaxSeq = n; }
 
-        int nextSeq = globalMaxSeq + 1; int nextMtSeq = mtMaxSeq + 1; int totalAssigned = 0; int totalMtAssigned = 0;
+        int nextSeq = globalMaxSeq + 1; 
+        int nextMtSeq = mtMaxSeq + 1; 
+        int totalAssigned = 0; 
+        int totalMtAssigned = 0;
         string groupNumber = group.GroupNumber;
 
-        foreach (var config in configs)
+        // === ЛОГИКА 1: ОДИН НОМЕР НА ВСЕ КУРСЫ ===
+        if (useSameNumberForGroup)
         {
-            var studentIds = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
-            if (!studentIds.Any()) continue;
+            // Собираем всех уникальных студентов группы
+            var allStudentIds = new HashSet<int>();
+            foreach (var config in configs)
+            {
+                var ids = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
+                foreach (var id in ids) allStudentIds.Add(id);
+            }
 
-            var sortedStudents = await _context.Users.Where(u => studentIds.Contains(u.Id)).OrderBy(u => u.LastName).ThenBy(u => u.FirstName).ThenBy(u => u.MiddleName).ToListAsync();
-            bool isMintrudCourse = config.Course != null && config.Course.MintrudProgramId != null;
+            var sortedStudents = await _context.Users
+                .Where(u => allStudentIds.Contains(u.Id))
+                .OrderBy(u => u.LastName).ThenBy(u => u.FirstName).ThenBy(u => u.MiddleName)
+                .ToListAsync();
 
             foreach (var student in sortedStudents)
             {
-                var progress = await _context.CourseProgresses.FirstOrDefaultAsync(p => p.CourseId == config.CourseId && p.StudentId == student.Id && p.GroupId == groupId);
-                if (progress == null)
+                // Получаем прогрессы студента по всем курсам этой группы
+                var progresses = await _context.CourseProgresses
+                    .Where(p => p.StudentId == student.Id && p.GroupId == groupId)
+                    .ToListAsync();
+
+                // Если прогресса нет вообще, создаем его для всех курсов, куда он допущен
+                foreach (var config in configs)
                 {
-                    progress = new CourseProgress { CourseId = config.CourseId, StudentId = student.Id, GroupId = groupId };
-                    _context.CourseProgresses.Add(progress);
+                    var ids = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
+                    if (ids.Contains(student.Id) && !progresses.Any(p => p.CourseId == config.CourseId))
+                    {
+                        var p = new CourseProgress { CourseId = config.CourseId, StudentId = student.Id, GroupId = groupId };
+                        _context.CourseProgresses.Add(p);
+                        progresses.Add(p);
+                    }
                 }
 
-                if (isMintrudCourse && string.IsNullOrEmpty(progress.MintrudNumber)) { progress.MintrudNumber = nextMtSeq.ToString(); nextMtSeq++; totalMtAssigned++; }
-                else if (!isMintrudCourse && string.IsNullOrEmpty(progress.CertificateNumber)) { progress.CertificateNumber = $"{nextSeq}-{groupNumber}"; nextSeq++; totalAssigned++; }
+                if (!progresses.Any()) continue;
+
+                // Ищем существующий номер у студента (если уже есть, используем его)
+                string? existingCert = progresses.Select(p => p.CertificateNumber).FirstOrDefault(n => !string.IsNullOrEmpty(n));
+
+                // Если нет — генерируем ОДИН новый
+                if (existingCert == null)
+                {
+                    existingCert = $"{nextSeq}-{groupNumber}";
+                    nextSeq++;
+                }
+
+                // Присваиваем этот ОДИН номер всем курсам студента
+                foreach (var p in progresses)
+                {
+                    if (string.IsNullOrEmpty(p.CertificateNumber))
+                    {
+                        p.CertificateNumber = existingCert;
+                        totalAssigned++;
+                    }
+                }
+            }
+        }
+        // === ЛОГИКА 2: НОМЕР НА КАЖДЫЙ КУРС (СТАРАЯ) ===
+        else
+        {
+            foreach (var config in configs)
+            {
+                var studentIds = await AccessService.GetAllowedStudentIdsAsync(_context, groupId, config.CourseId);
+                if (!studentIds.Any()) continue;
+
+                var sortedStudents = await _context.Users.Where(u => studentIds.Contains(u.Id)).OrderBy(u => u.LastName).ThenBy(u => u.FirstName).ThenBy(u => u.MiddleName).ToListAsync();
+                bool isMintrudCourse = config.Course != null && config.Course.MintrudProgramId != null;
+
+                foreach (var student in sortedStudents)
+                {
+                    var progress = await _context.CourseProgresses.FirstOrDefaultAsync(p => p.CourseId == config.CourseId && p.StudentId == student.Id && p.GroupId == groupId);
+                    if (progress == null)
+                    {
+                        progress = new CourseProgress { CourseId = config.CourseId, StudentId = student.Id, GroupId = groupId };
+                        _context.CourseProgresses.Add(progress);
+                    }
+
+                    if (isMintrudCourse && string.IsNullOrEmpty(progress.MintrudNumber)) 
+                    { 
+                        progress.MintrudNumber = nextMtSeq.ToString(); 
+                        nextMtSeq++; 
+                        totalMtAssigned++; 
+                    }
+                    else if (!isMintrudCourse && string.IsNullOrEmpty(progress.CertificateNumber)) 
+                    { 
+                        progress.CertificateNumber = $"{nextSeq}-{groupNumber}"; 
+                        nextSeq++; 
+                        totalAssigned++; 
+                    }
+                }
             }
         }
 
         await _context.SaveChangesAsync();
-        if (totalAssigned == 0 && totalMtAssigned == 0) return Json(new { success = true, message = "У всех студентов уже есть номера." });
+        
+        if (totalAssigned == 0 && totalMtAssigned == 0) 
+            return Json(new { success = true, message = "У всех студентов уже есть номера." });
 
-        string msg = ""; if (totalAssigned > 0) msg += $"Обычных: {totalAssigned}. "; if (totalMtAssigned > 0) msg += $"Минтруд: {totalMtAssigned}.";
-        await _auditService.LogAsync("Update", "CourseProgress", groupId, $"Присвоены номера (Группа {group.GroupNumber}). Обычных: {totalAssigned}, Минтруд: {totalMtAssigned}");
+        string msg = ""; 
+        if (totalAssigned > 0) msg += $"Обычных: {totalAssigned}. "; 
+        if (totalMtAssigned > 0) msg += $"Минтруд: {totalMtAssigned}.";
+        
+        // Логируем в аудит с указанием режима
+        string modeText = useSameNumberForGroup ? " (Один номер на все курсы)" : "";
+        await _auditService.LogAsync("Update", "CourseProgress", groupId, $"Присвоены номера{modeText} (Группа {group.GroupNumber}). Обычных: {totalAssigned}, Минтруд: {totalMtAssigned}");
+        
         return Json(new { success = true, message = $"Успешно присвоено: {msg}" });
     }
 

@@ -26,13 +26,15 @@ public class UsersController : Controller
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _env;
     private readonly AuditService _auditService;
+    private readonly Microsoft.Extensions.Configuration.IConfiguration _config;
 
     // Внедряем контекст базы данных через конструктор
-    public UsersController(AppDbContext context, IWebHostEnvironment env, AuditService auditService)
+    public UsersController(AppDbContext context, IWebHostEnvironment env, AuditService auditService, Microsoft.Extensions.Configuration.IConfiguration config)
     {
         _context = context;
         _env = env;
         _auditService = auditService;
+        _config = config;
     }
 
     // ГЕТ: /Users/Index
@@ -796,9 +798,15 @@ public class UsersController : Controller
             var worksheet = workbook.Worksheets.Add("Доступы");
 
             // --- ФОРМИРУЕМ ШАПКУ (Точь-в-точь как в групповом файле) ---
+            string escapedLogin = Uri.EscapeDataString(student.Login ?? "");
+            string escapedPassword = Uri.EscapeDataString(student.Password ?? "");
 
+            // Ссылка авторизации
+            string baseUrl = _config["AppSettings:BaseUrl"] ?? $"{Request.Scheme}://{Request.Host}";
+            string authUrl = $"{baseUrl}/Auth/Login?login={escapedLogin}&password={escapedPassword}";
+            
             // Строка 1
-            worksheet.Cell(1, 1).Value = "Данные для входа в систему https://sdo.dpo-energo.ru для слушателя организации";
+            worksheet.Cell(1, 1).Value = $"Данные для входа в систему {baseUrl} для слушателя организации";
             worksheet.Range(1, 1, 1, 8).Merge();
             worksheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             worksheet.Cell(1, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
@@ -826,11 +834,7 @@ public class UsersController : Controller
 
             // --- ЗАПОЛНЯЕМ ДАННЫЕ СТУДЕНТА (Строка 4) ---
 
-            string escapedLogin = Uri.EscapeDataString(student.Login ?? "");
-            string escapedPassword = Uri.EscapeDataString(student.Password ?? "");
-
-            // Ссылка авторизации
-            string authUrl = $"http://localhost:5018/Auth/Login?login={escapedLogin}&password={escapedPassword}";
+            
 
             int row = 4;
             worksheet.Cell(row, 1).Value = student.LastName ?? "";
