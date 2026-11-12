@@ -20,10 +20,12 @@ namespace SdoApp.Controllers;
 public class StudentTestController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly AuditService _auditService;
 
-    public StudentTestController(AppDbContext context)
+    public StudentTestController(AppDbContext context, AuditService auditService)
     {
         _context = context;
+        _auditService = auditService;
     }
 
     [HttpGet]
@@ -59,6 +61,9 @@ public class StudentTestController : Controller
                     activeAttempt.Status = AttemptStatus.Failed;
                     activeAttempt.FinishedAt = activeAttempt.HardDeadline;
                     await _context.SaveChangesAsync();
+
+                    await _auditService.LogAsync("TimeoutTest", "TestAttempt", activeAttempt.Id, 
+                        $"Истекло время теста '{material.Title}'. Результат не засчитан.");
                     activeAttempt = null;
                 }
             }
@@ -101,7 +106,7 @@ public class StudentTestController : Controller
         if (studentId == 0) return Challenge();
 
         if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, testId, groupId))
-        return this.ForbidSmart("Нет доступа к этому тесту.");
+            return this.ForbidSmart("Нет доступа к этому тесту.");
 
         var testMaterial = await _context.CourseMaterials.FindAsync(testId);
         if (testMaterial == null || testMaterial.Type != MaterialType.Test)
@@ -138,6 +143,9 @@ public class StudentTestController : Controller
             };
             _context.TestAttempts.Add(activeAttempt);
             await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync("StartTest", "TestAttempt", activeAttempt.Id,
+                $"Начат тест '{testMaterial.Title}' (ID материала: {testId})");
         }
         else if (activeAttempt.HardDeadline.HasValue && DateTime.UtcNow > activeAttempt.HardDeadline.Value)
         {
@@ -206,10 +214,10 @@ public class StudentTestController : Controller
             return Json(new { success = false, message = "Ошибка: не передан ID группы." });
 
         int studentId = GetCurrentUserId();
-    if (studentId == 0) return Json(new { success = false, message = "Вы не авторизованы!" });
+        if (studentId == 0) return Json(new { success = false, message = "Вы не авторизованы!" });
 
         if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, model.TestId, model.GroupId))
-        return this.ForbidSmart("Нет доступа к этому тесту.");
+            return this.ForbidSmart("Нет доступа к этому тесту.");
 
         var testMaterial = await _context.CourseMaterials.FindAsync(model.TestId);
 
@@ -269,6 +277,10 @@ public class StudentTestController : Controller
 
         await _context.SaveChangesAsync();
 
+        string statusText = isPassed ? "СДАЛ" : "НЕ СДАЛ";
+        await _auditService.LogAsync("FinishTest", "TestAttempt", attempt.Id,
+            $"Завершен тест '{testMaterial.Title}'. Результат: {finalScorePercentage}% ({statusText}). Верных ответов: {correctQuestionsCount} из {totalQuestions}");
+
         // ПЕРЕДАЕМ model.GroupId В СЕРВИС
         await GradeService.RecalculateCourseProgressAsync(_context, studentId, testMaterial.CourseId, model.GroupId);
 
@@ -289,7 +301,7 @@ public class StudentTestController : Controller
     {
         int studentId = GetCurrentUserId();
         if (studentId == 0) return Challenge();
-        
+
 
         var attempt = await _context.TestAttempts
             .Include(a => a.CourseMaterial)

@@ -95,7 +95,7 @@ public class ReportController : Controller
         return View(groups);
     }
 
-    // 2. Генерация документов (Word)
+        // 2. Генерация документов (Word)
     [HttpPost]
     public async Task<IActionResult> GenerateCourseReport(
         int groupConfigId, int templateId, bool splitByCompany,
@@ -126,32 +126,16 @@ public class ReportController : Controller
         string baseUrl = _config["AppSettings:BaseUrl"] ?? $"{Request.Scheme}://{Request.Host}";
         var groups = studentDataList.GroupBy(s => s.User.Company?.Name ?? "Частное лицо").ToList();
 
+        // === ЛОГИКА 1: БЕЗ РАЗДЕЛЕНИЯ ПО КОМПАНИЯМ ===
         if (!splitByCompany)
         {
-            if (template.IsPerStudent)
-            {
-                using var zipStream = new MemoryStream();
-                using (var zip = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
-                {
-                    foreach (var item in studentDataList)
-                    {
-                        var singleList = new List<StudentDocumentData> { item };
-                        byte[] bytes = await _docService.GenerateDocxReportAsync(config, template, singleList, chairman, member1, member2, commissionOrderNumber, commissionOrderDate, baseUrl);
-
-                        string entryName = $"{item.User.LastName}_{item.User.FirstName}_{template.Name}.docx";
-                        var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
-                        using var entryStream = entry.Open();
-                        await entryStream.WriteAsync(bytes, 0, bytes.Length);
-                    }
-                }
-                return File(zipStream.ToArray(), "application/zip", $"{template.Name}_{config.Group?.GroupNumber}.zip");
-            }
-            else
-            {
-                byte[] bytes = await _docService.GenerateDocxReportAsync(config, template, studentDataList, chairman, member1, member2, commissionOrderNumber, commissionOrderDate, baseUrl);
-                return File(bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}_{config.Group?.GroupNumber}.docx");
-            }
+            // Генерируем ОДИН общий документ (сервис сам поймет, сшивать страницы или нет)
+            byte[] bytes = await _docService.GenerateDocxReportAsync(config, template, studentDataList, chairman, member1, member2, commissionOrderNumber, commissionOrderDate, baseUrl);
+            
+            string suffix = template.IsPerStudent ? "_Сшитые" : "";
+            return File(bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{template.Name}_{config.Group?.GroupNumber}{suffix}.docx");
         }
+        // === ЛОГИКА 2: С РАЗДЕЛЕНИЕМ ПО КОМПАНИЯМ ===
         else
         {
             using var zipStream = new MemoryStream();
@@ -164,19 +148,17 @@ public class ReportController : Controller
 
                     if (template.IsPerStudent)
                     {
-                        foreach (var item in companyStudents)
-                        {
-                            var singleList = new List<StudentDocumentData> { item };
-                            byte[] bytes = await _docService.GenerateDocxReportAsync(config, template, singleList, chairman, member1, member2, commissionOrderNumber, commissionOrderDate, baseUrl);
-
-                            string entryName = $"{companyName}/{item.User.LastName}_{item.User.FirstName}_{template.Name}.docx";
-                            var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
-                            using var entryStream = entry.Open();
-                            await entryStream.WriteAsync(bytes, 0, bytes.Length);
-                        }
+                        // Если "Для каждого студента" + "Разделить по компаниям":
+                        // Генерируем один файл на всю компанию (внутри которого страницы разных студентов)
+                        byte[] bytes = await _docService.GenerateDocxReportAsync(config, template, companyStudents, chairman, member1, member2, commissionOrderNumber, commissionOrderDate, baseUrl);
+                        string entryName = $"{companyName}_{template.Name}.docx";
+                        var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
+                        using var entryStream = entry.Open();
+                        await entryStream.WriteAsync(bytes, 0, bytes.Length);
                     }
                     else
                     {
+                        // Обычный протокол на всю компанию
                         byte[] bytes = await _docService.GenerateDocxReportAsync(config, template, companyStudents, chairman, member1, member2, commissionOrderNumber, commissionOrderDate, baseUrl);
                         string entryName = $"{companyName}_{template.Name}.docx";
                         var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
@@ -185,7 +167,6 @@ public class ReportController : Controller
                     }
                 }
             }
-            await _auditService.LogAsync("Export", "Document", groupConfigId, $"Сгенерирован отчет по шаблону '{template.Name}' для группы {config.Group?.GroupNumber}");
             return File(zipStream.ToArray(), "application/zip", $"{template.Name}_{config.Group?.GroupNumber}_по_компаниям.zip");
         }
     }

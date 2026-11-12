@@ -84,12 +84,41 @@
         box-shadow: 0 0 0 0.2rem rgba(79, 88, 157, 0.15);
     }
 
-    /* Пагинация */
-    .pagination .page-item.active .page-link {
-        background-color: var(--brand-primary);
-        border-color: var(--brand-primary);
+    /* === ОБНОВЛЕННАЯ ПАГИНАЦИЯ === */
+    #kbPaginationButtons {
+        gap: 4px;
     }
-    .pagination .page-link { color: var(--brand-primary); }
+
+    #kbPaginationButtons .page-link {
+        color: var(--brand-primary) !important;
+        background-color: #ffffff !important;
+        border: 1px solid var(--brand-gray) !important;
+        font-weight: 700;
+        min-width: 38px;
+        text-align: center;
+        border-radius: 6px !important;
+        margin: 0 2px;
+        transition: all 0.2s;
+    }
+
+    #kbPaginationButtons .page-link:hover {
+        background-color: #f0f4ff !important;
+        color: var(--brand-dark) !important;
+        border-color: var(--brand-primary) !important;
+    }
+
+    #kbPaginationButtons .page-item.active .page-link {
+        background-color: var(--brand-primary) !important;
+        border-color: var(--brand-primary) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(79, 88, 157, 0.35);
+    }
+
+    #kbPaginationButtons .page-item.disabled .page-link {
+        color: #cbd5e1 !important;
+        background-color: #f8f9fa !important;
+        border-color: var(--brand-gray) !important;
+    }
 </style>
 
 <!-- 1. ВЕРХНЯЯ ШАПКА -->
@@ -365,7 +394,6 @@
     </div>
 </div>
 
-<!-- СКРИПТЫ (Без изменений логики, только рабочая часть) -->
 <script>
     let currentKbPage = 1;
     const kbTableBody = document.getElementById('kbTableBody');

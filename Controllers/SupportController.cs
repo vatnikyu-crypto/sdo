@@ -204,7 +204,7 @@ public class SupportController : Controller
             ticketId = ticket.Id,
             status = (int)ticket.Status, // 0 - Открыто, 1 - Закрыто
             phone = ticket.Phone,
-            studentFio = $"{ticket.Student?.LastName} {ticket.Student?.FirstName}".Trim(),
+            studentFio = $"{ticket.Student?.LastName} {ticket.Student?.FirstName} {ticket.Student?.MiddleName}".Trim(),
             createdAt = ticket.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"),
             messages = ticket.Messages.OrderBy(m => m.CreatedAt).Select(m => new
             {

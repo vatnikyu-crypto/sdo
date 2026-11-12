@@ -137,8 +137,8 @@ try
         // 1. Создаем БД, если её нет
         db.Database.EnsureCreated();
 
-        // 2. Очищаем логи аудита старше 60 дней
-        var oldLogs = db.AuditLogs.Where(l => l.Timestamp < DateTime.UtcNow.AddDays(-60));
+        // 2. Очищаем логи аудита старше 365 дней
+        var oldLogs = db.AuditLogs.Where(l => l.Timestamp < DateTime.UtcNow.AddDays(-365));
         if (oldLogs.Any())
         {
             db.AuditLogs.RemoveRange(oldLogs);

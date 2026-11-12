@@ -82,6 +82,64 @@ public class CourseMaterialsController : Controller
         return Json(new { success = true });
     }
 
+        // POST: /CourseMaterials/EditTheme
+    [HttpPost]
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> EditTheme(int id, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return Json(new { success = false, message = "Название темы не может быть пустым!" });
+
+        var theme = await _context.CourseThemes.FindAsync(id);
+        if (theme == null)
+            return Json(new { success = false, message = "Тема не найдена!" });
+
+        theme.Title = title.Trim();
+        _context.CourseThemes.Update(theme);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true });
+    }
+
+    // POST: /CourseMaterials/ChangeThemeOrder
+    [HttpPost]
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> ChangeThemeOrder(int id, string direction)
+    {
+        var currentTheme = await _context.CourseThemes.FindAsync(id);
+        if (currentTheme == null) return Json(new { success = false, message = "Тема не найдена!" });
+
+        var themes = await _context.CourseThemes
+            .Where(t => t.CourseId == currentTheme.CourseId)
+            .OrderBy(t => t.Order)
+            .ToListAsync();
+
+        int currentIndex = themes.FindIndex(t => t.Id == id);
+        if (currentIndex == -1) return Json(new { success = false });
+
+        CourseTheme? swapTheme = null;
+
+        if (direction == "up" && currentIndex > 0)
+            swapTheme = themes[currentIndex - 1];
+        else if (direction == "down" && currentIndex < themes.Count - 1)
+            swapTheme = themes[currentIndex + 1];
+
+        if (swapTheme != null)
+        {
+            int tempOrder = currentTheme.Order;
+            currentTheme.Order = swapTheme.Order;
+            swapTheme.Order = tempOrder;
+
+            _context.CourseThemes.Update(currentTheme);
+            _context.CourseThemes.Update(swapTheme);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        return Json(new { success = false, message = "Перемещение невозможно!" });
+    }
+
     [HttpPost]
     [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Create(

@@ -19,6 +19,7 @@ namespace SdoApp.Models.ViewModels
     {
         public Course Course { get; set; } = null!;
         public int GroupConfigId { get; set; }
-        public bool IsAllowed { get; set; } // Есть ли студент в AllowedStudentIds (или поле пустое)
+        public bool IsAllowed { get; set; }
+        public string? CertificateNumber { get; set; }
     }
 }

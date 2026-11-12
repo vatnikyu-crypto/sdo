@@ -371,8 +371,6 @@ public class UsersController : Controller
         }
 
         // Вся операция импорта — в одной транзакции.
-        // Если упадёт на любой строке — откатятся ВСЕ строки, включая уже обработанные.
-        // Ошибки разбора отдельных строк (валидация) — отлавливаются внутри цикла и НЕ роняют транзакцию.
         await using var tx = await _context.Database.BeginTransactionAsync();
 
         try
@@ -510,6 +508,7 @@ public class UsersController : Controller
                             // Зачисление в группу и на курсы
                             if (targetGroup != null)
                             {
+                                // Проверяем, разрешено ли компании студента быть в этой группе
                                 bool isAllowedToGroup = company == null || await _context.GroupCompanies
                                     .AnyAsync(gc => gc.GroupId == targetGroup.Id && gc.CompanyId == company.Id);
 
@@ -528,11 +527,6 @@ public class UsersController : Controller
                                         await _context.SaveChangesAsync();
                                     }
 
-                                    var allGroupStudentIds = await _context.GroupStudents
-                                        .Where(gs => gs.GroupId == targetGroup.Id)
-                                        .Select(gs => gs.StudentId)
-                                        .ToListAsync();
-
                                     var courseConfigs = await _context.GroupCourseConfigs
                                         .Include(cc => cc.Course)
                                         .Where(cc => cc.GroupId == targetGroup.Id)
@@ -540,15 +534,16 @@ public class UsersController : Controller
 
                                     foreach (var config in courseConfigs)
                                     {
-                                        // Семантика AllowedStudentIds:
-                                        // null = все, "" = никто, "1,2,5" = явный список
+                                        // Семантика AllowedStudentIds: null = все, "" = никто, "1,2,5" = явный список
                                         if (config.AllowedStudentIds == null)
                                         {
                                             // null = все — новый студент автоматически допущен, ничего не делаем
                                         }
                                         else if (string.IsNullOrWhiteSpace(config.AllowedStudentIds))
                                         {
-                                            // "" = никто — не трогаем
+                                            // ИСПРАВЛЕНИЕ: Если список пуст (в группе не было студентов), добавляем первого!
+                                            config.AllowedStudentIds = studentToProcess.Id.ToString();
+                                            _context.GroupCourseConfigs.Update(config);
                                         }
                                         else
                                         {
@@ -594,13 +589,18 @@ public class UsersController : Controller
                                     }
                                     await _context.SaveChangesAsync();
                                 }
+                                else
+                                {
+                                    // ИСПРАВЛЕНИЕ: Компания не привязана к группе, выводим ошибку
+                                    errorCount++;
+                                    errorMessages.Add($"Строка {row.RowNumber()} ({lastName}): Студент создан, но НЕ зачислен. Компания не привязана к группе №{targetGroup.GroupNumber}.");
+                                }
                             }
 
                             successCount++;
                         }
                         catch (Exception innerEx)
                         {
-                            // Ошибка разбора одной строки — НЕ роняем транзакцию, пропускаем строку
                             errorCount++;
                             errorMessages.Add($"Строка {row.RowNumber()}: Сбой разбора данных ({innerEx.Message}).");
                         }
@@ -644,6 +644,10 @@ public class UsersController : Controller
             .Where(gcc => groupIds.Contains(gcc.GroupId))
             .ToListAsync();
 
+        var progresses = await _context.CourseProgresses
+            .Where(p => p.StudentId == id)
+            .ToListAsync();
+
         var viewModel = new UserDetailsViewModel
         {
             User = user,
@@ -657,7 +661,9 @@ public class UsersController : Controller
                     {
                         Course = c.Course!,
                         GroupConfigId = c.Id,
-                        IsAllowed = true // Уже отфильтровали, поэтому всегда true
+                        IsAllowed = true,
+                        CertificateNumber = progresses
+                            .FirstOrDefault(p => p.CourseId == c.CourseId && p.GroupId == g.Id)?.CertificateNumber
                     }).ToList()
             })
             .Where(g => g.Courses.Any()) // Прячем группы, в которых нет доступных курсов

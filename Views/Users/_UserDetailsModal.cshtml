@@ -3,6 +3,52 @@
     Layout = null;
 }
 
+<style>
+    .course-item-card {
+        transition: all 0.2s ease;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+    }
+    .course-item-card:hover {
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.08);
+        border-color: #4F589D;
+    }
+    .course-icon-box {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background-color: #f0f4ff;
+        color: #4F589D;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.2rem;
+    }
+    .cert-number-badge {
+        font-family: monospace;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background-color: #f8fafc;
+        color: #4F589D;
+        border: 1px solid #cbd5e1;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+    
+    /* НОВЫЙ КЛАСС ДЛЯ ОДИНАКОВЫХ КНОПОК ОТЧИСЛЕНИЯ */
+    .btn-expel {
+        width: 125px;           /* Фиксированная ширина */
+        height: 36px;           /* Фиксированная высота */
+        display: inline-flex;   /* Flexbox для центрирования */
+        align-items: center;
+        justify-content: center;
+        padding: 0;             /* Убираем стандартные отступы */
+        flex-shrink: 0;         /* Запрещаем сжатие */
+    }
+</style>
+
 <div class="mb-4 pb-3 border-bottom">
     <h6 class="fw-bold text-dark mb-1">@Model.User.LastName @Model.User.FirstName @Model.User.MiddleName</h6>
     <div class="text-muted small">
@@ -23,46 +69,70 @@ else
         @{
             int gIdx = 0;
         }
-        @foreach (var g in Model.Groups)
+        @foreach (var g in Model.Groups.OrderByDescending(x => x.Group.Id))
         {
             gIdx++;
             string collapseId = $"collapseGroupModal-{gIdx}";
-            string isExpanded = gIdx == 1 ? "show" : "";
-            string btnExpanded = gIdx == 1 ? "true" : "false";
 
-            <div class="accordion-item mb-2 border rounded-3 overflow-hidden">
+            <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
                 <div class="d-flex align-items-center bg-light pe-3">
-                    <button class="accordion-button @(gIdx != 1 ? "collapsed" : "") text-dark shadow-none p-3 flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@btnExpanded">
+                    <button class="accordion-button collapsed text-dark shadow-none p-3 flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false">
                         <div>
-                            <span class="fw-bold">Группа № @g.Group.GroupNumber</span>
-                            <div class="text-muted small fw-normal mt-1">@g.Group.Title</div>
+                            <span class="fw-bold fs-6">Группа № @g.Group.GroupNumber <span class="text-muted small fw-normal ms-1">(ID: @g.Group.Id)</span></span>
+                            <div class="text-muted small fw-normal mt-1 d-flex flex-column gap-1">
+                                <span>@g.Group.Title</span>
+                                <span class="text-primary" style="font-size: 0.75rem; font-weight: 600;">
+                                    <i class="bi bi-calendar-range me-1"></i> 
+                                    @g.Group.StartDate.ToString("dd.MM.yyyy") — @g.Group.EndDate.ToString("dd.MM.yyyy")
+                                </span>
+                            </div>
                         </div>
                     </button>
                     
-                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold remove-group-btn ms-2 shadow-sm" 
+                    <!-- Применяем класс btn-expel к кнопке группы -->
+                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold remove-group-btn ms-2 shadow-sm rounded-3 btn-expel" 
                             data-group-id="@g.Group.Id" 
                             title="Отчислить из группы">
                         <i class="bi bi-box-arrow-left me-1"></i> Отчислить
                     </button>
                 </div>
                 
-                <div id="@collapseId" class="accordion-collapse collapse @isExpanded" data-bs-parent="#groupsAccordion">
+                <div id="@collapseId" class="accordion-collapse collapse" data-bs-parent="#groupsAccordion">
                     <div class="accordion-body p-3 bg-white">
-                        <h6 class="fw-bold text-secondary small text-uppercase mb-3">Доступные курсы:</h6>
+                        <h6 class="fw-bold text-secondary small text-uppercase mb-3 mt-1">Доступные курсы:</h6>
                         
-                        <div class="d-flex flex-column gap-2">
+                        <div class="d-flex flex-column gap-3">
                             @foreach (var c in g.Courses)
                             {
-                                <div class="d-flex justify-content-between align-items-center p-2 rounded border border-success bg-success bg-opacity-10">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="bi bi-check-circle-fill text-success"></i>
-                                        <div class="fw-bold text-dark small">@c.Course.Title</div>
+                                <div class="course-item-card p-3 d-flex justify-content-between align-items-center gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <!-- Иконка -->
+                                        <div class="course-icon-box shadow-sm">
+                                            <i class="bi bi-journal-bookmark-fill"></i>
+                                        </div>
+                                        
+                                        <!-- Информация о курсе -->
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.95rem;">@c.Course.Title</div>
+                                            <div class="d-flex align-items-center gap-2 mt-2">
+                                                <span class="text-muted small"><i class="bi bi-award me-1"></i> Удостоверение:</span>
+                                                @if (!string.IsNullOrEmpty(c.CertificateNumber))
+                                                {
+                                                    <span class="cert-number-badge"><i class="bi bi-check2-circle me-1 text-success"></i>@c.CertificateNumber</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted fw-bold">—</span>
+                                                }
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <button type="button" class="btn btn-sm btn-link text-danger fw-bold text-decoration-none remove-course-btn" 
+                                    <!-- Применяем класс btn-expel к кнопке курса -->
+                                    <button type="button" class="btn btn-sm btn-light border text-danger fw-bold text-decoration-none remove-course-btn shadow-sm rounded-3 btn-expel" 
                                             data-config-id="@c.GroupConfigId" 
                                             title="Отчислить с курса">
-                                        <i class="bi bi-x-lg"></i> Отчислить
+                                        <i class="bi bi-person-x me-1"></i> Отчислить
                                     </button>
                                 </div>
                             }

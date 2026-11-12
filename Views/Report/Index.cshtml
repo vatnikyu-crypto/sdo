@@ -1227,8 +1227,7 @@
                 orderDateInput.removeAttribute('required');
             }
 
-            if (isPerStudent) companyBlock.classList.add('d-none');
-            else companyBlock.classList.remove('d-none');
+            companyBlock.classList.remove('d-none');
 
             new bootstrap.Modal(document.getElementById('reportSetupModal')).show();
         }

@@ -73,17 +73,56 @@
         justify-content: center;
         border: 1px solid var(--brand-gray);
     }
+
+    /* === ПАГИНАЦИЯ === */
+    #kbPaginationButtons {
+        gap: 4px;
+    }
+
+    #kbPaginationButtons .page-link {
+        color: var(--brand-primary) !important;
+        background-color: #ffffff !important;
+        border: 1px solid var(--brand-gray) !important;
+        font-weight: 700;
+        min-width: 38px;
+        text-align: center;
+        border-radius: 6px !important;
+        margin: 0 2px;
+        transition: all 0.2s;
+    }
+
+    #kbPaginationButtons .page-link:hover {
+        background-color: #f0f4ff !important;
+        color: var(--brand-dark) !important;
+        border-color: var(--brand-primary) !important;
+    }
+
+    #kbPaginationButtons .page-item.active .page-link {
+        background-color: var(--brand-primary) !important;
+        border-color: var(--brand-primary) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(79, 88, 157, 0.35);
+    }
+
+    #kbPaginationButtons .page-item.disabled .page-link {
+        color: #cbd5e1 !important;
+        background-color: #f8f9fa !important;
+        border-color: var(--brand-gray) !important;
+    }
 </style>
 
 <!-- 1. ВЕРХНЯЯ ШАПКА -->
 <div class="mb-4 mt-2">
+    <a href="javascript:history.back()" class="text-decoration-none text-muted small d-flex align-items-center gap-1 mb-2 fw-semibold">
+        <i class="bi bi-arrow-left"></i> Назад
+    </a>
     <h3 class="fw-bold text-dark m-0 d-flex align-items-center gap-2 mb-2">
         <i class="bi bi-book-half text-primary fs-3"></i> База знаний СДО
     </h3>
 </div>
 
 <div class="row g-4">
-    <!-- ЛЕВАЯ КОЛОНКА: ПОИСК И ФИЛЬТРЫ (на мобильных будет сверху) -->
+    <!-- ЛЕВАЯ КОЛОНКА: ПОИСК И ФИЛЬТРЫ -->
     <div class="col-lg-3">
         <div class="card border-0 shadow-sm p-3" style="border-radius: 12px; border: 1px solid var(--brand-gray) !important;">
             <h6 class="fw-bold text-dark mb-3"><i class="bi bi-funnel text-primary me-1"></i> Фильтры</h6>
@@ -129,17 +168,29 @@
 
     <!-- ПРАВАЯ КОЛОНКА: КАРТОЧКИ ДОКУМЕНТОВ -->
     <div class="col-lg-9">
-        <div class="row g-3" id="kbCardsContainer">
-            @if (!Model.Any())
-            {
-                <div class="col-12 text-center py-5 text-muted" id="studentEmptyState">
-                    <i class="bi bi-folder-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i>
-                    <h5 class="fw-bold mt-2 text-dark">База знаний временно пуста</h5>
-                    <p class="small">Администратор еще не загрузил справочные документы.</p>
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted" id="studentEmptyState">
+                <i class="bi bi-folder-x text-secondary opacity-50 d-block mb-3" style="font-size: 4rem;"></i>
+                <h5 class="fw-bold mt-2 text-dark">База знаний временно пуста</h5>
+                <p class="small">Администратор еще не загрузил справочные документы.</p>
+            </div>
+        }
+        else
+        {
+            <!-- Панель над карточками (выбор количества элементов) -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2 small text-muted fw-bold">
+                    <span>Показать по:</span>
+                    <select id="kbPageSizeSelect" class="form-select form-select-sm rounded-3 shadow-none border" style="width: 80px;">
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
                 </div>
-            }
-            else
-            {
+            </div>
+
+            <div class="row g-3" id="kbCardsContainer">
                 @foreach (var d in Model)
                 {
                     // Определяем иконку и цвет в зависимости от расширения
@@ -193,8 +244,18 @@
                     <h5 class="fw-bold mt-2 text-dark">Ничего не найдено</h5>
                     <p class="small">Попробуйте изменить поисковый запрос или выбрать другое направление.</p>
                 </div>
-            }
-        </div>
+            </div>
+
+            <!-- ПАГИНАЦИЯ ВНИЗУ -->
+            <div class="d-flex justify-content-between align-items-center px-1 mt-4 mb-5">
+                <div id="kbPaginationInfo" class="small text-muted fw-bold">Показано 0-0 из 0 документов</div>
+                <nav>
+                    <ul id="kbPaginationButtons" class="pagination pagination-sm m-0">
+                        <!-- Генерируется через JS -->
+                    </ul>
+                </nav>
+            </div>
+        }
     </div>
 </div>
 
@@ -205,35 +266,79 @@
         const cardItems = Array.from(document.querySelectorAll('.kb-card-item'));
         const categoryButtons = document.querySelectorAll('.category-btn');
         const searchEmptyState = document.getElementById('searchEmptyState');
+        const pageSizeSelect = document.getElementById('kbPageSizeSelect');
         
-        let activeCategory = "all";
+        if (!cardsContainer) return; // Если БЗ пуста, скрипт не нужен
 
-        // ФУНКЦИЯ ДИНАМИЧЕСКОЙ ФИЛЬТРАЦИИ КАРТОЧЕК
-        function filterCards() {
+        // === 1. ВОССТАНОВЛЕНИЕ СОСТОЯНИЯ ИЗ LOCALSTORAGE ===
+        let currentPage = 1;
+        let pageSize = parseInt(localStorage.getItem('kb_pageSize') || '10');
+        let activeCategory = localStorage.getItem('kb_category') || "all";
+        let filteredItems = [];
+
+        // Ставим сохраненный размер страницы
+        if (pageSizeSelect) pageSizeSelect.value = pageSize;
+
+        // Ставим сохраненный поисковый запрос
+        const savedSearch = localStorage.getItem('kb_search');
+        if (savedSearch) searchInput.value = savedSearch;
+
+        // Ставим активную категорию
+        categoryButtons.forEach(btn => {
+            if (btn.getAttribute('data-category') === activeCategory) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // === 2. ФУНКЦИЯ ФИЛЬТРАЦИИ И ПАГИНАЦИИ ===
+        function applyFiltersAndPaginate() {
             const searchText = searchInput.value.trim().toLowerCase();
-            let visibleCount = 0;
 
-            cardItems.forEach(card => {
+            // Сохраняем в LocalStorage
+            localStorage.setItem('kb_search', searchInput.value);
+            localStorage.setItem('kb_category', activeCategory);
+            localStorage.setItem('kb_pageSize', pageSize);
+
+            // Фильтруем
+            filteredItems = cardItems.filter(card => {
                 const num = card.getAttribute('data-number') || "";
                 const title = card.getAttribute('data-title') || "";
                 const category = card.getAttribute('data-category') || "";
 
-                // Проверяем соответствие поисковому тексту
                 const matchesSearch = searchText.length === 0 || num.includes(searchText) || title.includes(searchText);
-                // Проверяем соответствие выбранной категории
                 const matchesCategory = activeCategory === "all" || category === activeCategory;
 
-                if (matchesSearch && matchesCategory) {
-                    card.classList.remove('d-none');
-                    visibleCount++;
-                } else {
-                    card.classList.add('d-none');
-                }
+                return matchesSearch && matchesCategory;
             });
 
-            // Управляем показом заглушки «Ничего не найдено»
+            // Пагинация
+            const totalItems = filteredItems.length;
+            const totalPages = Math.ceil(totalItems / pageSize);
+            
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+            // Скрываем все, показываем нужные
+            cardItems.forEach(c => c.classList.add('d-none'));
+            filteredItems.slice(startIndex, endIndex).forEach(c => c.classList.remove('d-none'));
+
+            // Обновляем текст
+            const info = document.getElementById('kbPaginationInfo');
+            if (info) {
+                info.textContent = totalItems === 0 ? 'Показано 0-0 из 0' : `Показано ${startIndex + 1}-${endIndex} из ${totalItems} документов`;
+            }
+
+            // Рисуем кнопки
+            renderPagination(totalPages);
+
+            // Показываем заглушку "Ничего не найдено"
             if (searchEmptyState) {
-                if (visibleCount === 0 && cardItems.length > 0) {
+                if (totalItems === 0 && cardItems.length > 0) {
                     searchEmptyState.classList.remove('d-none');
                 } else {
                     searchEmptyState.classList.add('d-none');
@@ -241,20 +346,63 @@
             }
         }
 
-        // Обработчик ввода букв в поисковую строку
-        searchInput.addEventListener('input', filterCards);
+        function renderPagination(totalPages) {
+            const container = document.getElementById('kbPaginationButtons');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            if (totalPages <= 1) return;
 
-        // Обработчик клика по кнопкам-категориям
+            // Назад
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-left"></i></span>`;
+            if (currentPage > 1) {
+                prevLi.addEventListener('click', () => { currentPage--; applyFiltersAndPaginate(); });
+            }
+            container.appendChild(prevLi);
+
+            // Номера страниц
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<span class="page-link" style="cursor:pointer;">${i}</span>`;
+                li.addEventListener('click', () => { currentPage = i; applyFiltersAndPaginate(); });
+                container.appendChild(li);
+            }
+
+            // Вперед
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<span class="page-link" style="cursor:pointer;"><i class="bi bi-chevron-right"></i></span>`;
+            if (currentPage < totalPages) {
+                nextLi.addEventListener('click', () => { currentPage++; applyFiltersAndPaginate(); });
+            }
+            container.appendChild(nextLi);
+        }
+
+        // === 3. ОБРАБОТЧИКИ СОБЫТИЙ ===
+        searchInput.addEventListener('input', () => { currentPage = 1; applyFiltersAndPaginate(); });
+
         categoryButtons.forEach(btn => {
             btn.addEventListener('click', function() {
-                // Убираем активный класс со всех кнопок
                 categoryButtons.forEach(b => b.classList.remove('active'));
-                // Добавляем активный класс текущей
                 this.classList.add('active');
-
                 activeCategory = this.getAttribute('data-category');
-                filterCards();
+                currentPage = 1;
+                applyFiltersAndPaginate();
             });
         });
+
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', function() {
+                pageSize = parseInt(this.value);
+                currentPage = 1;
+                applyFiltersAndPaginate();
+            });
+        }
+
+        // Запуск при загрузке
+        applyFiltersAndPaginate();
     });
 </script>

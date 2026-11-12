@@ -55,7 +55,7 @@
     #paginationButtons .page-link { color: var(--brand-primary); border-radius: 6px; margin: 0 2px; border: 1px solid #dee2e6; font-weight: 600; }
     #paginationButtons .page-item.active .page-link { background-color: var(--brand-primary); border-color: var(--brand-primary); color: white; }
 
-    .copy-clickable { cursor: pointer; position: relative; transition: all 0.2s; border-radius: 4px; }
+    .copy-clickable { cursor: pointer; position: relative; transition: all 0.2s; border-radius: 4px; white-space: nowrap;}
     .copy-clickable:hover { background-color: #f1f5f9; }
     .copy-toast { position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); background-color: var(--brand-dark); color: #fff; padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; }
     .copy-toast.show { opacity: 1; }
@@ -162,7 +162,7 @@
                                     </span>
                                 }
                             </td>
-                            <td>
+                            <td class="text-nowrap">
                                 <div class="mb-1">
                                     <span class="text-muted small fw-bold me-1" style="font-size: 0.7rem;">ЛОГИН:</span>
                                     <span class="badge bg-light text-primary border fw-mono copy-clickable" onclick="copyText(this, '@student.Login')">
@@ -181,7 +181,7 @@
                                 @if (!string.IsNullOrWhiteSpace(student.Position)) { <div class="text-muted small">@student.Position</div> }
                                 @if (!string.IsNullOrWhiteSpace(student.Department)) { <div class="text-muted small">@student.Department</div> }
                             </td>
-                            <td class="text-muted small">@(string.IsNullOrEmpty(student.Snils) ? "—" : student.Snils)</td>
+                            <td class="text-muted small text-nowrap">@(string.IsNullOrEmpty(student.Snils) ? "—" : student.Snils)</td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
                                     <button type="button" class="btn btn-action btn-action-download download-access-btn" data-id="@student.Id" data-fio="@($"{student.LastName}_{student.FirstName}_{student.MiddleName}".TrimEnd('_'))" title="Скачать данные (.xlsx)">
