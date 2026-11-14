@@ -17,12 +17,14 @@ namespace SdoApp.Controllers;
 public class GroupsController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly IWebHostEnvironment _env;
     private readonly AuditService _auditService;
     private readonly IConfiguration _config;
 
-    public GroupsController(AppDbContext context, AuditService auditService, IConfiguration config)
+    public GroupsController(AppDbContext context, IWebHostEnvironment env, AuditService auditService, IConfiguration config)
     {
         _context = context;
+        _env = env;
         _auditService = auditService;
         _config = config;
     }
@@ -303,6 +305,7 @@ public class GroupsController : Controller
 
         var coursesInGroup = await _context.GroupCourseConfigs
             .Include(c => c.Course)
+            .Include(c => c.Files) // <--- ДОБАВИТЬ ЭТО
             .Where(c => c.GroupId == id)
             .Select(c => new
             {
@@ -312,7 +315,8 @@ public class GroupsController : Controller
                 protocol = c.ProtocolNumber,
                 start = c.CourseStartDate.HasValue ? c.CourseStartDate.Value.ToString("yyyy-MM-dd") : "",
                 end = c.CourseEndDate.HasValue ? c.CourseEndDate.Value.ToString("yyyy-MM-dd") : "",
-                allowedIds = c.AllowedStudentIds
+                allowedIds = c.AllowedStudentIds,
+                files = c.Files.Select(f => new { id = f.Id, name = f.FileName, url = f.FilePath }).ToList()
             })
             .ToListAsync();
 
@@ -422,7 +426,7 @@ public class GroupsController : Controller
 
             await _context.SaveChangesAsync();
 
-            // 3.5. Автоматическое распределение новых студентов на все курсы
+            // 3.5. Автоматическое распределение НОВЫХ студентов на все курсы
             var actualStudents = await _context.GroupStudents
                 .Where(gs => gs.GroupId == groupId)
                 .Select(gs => gs.StudentId)
@@ -432,27 +436,27 @@ public class GroupsController : Controller
                 .Where(gc => gc.GroupId == groupId)
                 .ToListAsync();
 
-            if (actualStudents.Any() && actualConfigs.Any())
+            // Находим тех, кого только что добавили (сравниваем со старым списком oldStudents)
+            var oldStudentIds = oldStudents.Select(s => s.StudentId).ToList();
+            var addedStudentIds = actualStudents.Except(oldStudentIds).ToList();
+
+            if (addedStudentIds.Any() && actualConfigs.Any())
             {
                 bool hasChanges = false;
 
-                foreach (var sId in actualStudents)
+                foreach (var sId in addedStudentIds)
                 {
-                    bool isAssignedToAnyCourse = actualConfigs.Any(cfg =>
-                        AccessService.IsStudentAllowed(cfg.AllowedStudentIds, sId));
-
-                    if (isAssignedToAnyCourse) continue;
-
                     foreach (var cfg in actualConfigs)
                     {
+                        // null означает "все допущены", там уже есть галочка
                         if (cfg.AllowedStudentIds == null) continue;
-                        if (string.IsNullOrWhiteSpace(cfg.AllowedStudentIds)) continue;
 
-                        var ids = cfg.AllowedStudentIds
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(int.Parse)
-                            .ToList();
+                        var ids = string.IsNullOrWhiteSpace(cfg.AllowedStudentIds)
+                            ? new List<int>()
+                            : cfg.AllowedStudentIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                   .Select(int.Parse).ToList();
 
+                        // Если студента еще нет в списке этого курса — добавляем
                         if (!ids.Contains(sId))
                         {
                             ids.Add(sId);
@@ -543,20 +547,72 @@ public class GroupsController : Controller
 
     // POST: /Groups/SaveCourseConfig
     [HttpPost]
-    public async Task<IActionResult> SaveCourseConfig(int configId, string protocolNumber, DateTime? startDate, DateTime? endDate, List<int> allowedStudentIds)
+    public async Task<IActionResult> SaveCourseConfig(
+        int configId, string protocolNumber, DateTime? startDate, DateTime? endDate,
+        List<int> allowedStudentIds, List<int>? keptFileIds, List<IFormFile>? configFiles)
     {
         try
         {
-            var config = await _context.GroupCourseConfigs.FindAsync(configId);
+            var config = await _context.GroupCourseConfigs
+                .Include(c => c.Files) // <--- Подтягиваем текущие файлы
+                .FirstOrDefaultAsync(c => c.Id == configId);
+
             if (config == null) return Json(new { success = false, message = "Конфигурация курса не найдена!" });
 
             config.ProtocolNumber = protocolNumber?.Trim() ?? string.Empty;
             config.CourseStartDate = startDate;
             config.CourseEndDate = endDate;
-
             config.AllowedStudentIds = allowedStudentIds != null && allowedStudentIds.Any()
                 ? string.Join(",", allowedStudentIds)
                 : string.Empty;
+
+            // --- ОБРАБОТКА ФАЙЛОВ ---
+            keptFileIds ??= new List<int>();
+
+            // 1. Удаляем файлы, которые админ убрал (не передал в keptFileIds)
+            var filesToRemove = config.Files.Where(f => !keptFileIds.Contains(f.Id)).ToList();
+            foreach (var oldFile in filesToRemove)
+            {
+                string path = Path.Combine(_env.WebRootPath, oldFile.FilePath.TrimStart('/'));
+                if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+                _context.GroupCourseConfigFiles.Remove(oldFile);
+            }
+
+            // 2. Добавляем новые файлы (если есть)
+            if (configFiles != null && configFiles.Any())
+            {
+                int currentCount = config.Files.Count(f => keptFileIds.Contains(f.Id));
+                if (currentCount + configFiles.Count > 3)
+                    return Json(new { success = false, message = "Максимум 3 файла на курс!" });
+
+                if (configFiles.Sum(f => f.Length) > 75 * 1024 * 1024)
+                    return Json(new { success = false, message = "Общий вес новых файлов более 75 МБ!" });
+
+                string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "group_course_files");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                foreach (var file in configFiles)
+                {
+                    string ext = Path.GetExtension(file.FileName).ToLower();
+                    var allowed = new[] { ".doc", ".docx", ".pdf", ".xls", ".xlsx", ".txt", ".zip", ".rar" };
+                    if (!allowed.Contains(ext))
+                        return Json(new { success = false, message = $"Формат {ext} не разрешен. Разрешены: doc, docx, pdf, xls, xlsx, txt, zip, rar." });
+
+                    string uniqueFileName = Guid.NewGuid().ToString() + ext;
+                    string savePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var stream = new FileStream(savePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    config.Files.Add(new GroupCourseConfigFile
+                    {
+                        FilePath = $"/uploads/group_course_files/{uniqueFileName}",
+                        FileName = file.FileName
+                    });
+                }
+            }
 
             _context.GroupCourseConfigs.Update(config);
             await _context.SaveChangesAsync();

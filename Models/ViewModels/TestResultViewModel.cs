@@ -6,6 +6,7 @@ namespace SdoApp.Models.ViewModels
     public class TestResultViewModel
     {
         public int AttemptId { get; set; }
+        public int MaterialId { get; set; }
         public int GroupId { get; set; }
         public string TestTitle { get; set; } = string.Empty;
         public string CourseTitle { get; set; } = string.Empty;

@@ -2076,7 +2076,7 @@
 	        return '<div class="create">Add <strong>' + escape(data.input) + '</strong>&hellip;</div>';
 	      },
 	      'no_results': () => {
-	        return '<div class="no-results">No results found</div>';
+	        return '<div class="no-results">Результаты не найдены</div>';
 	      },
 	      'loading': () => {
 	        return '<div class="spinner"></div>';

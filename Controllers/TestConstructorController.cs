@@ -51,7 +51,7 @@ public class TestConstructorController : Controller
         return View(questions);
     }
 
-     // POST: /TestConstructor/Create
+    // POST: /TestConstructor/Create
     [HttpPost]
     public async Task<IActionResult> Create(int testId, string questionText, string? hint, bool isMultipleChoice, List<string> answers, List<int> correctIndices, IFormFile?[] answerImages)
     {
@@ -203,6 +203,15 @@ public class TestConstructorController : Controller
                 _context.TestAnswerOptions.Add(option);
             }
 
+            var newAnswerTexts = answers.Select(a => a.Trim()).ToList();
+            foreach (var oldOpt in oldOptions)
+            {
+                if (!newAnswerTexts.Contains(oldOpt.AnswerText))
+                {
+                    DeleteOptionImage(oldOpt.ImageUrl);
+                }
+            }
+
             _context.TestAnswerOptions.RemoveRange(oldOptions);
             await _context.SaveChangesAsync();
             return Json(new { success = true });
@@ -254,7 +263,7 @@ public class TestConstructorController : Controller
     }
 
 
-        // ПОСТ: /TestConstructor/ExportToExcel
+    // ПОСТ: /TestConstructor/ExportToExcel
     // Экспорт в формате 5 колонок (каждый ответ на новой строке)
     [HttpPost]
     public async Task<IActionResult> ExportToExcel([FromForm] string questionIdsJson)
@@ -290,7 +299,7 @@ public class TestConstructorController : Controller
         foreach (var q in questions)
         {
             string typeStr = q.IsMultipleChoice ? "several_answers" : "one_answer";
-            
+
             foreach (var ans in q.Answers)
             {
                 worksheet.Cell(row, 1).Value = q.QuestionText;
@@ -334,7 +343,7 @@ public class TestConstructorController : Controller
             var worksheet = workbook.Worksheet(1);
 
             var rows = worksheet.RowsUsed().Skip(1); // Пропускаем шапку
-            
+
             TestQuestion? currentQuestion = null;
             string lastQuestionText = "";
             string lastHint = "";
@@ -364,7 +373,7 @@ public class TestConstructorController : Controller
                     };
                     _context.TestQuestions.Add(currentQuestion);
                     await _context.SaveChangesAsync();
-                    
+
                     lastQuestionText = qText;
                     lastHint = hint;
                     lastType = type;

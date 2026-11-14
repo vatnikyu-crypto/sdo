@@ -36,6 +36,7 @@ try
 
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<SdoApp.Services.AuditService>();
+    builder.Services.AddScoped<SdoApp.Services.NotificationService>();
 
     // Настройка Rate Limiting
     builder.Services.AddRateLimiter(options =>

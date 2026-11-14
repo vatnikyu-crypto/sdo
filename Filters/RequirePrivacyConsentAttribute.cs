@@ -29,6 +29,7 @@ public class RequirePrivacyConsentAttribute : ActionFilterAttribute
             path.StartsWith("/lib") || 
             path.StartsWith("/images") || 
             path.StartsWith("/uploads") ||
+             path.StartsWith("/notifications") ||
             path.StartsWith("/support/getstudentunreadcount"))
         {
             await next();

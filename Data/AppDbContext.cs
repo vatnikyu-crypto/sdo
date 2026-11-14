@@ -31,6 +31,10 @@ public class AppDbContext : DbContext
     public DbSet<CommissionMember> CommissionMembers => Set<CommissionMember>();
     public DbSet<CourseTheme> CourseThemes => Set<CourseTheme>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+    public DbSet<SubmissionFile> SubmissionFiles => Set<SubmissionFile>();
+    public DbSet<CourseMaterialFile> CourseMaterialFiles => Set<CourseMaterialFile>();
+    public DbSet<GroupCourseConfigFile> GroupCourseConfigFiles => Set<GroupCourseConfigFile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

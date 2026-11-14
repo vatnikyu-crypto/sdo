@@ -226,39 +226,60 @@ public class SupportController : Controller
 
 
     // POST: /Support/SendAdminReply
-    // УНИВЕРСАЛЬНЫЙ МЕТОД: Обрабатывает ответы и от Администратора, и от Студента
     [HttpPost]
-    public async Task<IActionResult> SendAdminReply(int ticketId, string text, IFormFile? replyFile)
+    public async Task<IActionResult> SendAdminReply(int ticketId, string text, List<IFormFile>? replyFiles)
     {
-        int senderId = User.GetUserId();
-        if (senderId == 0)
+        var senderIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                       ?? User.FindFirst("Id")?.Value
+                       ?? User.FindFirst("UserId")?.Value;
+
+        if (string.IsNullOrEmpty(senderIdStr) || !int.TryParse(senderIdStr, out int senderId))
         {
             return Json(new { success = false, message = "Ошибка: Авторизация пользователя истекла!" });
         }
 
         var ticket = await _context.SupportTickets.FindAsync(ticketId);
         if (ticket == null)
+        {
             return Json(new { success = false, message = "Обращение не найдено в системе!" });
+        }
 
         bool isStaff = User.IsInRole("Админ") || User.IsInRole("Главный_Админ");
         if (!isStaff && ticket.StudentId != senderId)
+        {
             return this.ForbidSmart("Нет доступа к этому обращению.");
+        }
 
         if (ticket.Status == TicketStatus.Закрыто)
-            return Json(new { success = false, message = "Ошибка: Данное обращение успешно решено и закрыто. Писать в него больше нельзя!" });
-
-        if (string.IsNullOrWhiteSpace(text) && replyFile == null)
-            return Json(new { success = false, message = "Ошибка: Напишите текст сообщения или прикрепите файл!" });
-
-        if (replyFile != null && replyFile.Length > 0)
         {
-            if (!FileValidationHelper.IsAllowed(replyFile, FileValidationHelper.SafeDocumentExtensions))
+            return Json(new { success = false, message = "Ошибка: Данное обращение успешно решено и закрыто. Писать в него больше нельзя!" });
+        }
+
+        bool hasFiles = replyFiles != null && replyFiles.Any();
+
+        if (string.IsNullOrWhiteSpace(text) && !hasFiles)
+        {
+            return Json(new { success = false, message = "Ошибка: Напишите текст сообщения или прикрепите файл!" });
+        }
+
+        // ВАЛИДАЦИЯ ФАЙЛОВ (Максимум 3 файла, общий вес до 15 МБ)
+        if (hasFiles)
+        {
+            if (replyFiles!.Count > 3)
             {
-                return Json(new { success = false, message = "Недопустимый формат файла!" });
+                return Json(new { success = false, message = "Ошибка: Можно прикрепить не более 3 файлов!" });
+            }
+
+            long totalSizeBytes = replyFiles.Sum(f => f.Length);
+            double totalSizeMb = (double)totalSizeBytes / (1024 * 1024);
+
+            if (totalSizeMb > 15.0)
+            {
+                return Json(new { success = false, message = $"Ошибка: Общий размер файлов ({Math.Round(totalSizeMb, 2)} МБ) превышает лимит в 15 МБ!" });
             }
         }
 
-        // 4. Формируем сообщение
+        // Формируем сообщение
         var message = new SupportMessage
         {
             TicketId = ticketId,
@@ -272,8 +293,8 @@ public class SupportController : Controller
 
         await _context.SaveChangesAsync();
 
-        // 5. Сохранение файла
-        if (replyFile != null && replyFile.Length > 0)
+        // Сохранение файлов на диск
+        if (hasFiles)
         {
             try
             {
@@ -283,27 +304,33 @@ public class SupportController : Controller
                     Directory.CreateDirectory(uploadFolder);
                 }
 
-                string extension = Path.GetExtension(replyFile.FileName).ToLower();
-                string uniqueName = Guid.NewGuid().ToString() + extension;
-                string savePath = Path.Combine(uploadFolder, uniqueName);
-
-                using (var stream = new FileStream(savePath, FileMode.Create))
+                foreach (var file in replyFiles!)
                 {
-                    await replyFile.CopyToAsync(stream);
+                    if (file.Length > 0)
+                    {
+                        string extension = Path.GetExtension(file.FileName).ToLower();
+                        string uniqueName = Guid.NewGuid().ToString() + extension;
+                        string savePath = Path.Combine(uploadFolder, uniqueName);
+
+                        using (var stream = new FileStream(savePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        _context.TicketFiles.Add(new TicketFile
+                        {
+                            MessageId = message.Id,
+                            FilePath = $"/uploads/support/{uniqueName}",
+                            FileName = file.FileName
+                        });
+                    }
                 }
-
-                _context.TicketFiles.Add(new TicketFile
-                {
-                    MessageId = message.Id,
-                    FilePath = $"/uploads/support/{uniqueName}",
-                    FileName = replyFile.FileName
-                });
 
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"Сообщение отправлено, но файл не сохранился: {ex.Message}" });
+                return Json(new { success = false, message = $"Сообщение отправлено, но файлы не сохранились: {ex.Message}" });
             }
         }
 

@@ -11,152 +11,11 @@
         --brand-gray: #e2e8f0;
     }
 
-    .ticket-admin-card {
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 1px solid var(--brand-gray);
-        border-radius: 12px;
-        background: #fff;
-    }
-
-    .ticket-admin-card:hover {
-        background-color: #f8fafc;
-        border-color: var(--brand-primary);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.08);
-    }
-
-    .ticket-admin-card.active {
-        background-color: rgba(79, 88, 157, 0.05);
-        border-color: var(--brand-primary);
-        border-left: 4px solid var(--brand-primary) !important;
-    }
-
-    .admin-chat-box {
-        background-color: #f8fafc;
-        border-radius: 12px;
-        height: 420px;
-        overflow-y: auto;
-        padding: 15px;
-        border: 1px solid var(--brand-gray);
-    }
-
-    .msg-bubble {
-        max-width: 85%;
-        padding: 12px 16px;
-        border-radius: 12px;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
-    }
-
-    .msg-admin-reply {
-        background-color: var(--brand-primary);
-        color: white;
-        margin-left: auto;
-        border-bottom-right-radius: 2px;
-        box-shadow: 0 2px 8px rgba(79, 88, 157, 0.2);
-    }
-
-    .msg-student-query {
-        background-color: #fff;
-        color: #333;
-        margin-right: auto;
-        border-bottom-left-radius: 2px;
-        border: 1px solid var(--brand-gray);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-    }
-
-    .btn-brand {
-        background-color: var(--brand-primary);
-        color: white;
-        border: none;
-        transition: all 0.3s;
-    }
-
-    .btn-brand:hover {
-        background-color: var(--brand-dark);
-        color: white;
-        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
-    }
-
-    /* Уведомления */
-    .toast-container-custom {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .custom-toast {
-        min-width: 300px;
-        max-width: 400px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-        display: flex;
-        align-items: center;
-        padding: 15px 20px;
-        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        border-left: 6px solid #ccc;
-    }
-
-    .custom-toast.success {
-        border-left-color: #198754;
-    }
-
-    .custom-toast.danger {
-        border-left-color: #dc3545;
-    }
-
-    .custom-toast.warning {
-        border-left-color: #F59E0B;
-    }
-
-    @@keyframes slideInRight {
-        from {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @@keyframes fadeOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        to {
-            transform: translateX(120%);
-            opacity: 0;
-        }
-    }
-
-    /* === НОВЫЙ ДИЗАЙН СПИСКА ТИКЕТОВ === */
-    #adminTicketsList::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    #adminTicketsList::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    #adminTicketsList::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-
-    #adminTicketsList::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
+    /* === СПИСОК ТИКЕТОВ === */
+    #adminTicketsList::-webkit-scrollbar { width: 6px; }
+    #adminTicketsList::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    #adminTicketsList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    #adminTicketsList::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
     .ticket-admin-card {
         cursor: pointer;
@@ -210,18 +69,85 @@
     }
 
     @@keyframes pulse-orange {
-        0% {
-            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
-        }
-
-        70% {
-            box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
-        }
-
-        100% {
-            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
-        }
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
     }
+
+    /* === ЧАТ === */
+    .admin-chat-box {
+        background-color: #f4f6f9;
+        overflow-y: auto;
+        min-height: 0;
+    }
+
+    .msg-bubble {
+        max-width: 85%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+
+    .msg-admin-reply {
+        background-color: var(--brand-primary);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 2px;
+        box-shadow: 0 2px 8px rgba(79, 88, 157, 0.2);
+    }
+
+    .msg-student-query {
+        background-color: #fff;
+        color: #333;
+        margin-right: auto;
+        border-bottom-left-radius: 2px;
+        border: 1px solid var(--brand-gray);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-brand {
+        background-color: var(--brand-primary);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: var(--brand-dark);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 88, 157, 0.3);
+    }
+
+    /* Уведомления */
+    .toast-container-custom {
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .custom-toast {
+        min-width: 300px; max-width: 400px; background: white;
+        border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: flex; align-items: center; padding: 15px 20px;
+        animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        border-left: 6px solid #ccc;
+    }
+    .custom-toast.success { border-left-color: #198754; }
+    .custom-toast.danger { border-left-color: #dc3545; }
+    .custom-toast.warning { border-left-color: #F59E0B; }
+
+        /* Фиксированная высота окна чата и заглушки */
+    #adminChatMainCard, #adminChatPlaceholder {
+        height: 650px; /* Фиксированная высота, чтобы блок не разрастался */
+        max-height: calc(100vh - 150px); /* Чтобы на маленьких экранах не уходило за край */
+    }
+    
+    /* Ограничиваем рост поля ввода, чтобы оно не тянуло верстку */
+    #adminReplyText {
+        max-height: 120px;
+        overflow-y: auto;
+    }
+
+    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
 </style>
 
 <!-- Контейнер для уведомлений -->
@@ -274,9 +200,7 @@
                         var lastMessage = t.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault();
                         bool isWaitingForAdminAnswer = isOpen && lastMessage != null && lastMessage.SenderId == t.StudentId;
                         
-                        // Берем первую букву фамилии для аватарки
-                        string firstLetter = !string.IsNullOrEmpty(t.Student?.LastName) ? t.Student.LastName.Substring(0,
-                1).ToUpper() : "?";
+                        string firstLetter = !string.IsNullOrEmpty(t.Student?.LastName) ? t.Student.LastName.Substring(0, 1).ToUpper() : "?";
 
                         <div class="ticket-admin-card @(isWaitingForAdminAnswer ? "ticket-unread" : "")"
                              id="admin-ticket-card-@t.Id"
@@ -284,18 +208,12 @@
                              data-phone="@t.Phone.ToLower()" onclick="loadAdminTicketChat(@t.Id)">
         
                             <div class="d-flex gap-3 align-items-center">
+                                <div class="ticket-avatar">@firstLetter</div>
                                 
-                                <!-- Аватарка -->
-                                <div class="ticket-avatar">
-                                    @firstLetter
-                                </div>
-                                
-                                <!-- Информация -->
                                 <div class="flex-grow-1 overflow-hidden">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <div class="fw-bold text-dark text-truncate" style="font-size:0.95rem;">
-                                            @(t.Student != null ? $"{t.Student.LastName} {t.Student.FirstName} {t.Student.MiddleName}".Trim() :
-                         "Удаленный пользователь")
+                                            @(t.Student != null ? $"{t.Student.LastName} {t.Student.FirstName} {t.Student.MiddleName}".Trim() : "Удаленный пользователь")
                                         </div>
                                         <small class="text-muted ms-2" style="font-size:0.7rem; white-space:nowrap;">
                                             @t.CreatedAt.ToLocalTime().ToString("dd.MM HH:mm")
@@ -306,11 +224,8 @@
                                         <i class="bi bi-telephone"></i> @t.Phone
                                     </div>
                                     
-                                    <!-- Бейджи -->
                                     <div class="d-flex gap-2 align-items-center">
-                                        <span class="badge @statusClass rounded-pill"
-                                              style="font-size:0.65rem;">@statusText</span>
-                                        
+                                        <span class="badge @statusClass rounded-pill" style="font-size:0.65rem;">@statusText</span>
                                         @if (isWaitingForAdminAnswer)
                                         {
                                             <span class="badge bg-danger rounded-pill badge-waiting" style="font-size:0.65rem;">
@@ -320,7 +235,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Стрелочка -->
                                 <i class="bi bi-chevron-right text-muted opacity-50"></i>
                             </div>
                         </div>
@@ -339,294 +253,378 @@
              style="border-radius: 16px; border: 1px solid var(--brand-gray) !important; min-height: 600px;">
             <i class="bi bi-chat-dots-fill text-secondary opacity-50" style="font-size: 4rem;"></i>
             <h5 class="fw-bold mt-3 text-dark">Диалог не выбран</h5>
-            <p class="small mb-0" style="max-width: 320px;">Выберите любое обращение в левом списке, чтобы прочитать
-                текст проблемы и написать ответ студенту.</p>
+            <p class="small mb-0" style="max-width: 320px;">Выберите любое обращение в левом списке, чтобы прочитать текст проблемы и написать ответ студенту.</p>
+        </div>
+
+        <!-- Активное окно чата -->
+        <div class="card bg-white border-0 shadow-sm p-0 h-100 d-none d-flex flex-column" id="adminChatMainCard"
+             style="border-radius: 16px; border: 1px solid var(--brand-gray) !important; overflow: hidden;">
+            
+            <!-- Шапка чата -->
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="ticket-avatar shadow-sm" id="adminChatAvatar">?</div>
+                    <div>
+                        <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2" id="adminChatTitle">Обращение №00</h5>
+                        <small class="text-muted d-block mt-1" id="adminChatStudentInfo">Слушатель: — | Телефон: —</small>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" id="adminCloseTicketBtn"
+                            class="btn btn-sm btn-outline-danger fw-bold px-3 rounded-3 shadow-sm d-flex align-items-center gap-1">
+                        <i class="bi bi-lock-fill"></i> Закрыть тикет
+                    </button>
+                </div>
             </div>
 
-            <!-- Активное окно чата -->
-            <div class="card bg-white border-0 shadow-sm p-4 h-100 d-none" id="adminChatMainCard"
-                 style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
-                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                    <div>
-                        <h5 class="fw-bold text-dark m-0" id="adminChatTitle">Тикет №00</h5>
-                        <small class="text-muted d-block" id="adminChatStudentInfo">Слушатель: — | Телефон: —</small>
-                    </div>
-                    <div>
-                        <button type="button" id="adminCloseTicketBtn"
-                                class="btn btn-sm btn-outline-danger fw-bold px-3 py-2 rounded-3 shadow-sm d-flex align-items-center gap-1">
-                            <i class="bi bi-lock-fill"></i> Решить и закрыть
+            <!-- Область сообщений -->
+            <div class="admin-chat-box flex-grow-1 m-0 p-4 border-0 rounded-0" id="adminChatMessagesContainer"></div>
+
+            <!-- Форма ответа -->
+            <div id="adminReplyFormContainer" class="p-3 bg-white border-top">
+                <form id="adminReplyForm" autocomplete="off" enctype="multipart/form-data">
+                    <input type="hidden" id="adminTargetTicketId" />
+                    
+                    <!-- Контейнер для списка выбранных файлов -->
+                    <div id="adminFileListContainer" class="d-flex flex-wrap gap-2 mb-2 d-none"></div>
+
+                    <div class="d-flex align-items-end bg-light rounded-4 p-2 border shadow-sm gap-2">
+                        <textarea id="adminReplyText" class="form-control border-0 bg-transparent shadow-none p-2" rows="2" style="resize: none;" placeholder="Напишите официальный ответ..."></textarea>
+                        
+                        <input type="file" id="adminReplyFiles" class="d-none" multiple />
+                        <label for="adminReplyFiles" class="btn btn-light border-0 rounded-circle text-secondary flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; cursor: pointer;" title="Прикрепить файлы (макс. 3 шт, до 15 МБ)">
+                            <i class="bi bi-paperclip fs-5"></i>
+                        </label>
+                        
+                        <button type="button" id="adminSubmitReplyBtn" class="btn btn-brand rounded-circle flex-shrink-0 shadow-sm d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; padding: 0;" title="Отправить">
+                            <i class="bi bi-send-fill fs-5"></i>
                         </button>
                     </div>
-                </div>
+                </form>
+            </div>
 
-                <div class="admin-chat-box mb-3 d-flex flex-column" id="adminChatMessagesContainer"></div>
-
-                <div id="adminReplyFormContainer">
-                    <form id="adminReplyForm" autocomplete="off" enctype="multipart/form-data">
-                        <input type="hidden" id="adminTargetTicketId" />
-                        <div class="mb-2">
-                            <textarea id="adminReplyText" class="form-control form-control-sm" rows="3"
-                                      placeholder="Наберите текст официального ответа техподдержки..."></textarea>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                            <div style="max-width: 250px;">
-                                <input type="file" id="adminReplyFile" class="form-control form-control-sm"
-                                       title="Прикрепить файл-инструкцию" />
-                            </div>
-                            <button type="button" id="adminSubmitReplyBtn"
-                                    class="btn btn-brand px-4 fw-bold shadow-sm py-2 rounded-3 d-flex align-items-center gap-1">
-                                <i class="bi bi-send-fill"></i> Отправить ответ
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="adminReplyLockedNotice"
-                     class="alert alert-secondary border text-center small text-muted p-2.5 m-0 d-none"
-                     style="border-radius: 8px;">
-                    <i class="bi bi-lock-fill me-1"></i> Это обращение закрыто администратором. Добавление ответов
-                    заблокировано.
-                </div>
+            <!-- Заглушка при закрытии -->
+            <div id="adminReplyLockedNotice" class="alert alert-secondary border-0 text-center small text-muted p-3 m-0 rounded-0 d-none">
+                <i class="bi bi-lock-fill me-1"></i> Это обращение закрыто администратором. Добавление ответов заблокировано.
             </div>
         </div>
     </div>
+</div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: ЗАКРЫТИЕ ТИКЕТА -->
-    <div class="modal fade" id="closeTicketModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
-            <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-                <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                     style="width: 70px; height: 70px;">
-                    <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Закрытие обращения</h5>
-                <p class="text-muted small mb-4">Вы действительно хотите перевести это обращение в статус «Закрыто»? Диалог
-                    будет полностью заблокирован для обеих сторон.</p>
-                    <div class="d-flex gap-2 justify-content-center">
-                        <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
-                                data-bs-dismiss="modal">Отмена</button>
-                        <button id="confirmCloseTicketBtn" type="button"
-                                class="btn btn-danger fw-bold w-50 rounded-3">Закрыть</button>
-                    </div>
-                </div>
+<!-- МОДАЛЬНОЕ ОКНО: ЗАКРЫТИЕ ТИКЕТА -->
+<div class="modal fade" id="closeTicketModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Закрытие обращения</h5>
+            <p class="text-muted small mb-4">Вы действительно хотите перевести это обращение в статус «Закрыто»? Диалог будет полностью заблокирован для обеих сторон.</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
+                <button id="confirmCloseTicketBtn" type="button" class="btn btn-danger fw-bold w-50 rounded-3">Закрыть</button>
             </div>
         </div>
+    </div>
+</div>
 
-        <script>
-            // 1. УВЕДОМЛЕНИЯ
-            function showToast(message, type = 'success') {
-                const container = document.getElementById('toastContainer');
-                const toast = document.createElement('div');
-                toast.className = `custom-toast ${type}`;
-                let iconClass = 'bi-check-circle-fill text-success';
-                if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
-                if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
-        
-                toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
-                container.appendChild(toast);
-        
-                setTimeout(() => {
-                    toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-                    setTimeout(() => toast.remove(), 300);
-                }, 3500);
+<script>
+    // 1. УВЕДОМЛЕНИЯ
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        let iconClass = 'bi-check-circle-fill text-success';
+        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+
+        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    const ticketsList = document.getElementById('adminTicketsList');
+    const searchInput = document.getElementById('adminKbSearchInput');
+    const placeholderCard = document.getElementById('adminChatPlaceholder');
+    const mainChatCard = document.getElementById('adminChatMainCard');
+
+    const messagesContainer = document.getElementById('adminChatMessagesContainer');
+    const replyFormContainer = document.getElementById('adminReplyFormContainer');
+    const replyLockedNotice = document.getElementById('adminReplyLockedNotice');
+
+    const targetTicketIdInput = document.getElementById('adminTargetTicketId');
+    const replyTextInput = document.getElementById('adminReplyText');
+    const submitReplyBtn = document.getElementById('adminSubmitReplyBtn');
+    const closeTicketBtn = document.getElementById('adminCloseTicketBtn');
+
+    let ticketIdToClose = null;
+
+    // === УПРАВЛЕНИЕ ФАЙЛАМИ ===
+    let selectedFiles = new DataTransfer();
+    const fileInput = document.getElementById('adminReplyFiles');
+    const fileListContainer = document.getElementById('adminFileListContainer');
+
+    // Обработка выбора файлов
+    fileInput.addEventListener('change', function () {
+        const newFiles = Array.from(this.files);
+
+        for (let file of newFiles) {
+            if (selectedFiles.files.length >= 3) {
+                showToast('Можно прикрепить не более 3 файлов!', 'warning');
+                break;
             }
 
-            const ticketsList = document.getElementById('adminTicketsList');
-            const searchInput = document.getElementById('adminKbSearchInput');
-            const placeholderCard = document.getElementById('adminChatPlaceholder');
-            const mainChatCard = document.getElementById('adminChatMainCard');
-    
-            const messagesContainer = document.getElementById('adminChatMessagesContainer');
-            const replyFormContainer = document.getElementById('adminReplyFormContainer');
-            const replyLockedNotice = document.getElementById('adminReplyLockedNotice');
-    
-            const targetTicketIdInput = document.getElementById('adminTargetTicketId');
-            const replyTextInput = document.getElementById('adminReplyText');
-            const replyFileInput = document.getElementById('adminReplyFile');
-            const submitReplyBtn = document.getElementById('adminSubmitReplyBtn');
-            const closeTicketBtn = document.getElementById('adminCloseTicketBtn');
-    
-            let ticketIdToClose = null;
-
-            // 2. ЖИВОЙ ПОИСК ПО РЕЕСТРУ ТИКЕТОВ
-            searchInput.addEventListener('input', function () {
-                const text = this.value.trim().toLowerCase();
-                const cards = Array.from(document.querySelectorAll('.ticket-admin-card'));
-
-                cards.forEach(card => {
-                    const fio = card.getAttribute('data-fio') || "";
-                    const phone = card.getAttribute('data-phone') || "";
-
-                    if (text.length === 0 || fio.includes(text) || phone.includes(text)) {
-                        card.style.setProperty('display', 'block', 'important');
-                    } else {
-                        card.style.setProperty('display', 'none', 'important');
-                    }
-                });
-            });
-
-            // 3. ДИНАМИЧЕСКАЯ ПОДГРУЗКА ЧАТА ДИАЛОГА
-            async function loadAdminTicketChat(ticketId) {
-                Array.from(document.querySelectorAll('.ticket-admin-card')).forEach(c => c.classList.remove('active'));
-        
-                const targetCard = document.getElementById(`admin-ticket-card-${ticketId}`);
-                if (targetCard) {
-                    targetCard.classList.add('active');
-                    targetCard.classList.remove('ticket-unread'); // Убираем желтую подсветку
-
-                    // Мгновенно удаляем бейдж "Ждет ответа" при клике админа
-                    const waitingBadge = targetCard.querySelector('.badge-waiting');
-                    if (waitingBadge) waitingBadge.remove();
-                }
-
-                try {
-                    const response = await fetch(`/Support/GetDetails/${ticketId}`);
-                    const data = await response.json();
-
-                    placeholderCard.classList.add('d-none');
-                    mainChatCard.classList.remove('d-none');
-
-                    targetTicketIdInput.value = data.ticketId;
-                    document.getElementById('adminChatTitle').textContent = `Обращение №${data.ticketId}`;
-                    document.getElementById('adminChatStudentInfo').textContent = `Слушатель: ${data.studentFio} | Телефон: ${data.phone} | Создано: ${data.createdAt}`;
-
-                    if (data.status === 1) {
-                        replyFormContainer.classList.add('d-none');
-                        replyLockedNotice.classList.remove('d-none');
-                        closeTicketBtn.classList.add('d-none');
-                    } else {
-                        replyFormContainer.classList.remove('d-none');
-                        replyLockedNotice.classList.add('d-none');
-                        closeTicketBtn.classList.remove('d-none');
-                    }
-
-                    if (data.messages.length === 0) {
-                        messagesContainer.innerHTML = '<div class="text-center text-muted small py-4">Сообщений нет.</div>';
-                        return;
-                    }
-
-                    messagesContainer.innerHTML = data.messages.map(m => {
-                        const bubbleClass = m.isMe ? 'msg-admin-reply' : 'msg-student-query';
-                        const nameStyle = m.isMe ? 'color: rgba(255,255,255,0.8);' : 'color: #6c757d;';
-        
-                        let filesHtml = '';
-                        if (m.files && m.files.length > 0) {
-                            filesHtml = '<div class="mt-2 border-top pt-2 small font-monospace">' + m.files.map(f => `
-                                        <div class="d-flex align-items-center gap-1 mb-1">
-                                            <i class="bi bi-paperclip"></i> <a href="${f.url}" download="${f.name}" class="${m.isMe ? 'text-white' : 'text-primary'} fw-bold text-decoration-none text-truncate d-inline-block" style="max-width:240px;">${f.name}</a>
-                                        </div>
-                                    `).join('') + '</div>';
-                        }
-
-                        return `
-                                <div class="d-flex flex-column w-100">
-                                    <div class="msg-bubble ${bubbleClass}">
-                                        <div style="font-size:0.75rem; ${nameStyle}" class="fw-bold mb-1">${m.senderFio}</div>
-                                        <div style="font-size:0.9rem; white-space:pre-line;">${m.text}</div>
-                                        ${filesHtml}
-                                    </div>
-                                    <small class="text-muted mb-3 ${m.isMe ? 'text-end pe-2' : 'ps-2'}" style="font-size:0.7rem; margin-top:-8px;">${m.createdAt}</small>
-                                </div>`;
-                    }).join('');
-
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-                } catch (err) {
-                    showToast('Не удалось подгрузить историю обращений с сервера.', 'danger');
+            let isDuplicate = false;
+            for (let i = 0; i < selectedFiles.files.length; i++) {
+                if (selectedFiles.files[i].name === file.name && selectedFiles.files[i].size === file.size) {
+                    isDuplicate = true; break;
                 }
             }
+            if (!isDuplicate) selectedFiles.items.add(file);
+        }
 
-            // 4. ОТПРАВКА ОТВЕТА АДМИНИСТРАТОРА
-            submitReplyBtn.addEventListener('click', async function () {
-                const ticketId = targetTicketIdInput.value;
-                const text = replyTextInput.value.trim();
-                const fileInput = document.getElementById('adminReplyFile');
+        let totalSizeMb = Array.from(selectedFiles.files).reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
+        if (totalSizeMb > 15.0) {
+            showToast(`Общий вес файлов (${totalSizeMb.toFixed(2)} МБ) превышает 15 МБ!`, 'danger');
+            selectedFiles = new DataTransfer();
+        }
 
-                if (!text && fileInput.files.length === 0) {
-                    showToast('Введите текст ответа или прикрепите файл!', 'warning');
-                    return;
+        this.files = selectedFiles.files;
+        renderFileList();
+    });
+
+    // Отрисовка плашек с файлами
+    function renderFileList() {
+        fileListContainer.innerHTML = '';
+        const files = Array.from(selectedFiles.files);
+
+        if (files.length === 0) {
+            fileListContainer.classList.add('d-none');
+            return;
+        }
+
+        fileListContainer.classList.remove('d-none');
+
+        files.forEach((file, index) => {
+            const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+            const chip = document.createElement('div');
+            chip.className = 'badge bg-light text-dark border px-2 py-2 d-flex align-items-center gap-2 shadow-sm';
+            chip.style.fontSize = '0.75rem';
+            chip.innerHTML = `
+                <i class="bi bi-file-earmark-text text-primary"></i>
+                <span class="text-truncate" style="max-width: 150px;" title="${file.name}">${file.name}</span>
+                <span class="text-muted">(${sizeMb} МБ)</span>
+                <button type="button" class="btn-close ms-1" style="font-size: 0.5rem;" onclick="removeSelectedFile(${index})"></button>
+            `;
+            fileListContainer.appendChild(chip);
+        });
+    }
+
+    // Удаление файла из списка
+    window.removeSelectedFile = function (index) {
+        const dt = new DataTransfer();
+        const files = Array.from(selectedFiles.files);
+        files.splice(index, 1);
+        files.forEach(f => dt.items.add(f));
+
+        selectedFiles = dt;
+        fileInput.files = selectedFiles.files;
+        renderFileList();
+    };
+
+    // 2. ЖИВОЙ ПОИСК ПО РЕЕСТРУ ТИКЕТОВ
+    searchInput.addEventListener('input', function () {
+        const text = this.value.trim().toLowerCase();
+        const cards = Array.from(document.querySelectorAll('.ticket-admin-card'));
+
+        cards.forEach(card => {
+            const fio = card.getAttribute('data-fio') || "";
+            const phone = card.getAttribute('data-phone') || "";
+
+            if (text.length === 0 || fio.includes(text) || phone.includes(text)) {
+                card.style.setProperty('display', 'block', 'important');
+            } else {
+                card.style.setProperty('display', 'none', 'important');
+            }
+        });
+    });
+
+    // 3. ДИНАМИЧЕСКАЯ ПОДГРУЗКА ЧАТА ДИАЛОГА
+    async function loadAdminTicketChat(ticketId) {
+        Array.from(document.querySelectorAll('.ticket-admin-card')).forEach(c => c.classList.remove('active'));
+
+        const targetCard = document.getElementById(`admin-ticket-card-${ticketId}`);
+        if (targetCard) {
+            targetCard.classList.add('active');
+            targetCard.classList.remove('ticket-unread');
+
+            const waitingBadge = targetCard.querySelector('.badge-waiting');
+            if (waitingBadge) waitingBadge.remove();
+        }
+
+        try {
+            const response = await fetch(`/Support/GetDetails/${ticketId}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const data = await response.json();
+
+            placeholderCard.classList.add('d-none');
+            mainChatCard.classList.remove('d-none');
+
+            targetTicketIdInput.value = data.ticketId;
+            document.getElementById('adminChatTitle').textContent = `Обращение №${data.ticketId}`;
+            document.getElementById('adminChatStudentInfo').textContent = `Слушатель: ${data.studentFio} | Телефон: ${data.phone} | Создано: ${data.createdAt}`;
+
+            // === Аватарка ===
+            const avatarElement = document.getElementById('adminChatAvatar');
+            if (data.studentFio && data.studentFio !== '—') {
+                avatarElement.textContent = data.studentFio.trim().charAt(0).toUpperCase();
+            } else {
+                avatarElement.textContent = '?';
+            }
+
+            if (data.status === 1) {
+                replyFormContainer.classList.add('d-none');
+                replyLockedNotice.classList.remove('d-none');
+                closeTicketBtn.classList.add('d-none');
+            } else {
+                replyFormContainer.classList.remove('d-none');
+                replyLockedNotice.classList.add('d-none');
+                closeTicketBtn.classList.remove('d-none');
+            }
+
+            if (data.messages.length === 0) {
+                messagesContainer.innerHTML = '<div class="text-center text-muted small py-4">Сообщений нет.</div>';
+                return;
+            }
+
+            messagesContainer.innerHTML = data.messages.map(m => {
+                const bubbleClass = m.isMe ? 'msg-admin-reply' : 'msg-student-query';
+                const nameStyle = m.isMe ? 'color: rgba(255,255,255,0.8);' : 'color: #6c757d;';
+
+                let filesHtml = '';
+                if (m.files && m.files.length > 0) {
+                    filesHtml = '<div class="mt-2 border-top pt-2 small font-monospace">' + m.files.map(f => `
+                        <div class="d-flex align-items-center gap-1 mb-1">
+                            <i class="bi bi-paperclip"></i> <a href="${f.url}" download="${f.name}" class="${m.isMe ? 'text-white' : 'text-primary'} fw-bold text-decoration-none text-truncate d-inline-block" style="max-width:240px;">${f.name}</a>
+                        </div>
+                    `).join('') + '</div>';
                 }
 
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Отправка...';
+                return `
+                <div class="d-flex flex-column w-100">
+                    <div class="msg-bubble ${bubbleClass}">
+                        <div style="font-size:0.75rem; ${nameStyle}" class="fw-bold mb-1">${m.senderFio}</div>
+                        <div style="font-size:0.9rem; white-space:pre-line;">${m.text}</div>
+                        ${filesHtml}
+                    </div>
+                    <small class="text-muted mb-3 ${m.isMe ? 'text-end pe-2' : 'ps-2'}" style="font-size:0.7rem; margin-top:-8px;">${m.createdAt}</small>
+                </div>`;
+            }).join('');
 
-                const formData = new FormData();
-                formData.append('ticketId', ticketId);
-                formData.append('text', text);
-        
-                if (fileInput.files.length > 0) {
-                    formData.append('replyFile', fileInput.files[0]);
-                }
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-                try {
-                    const response = await fetch('/Support/SendAdminReply', { method: 'POST', body: formData });
-                    const result = await response.json();
+        } catch (err) {
+            console.error("Ошибка загрузки тикета:", err);
+            showToast('Не удалось подгрузить историю обращений с сервера.', 'danger');
+        }
+    }
 
-                    if (result.success) {
-                        replyTextInput.value = "";
-                        fileInput.value = "";
+    // 4. ОТПРАВКА ОТВЕТА АДМИНИСТРАТОРА
+    submitReplyBtn.addEventListener('click', async function () {
+        const ticketId = targetTicketIdInput.value;
+        const text = replyTextInput.value.trim();
+
+        if (!text && selectedFiles.files.length === 0) {
+            showToast('Введите текст ответа или прикрепите файл!', 'warning');
+            return;
+        }
+
+        const originalIcon = '<i class="bi bi-send-fill fs-5"></i>';
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm text-white"></span>';
+
+        const formData = new FormData();
+        formData.append('ticketId', ticketId);
+        formData.append('text', text);
+
+        Array.from(selectedFiles.files).forEach(file => {
+            formData.append('replyFiles', file);
+        });
+
+        try {
+            const response = await fetch('/Support/SendAdminReply', { method: 'POST', body: formData });
+            const result = await response.json();
+
+            if (result.success) {
+                replyTextInput.value = "";
                 
-                        this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-send-fill"></i> Отправить ответ';
-                
-                        showToast('Ответ успешно отправлен!', 'success');
-                        await loadAdminTicketChat(ticketId);
-                
-                        if (window.updateSidebarBadges) {
-                            await window.updateSidebarBadges();
-                        }
-                    } else {
-                        showToast(result.message, 'danger');
-                        this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-send-fill"></i> Отправить ответ';
-                    }
-                } catch (err) {
-                    showToast('Сбой сети при отправке ответа.', 'danger');
-                    this.disabled = false;
-                    this.innerHTML = '<i class="bi bi-send-fill"></i> Отправить ответ';
+                selectedFiles = new DataTransfer();
+                fileInput.value = "";
+                renderFileList();
+
+                this.disabled = false;
+                this.innerHTML = originalIcon;
+
+                showToast('Ответ успешно отправлен!', 'success');
+                await loadAdminTicketChat(ticketId);
+
+                if (window.updateSidebarBadges) {
+                    await window.updateSidebarBadges();
                 }
+            } else {
+                showToast(result.message, 'danger');
+                this.disabled = false;
+                this.innerHTML = originalIcon;
+            }
+        } catch (err) {
+            showToast('Сбой сети при отправке ответа.', 'danger');
+            this.disabled = false;
+            this.innerHTML = originalIcon;
+        }
+    });
+
+    // 5. ЗАКРЫТИЕ ТИКЕТА
+    closeTicketBtn.addEventListener('click', function () {
+        ticketIdToClose = targetTicketIdInput.value;
+        if (!ticketIdToClose) return;
+        new bootstrap.Modal(document.getElementById('closeTicketModal')).show();
+    });
+
+    document.getElementById('confirmCloseTicketBtn').addEventListener('click', async function () {
+        if (!ticketIdToClose) return;
+
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            const params = new URLSearchParams();
+            params.append('ticketId', ticketIdToClose);
+
+            const response = await fetch('/Support/CloseTicket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
             });
+            const result = await response.json();
 
-            // 5. ЗАКРЫТИЕ ТИКЕТА (ЧЕРЕЗ МОДАЛКУ)
-            closeTicketBtn.addEventListener('click', function () {
-                ticketIdToClose = targetTicketIdInput.value;
-                if (!ticketIdToClose) return;
-        
-                // Показываем красивое модальное окно
-                new bootstrap.Modal(document.getElementById('closeTicketModal')).show();
-            });
-
-            // Подтверждение закрытия в модалке
-            document.getElementById('confirmCloseTicketBtn').addEventListener('click', async function () {
-                if (!ticketIdToClose) return;
-        
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-                try {
-                    const params = new URLSearchParams();
-                    params.append('ticketId', ticketIdToClose);
-
-                    const response = await fetch('/Support/CloseTicket', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params
-                    });
-                    const result = await response.json();
-
-                    if (result.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('closeTicketModal')).hide();
-                        showToast('Обращение успешно закрыто!', 'success');
-                        setTimeout(() => window.location.reload(), 1000);
-                    } else {
-                        showToast(result.message, 'danger');
-                        this.disabled = false;
-                        this.textContent = 'Закрыть';
-                    }
-                } catch (err) {
-                    showToast('Сбой сети при закрытии обращения.', 'danger');
-                    this.disabled = false;
-                    this.textContent = 'Закрыть';
-                }
-            });
-        </script>
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('closeTicketModal')).hide();
+                showToast('Обращение успешно закрыто!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(result.message, 'danger');
+                this.disabled = false;
+                this.textContent = 'Закрыть';
+            }
+        } catch (err) {
+            showToast('Сбой сети при закрытии обращения.', 'danger');
+            this.disabled = false;
+            this.textContent = 'Закрыть';
+        }
+    });
+</script>

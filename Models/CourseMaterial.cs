@@ -26,4 +26,5 @@ public class CourseMaterial
 
     public int? ThemeId { get; set; } // Может быть null (если материал без темы)
     public CourseTheme? Theme { get; set; }
+    public List<CourseMaterialFile> Files { get; set; } = new();
 }

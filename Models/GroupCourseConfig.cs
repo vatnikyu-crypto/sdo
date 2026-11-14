@@ -5,7 +5,7 @@ namespace SdoApp.Models;
 public class GroupCourseConfig
 {
     public int Id { get; set; }
-    
+
     public int GroupId { get; set; }
     public Group? Group { get; set; }
 
@@ -20,4 +20,6 @@ public class GroupCourseConfig
     // Трюк: Храним ID студентов, допущенных к этому курсу, в виде строки через запятую (например: "3,5,12,14")
     // Это позволит нам на лету убирать/ставить галочки конкретным людям без создания миллиарда таблиц!
     public string AllowedStudentIds { get; set; } = string.Empty;
+    // В самый низ класса, после AllowedStudentIds
+    public List<GroupCourseConfigFile> Files { get; set; } = new();
 }

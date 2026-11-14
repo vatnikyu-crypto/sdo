@@ -27,7 +27,7 @@
         border: 1px solid var(--brand-gray);
         border-radius: 16px;
         padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     }
     
     .test-nav-sidebar.collapsed {
@@ -69,7 +69,9 @@
         font-size: 0.9rem;
     }
 
-    .q-btn:hover { border-color: var(--brand-primary); }
+    .q-btn:hover {
+        border-color: var(--brand-primary);
+    }
     
     /* Отвеченный вопрос */
     .q-btn.answered {
@@ -107,14 +109,37 @@
     }
 
     @@keyframes pulse-red {
-        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
     }
 
-    .question-wizard-step { display: none; }
-    .question-wizard-step.active { display: block; animation: fadeIn 0.3s ease; }
-    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .question-wizard-step {
+        display: none;
+    }
+
+    .question-wizard-step.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
 
     .student-answer-label {
         display: flex;
@@ -132,7 +157,7 @@
         border-color: #cbd5e1;
     }
 
-    .test-option-input:checked + .student-answer-label {
+    .test-option-input:checked+.student-answer-label {
         border-color: var(--brand-primary);
         background-color: rgba(79, 88, 157, 0.05);
         box-shadow: 0 0 0 1px var(--brand-primary);
@@ -151,16 +176,16 @@
         transition: all 0.2s;
     }
 
-    .test-option-input[type="checkbox"] + .student-answer-label .custom-indicator {
+    .test-option-input[type="checkbox"]+.student-answer-label .custom-indicator {
         border-radius: 6px;
     }
 
-    .test-option-input:checked + .student-answer-label .custom-indicator {
+    .test-option-input:checked+.student-answer-label .custom-indicator {
         border-color: var(--brand-primary);
         background-color: var(--brand-primary);
     }
 
-    .test-option-input:checked + .student-answer-label .custom-indicator::after {
+    .test-option-input:checked+.student-answer-label .custom-indicator::after {
         content: '';
         width: 10px;
         height: 10px;
@@ -168,7 +193,7 @@
         border-radius: 50%;
     }
     
-    .test-option-input[type="checkbox"]:checked + .student-answer-label .custom-indicator::after {
+    .test-option-input[type="checkbox"]:checked+.student-answer-label .custom-indicator::after {
         content: '✓';
         color: white;
         font-size: 14px;
@@ -191,6 +216,7 @@
         border: none;
         transition: all 0.3s;
     }
+
     .btn-brand:hover {
         background-color: var(--brand-dark);
         color: white;
@@ -199,29 +225,72 @@
 
     /* Уведомления */
     .toast-container-custom {
-        position: fixed; top: 20px; right: 20px; z-index: 9999;
-        display: flex; flex-direction: column; gap: 10px;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
+
     .custom-toast {
-        min-width: 300px; max-width: 400px; background: white;
-        border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        display: flex; align-items: center; padding: 15px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
         animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         border-left: 6px solid #ccc;
     }
-    .custom-toast.success { border-left-color: #198754; }
-    .custom-toast.danger { border-left-color: #dc3545; }
-    .custom-toast.warning { border-left-color: #F59E0B; }
 
-    @@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+    .custom-toast.success {
+        border-left-color: #198754;
+    }
+
+    .custom-toast.danger {
+        border-left-color: #dc3545;
+    }
+
+    .custom-toast.warning {
+        border-left-color: #F59E0B;
+    }
+
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes fadeOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+    }
 
 
     /* ========================================= */
     /* МОБИЛЬНАЯ АДАПТАЦИЯ (ЭКРАНЫ ДО 768px)      */
     /* ========================================= */
     @@media (max-width: 768px) {
-        .test-layout-wrapper { flex-direction: column; }
+        .test-layout-wrapper {
+            flex-direction: column;
+        }
 
         .test-nav-sidebar {
             width: 100% !important;
@@ -260,6 +329,7 @@
         .test-nav-buttons {
             gap: 10px;
         }
+
         .test-nav-buttons .btn {
             flex: 1;
             padding-left: 10px;
@@ -275,12 +345,15 @@
     
     <!-- ОСНОВНОЙ БЛОК С ТЕСТОМ -->
     <div class="flex-grow-1" style="min-width: 0;">
-        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4" style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
+        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4"
+             style="border-radius: 16px; border: 1px solid var(--brand-gray) !important;">
             
             <!-- Шапка -->
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-3 test-header">
+            <div
+                class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-3 test-header">
                 <div>
-                    <span class="badge bg-dark text-uppercase px-3 py-1 mb-2" style="letter-spacing: 0.5px;">@testKind.ToString()</span>
+                    <span class="badge bg-dark text-uppercase px-3 py-1 mb-2"
+                          style="letter-spacing: 0.5px;">@testKind.ToString()</span>
                     <h3 class="fw-bold text-dark m-0 fs-4 fs-md-3">@ViewBag.TestTitle</h3>
                 </div>
                 
@@ -300,7 +373,8 @@
 
             <!-- Прогресс -->
             <div class="progress mb-4 mb-md-5" style="height: 8px; border-radius: 4px;">
-                <div id="testProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%; transition: width 0.3s ease;"></div>
+                <div id="testProgressBar" class="progress-bar bg-success" role="progressbar"
+                     style="width: 0%; transition: width 0.3s ease;"></div>
             </div>
 
             <!-- Вопросы -->
@@ -312,18 +386,21 @@
                     @foreach (var q in Model)
                     {
                         qIdx++;
-                        <div class="question-wizard-step @(qIdx == 1 ? "active" : "")" data-step="@qIdx" data-question-id="@q.Id">
+                        <div class="question-wizard-step @(qIdx == 1 ? "active" : "")" data-step="@qIdx"
+                             data-question-id="@q.Id">
                             
                             <div class="mb-3">
                                 @if (q.IsMultipleChoice)
                                 {
-                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill">
+                                    <span
+                                        class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill">
                                         <i class="bi bi-check2-square me-1"></i> Выберите несколько правильных ответов
                                     </span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">
+                                    <span
+                                        class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">
                                         <i class="bi bi-record-circle me-1"></i> Выберите один правильный ответ
                                     </span>
                                 }
@@ -334,7 +411,8 @@
                             @if (testKind == SdoApp.Models.TestStatus.Тренажер && !string.IsNullOrWhiteSpace(q.Hint))
                             {
                                 <div class="student-hint-box p-3 mb-4 small">
-                                    <i class="bi bi-lightbulb-fill text-warning me-1"></i> <b>Вспомогательная подсказка:</b> @q.Hint
+                                    <i class="bi bi-lightbulb-fill text-warning me-1"></i> <b>Вспомогательная подсказка:</b>
+                                    @q.Hint
                                 </div>
                             }
 
@@ -344,14 +422,17 @@
                                     <div class="position-relative">
                                         @if (q.IsMultipleChoice)
                                         {
-                                            <input type="checkbox" class="form-check-input d-none test-option-input" id="opt-@opt.Id" name="q-@q.Id" value="@opt.Id" />
+                                            <input type="checkbox" class="form-check-input d-none test-option-input"
+                                                   id="opt-@opt.Id" name="q-@q.Id" value="@opt.Id" />
                                         }
                                         else
                                         {
-                                            <input type="radio" class="form-check-input d-none test-option-input" id="opt-@opt.Id" name="q-@q.Id" value="@opt.Id" />
+                                            <input type="radio" class="form-check-input d-none test-option-input" id="opt-@opt.Id"
+                                                   name="q-@q.Id" value="@opt.Id" />
                                         }
 
-                                        <label for="opt-@opt.Id" class="student-answer-label d-flex justify-content-between align-items-center gap-3">
+                                        <label for="opt-@opt.Id"
+                                               class="student-answer-label d-flex justify-content-between align-items-center gap-3">
                                             <div class="d-flex align-items-center gap-3">
                                                 <div class="custom-indicator"></div>
                                                 <span class="text-dark fw-medium fs-6">@opt.AnswerText</span>
@@ -360,7 +441,8 @@
                                             @if (!string.IsNullOrEmpty(opt.ImageUrl))
                                             {
                                                 <div>
-                                                    <img src="@opt.ImageUrl" class="shadow-sm rounded" style="max-width: 100px; max-height: 70px; object-fit: cover;" />
+                                                    <img src="@opt.ImageUrl" class="shadow-sm rounded"
+                                                         style="max-width: 100px; max-height: 70px; object-fit: cover;" />
                                                 </div>
                                             }
                                         </label>
@@ -375,7 +457,8 @@
 
         <!-- Кнопки внизу по центру -->
         <div class="d-flex justify-content-between align-items-center px-2 test-nav-buttons">
-            <button id="prevQuestionBtn" class="btn btn-light border px-4 py-2 fw-bold text-secondary rounded-3" disabled>
+            <button id="prevQuestionBtn" class="btn btn-light border px-4 py-2 fw-bold text-secondary rounded-3"
+                    disabled>
                 <i class="bi bi-chevron-left"></i> Назад
             </button>
             
@@ -393,333 +476,346 @@
     <!-- БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ -->
     <div class="test-nav-sidebar shadow-sm" id="testSidebar">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold text-dark m-0 sidebar-title"><i class="bi bi-grid-3x3-gap-fill me-1 text-primary"></i> Навигация</h6>
-            <button id="toggleSidebarBtn" class="btn btn-sm btn-light border p-1 rounded-2" title="Скрыть/Показать меню">
-                <i class="bi bi-layout-sidebar-reverse fs-5"></i>
-            </button>
-        </div>
+            <h6 class="fw-bold text-dark m-0 sidebar-title"><i class="bi bi-grid-3x3-gap-fill me-1 text-primary"></i>
+                Навигация</h6>
+                <button id="toggleSidebarBtn" class="btn btn-sm btn-light border p-1 rounded-2"
+                        title="Скрыть/Показать меню">
+                    <i class="bi bi-layout-sidebar-reverse fs-5"></i>
+                </button>
+            </div>
         
-        <div id="sidebarContent">
-            <div class="question-grid" id="questionGrid">
-                <!-- Кнопки вопросов генерируются JS -->
-            </div>
+            <div id="sidebarContent">
+                <div class="question-grid" id="questionGrid">
+                    <!-- Кнопки вопросов генерируются JS -->
+                </div>
 
-            <button id="sidebarFinishBtn" class="btn btn-danger w-100 fw-bold rounded-3 py-2 shadow-sm mt-3">
-                <i class="bi bi-flag-fill me-1"></i> Завершить тест
-            </button>
-            <div class="text-muted small text-center mt-2">
-                <span class="d-inline-block bg-primary rounded-circle" style="width:10px; height:10px;"></span> — есть ответ<br>
-                <span class="d-inline-block border rounded-circle" style="width:10px; height:10px;"></span> — нет ответа
+                <button id="sidebarFinishBtn" class="btn btn-danger w-100 fw-bold rounded-3 py-2 shadow-sm mt-3">
+                    <i class="bi bi-flag-fill me-1"></i> Завершить тест
+                </button>
+                <div class="text-muted small text-center mt-2">
+                    <span class="d-inline-block bg-primary rounded-circle" style="width:10px; height:10px;"></span> — есть
+                    ответ<br>
+                    <span class="d-inline-block border rounded-circle" style="width:10px; height:10px;"></span> — нет ответа
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- МОДАЛЬНОЕ ОКНО: НЕОТВЕЧЕННЫЕ ВОПРОСЫ -->
-<div class="modal fade" id="unansweredWarningModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
-        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-            <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
-                <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
-            </div>
-            <h5 class="fw-bold text-dark mb-2">Остались без ответа</h5>
-            <p class="text-muted small mb-3">Вы не ответили на следующие вопросы:</p>
-            <h6 id="unansweredList" class="fw-bold text-danger mb-4 fs-5" style="word-break: break-word;"></h6>
-            <p class="text-muted small mb-4">Вы действительно хотите завершить тест?</p>
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Вернуться</button>
-                <button type="button" class="btn btn-danger fw-bold w-50 rounded-3" id="confirmFinishWithUnanswered">Всё равно сдать</button>
+    <!-- МОДАЛЬНОЕ ОКНО: НЕОТВЕЧЕННЫЕ ВОПРОСЫ -->
+    <div class="modal fade" id="unansweredWarningModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+            <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+                <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                     style="width: 70px; height: 70px;">
+                    <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Остались без ответа</h5>
+                <p class="text-muted small mb-3">Вы не ответили на следующие вопросы:</p>
+                <h6 id="unansweredList" class="fw-bold text-danger mb-4 fs-5" style="word-break: break-word;"></h6>
+                <p class="text-muted small mb-4">Вы действительно хотите завершить тест?</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
+                            data-bs-dismiss="modal">Вернуться</button>
+                    <button type="button" class="btn btn-danger fw-bold w-50 rounded-3" id="confirmFinishWithUnanswered">Всё
+                        равно сдать</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- МОДАЛЬНОЕ ОКНО: ВСЕ ОТВЕЧЕНО, ПОДТВЕРЖДЕНИЕ -->
-<div class="modal fade" id="finishTestConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
-        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
-            <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
-                <i class="bi bi-flag-fill fs-2 text-warning"></i>
+        <!-- МОДАЛЬНОЕ ОКНО: ВСЕ ОТВЕЧЕНО, ПОДТВЕРЖДЕНИЕ -->
+        <div class="modal fade" id="finishTestConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+                <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                         style="width: 70px; height: 70px;">
+                        <i class="bi bi-flag-fill fs-2 text-warning"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Завершение теста</h5>
+                    <p class="text-muted small mb-4">Вы ответили на все вопросы. Действительно хотите отправить ответы на
+                        проверку?</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-light border fw-bold w-50 rounded-3"
+                                    data-bs-dismiss="modal">Отмена</button>
+                            <button id="confirmFinishTestBtn" type="button"
+                                    class="btn btn-brand fw-bold w-50 rounded-3">Завершить</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h5 class="fw-bold text-dark mb-2">Завершение теста</h5>
-            <p class="text-muted small mb-4">Вы ответили на все вопросы. Действительно хотите отправить ответы на проверку?</p>
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-light border fw-bold w-50 rounded-3" data-bs-dismiss="modal">Отмена</button>
-                <button id="confirmFinishTestBtn" type="button" class="btn btn-brand fw-bold w-50 rounded-3">Завершить</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<script>
-    let activeStep = 1;
-    const totalSteps = @Model.Count();
-    const steps = document.querySelectorAll('.question-wizard-step');
-    const prevBtn = document.getElementById('prevQuestionBtn');
-    const nextBtn = document.getElementById('nextQuestionBtn');
-    const finishBtn = document.getElementById('finishTestBtn'); // Кнопка завершения
-    const stepDisplay = document.getElementById('currentStepDisplay');
-    const progressBar = document.getElementById('testProgressBar');
+            <script>
+                let activeStep = 1;
+                const totalSteps = @Model.Count();
+                const steps = document.querySelectorAll('.question-wizard-step');
+                const prevBtn = document.getElementById('prevQuestionBtn');
+                const nextBtn = document.getElementById('nextQuestionBtn');
+                const finishBtn = document.getElementById('finishTestBtn'); // Кнопка завершения
+                const stepDisplay = document.getElementById('currentStepDisplay');
+                const progressBar = document.getElementById('testProgressBar');
     
-    // ==========================================
-    // СОХРАНЕНИЕ ПРОГРЕССА В LOCALSTORAGE
-    // ==========================================
-    const storageKey = `test_progress_@ViewBag.AttemptId`;
+                // ==========================================
+                // СОХРАНЕНИЕ ПРОГРЕССА В LOCALSTORAGE
+                // ==========================================
+                const storageKey = `test_progress_@ViewBag.AttemptId`;
 
-    function saveProgressToStorage() {
-        const answers = {};
-        steps.forEach(step => {
-            const qId = step.getAttribute('data-question-id');
-            const checkedOptions = Array.from(step.querySelectorAll('.test-option-input:checked')).map(input => input.value);
-            if (checkedOptions.length > 0) {
-                answers[qId] = checkedOptions;
-            }
-        });
-
-        const state = {
-            activeStep: activeStep,
-            answers: answers
-        };
-
-        localStorage.setItem(storageKey, JSON.stringify(state));
-    }
-
-    function restoreProgressFromStorage() {
-        const saved = localStorage.getItem(storageKey);
-        if (!saved) return;
-
-        try {
-            const state = JSON.parse(saved);
-
-            // Восстанавливаем ответы
-            if (state.answers) {
-                for (const [qId, optIds] of Object.entries(state.answers)) {
-                    optIds.forEach(optId => {
-                        const input = document.querySelector(`.test-option-input[value="${optId}"]`);
-                        if (input) {
-                            input.checked = true;
-                            // Вызываем событие change, чтобы подсветить кнопки в сайдбаре
-                            input.dispatchEvent(new Event('change')); 
+                function saveProgressToStorage() {
+                    const answers = {};
+                    steps.forEach(step => {
+                        const qId = step.getAttribute('data-question-id');
+                        const checkedOptions = Array.from(step.querySelectorAll('.test-option-input:checked')).map(input => input.value);
+                        if (checkedOptions.length > 0) {
+                            answers[qId] = checkedOptions;
                         }
                     });
+
+                    const state = {
+                        activeStep: activeStep,
+                        answers: answers
+                    };
+
+                    localStorage.setItem(storageKey, JSON.stringify(state));
                 }
-            }
 
-            // Восстанавливаем шаг
-            if (state.activeStep && state.activeStep <= totalSteps) {
-                activeStep = state.activeStep;
-                updateWizardUI();
-            }
-        } catch (e) {
-            console.error("Ошибка восстановления прогресса:", e);
-        }
-    }
+                function restoreProgressFromStorage() {
+                    const saved = localStorage.getItem(storageKey);
+                    if (!saved) return;
 
-    // 1. УВЕДОМЛЕНИЯ
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `custom-toast ${type}`;
-        let iconClass = 'bi-check-circle-fill text-success';
-        if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
-        if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
+                    try {
+                        const state = JSON.parse(saved);
+
+                        // Восстанавливаем ответы
+                        if (state.answers) {
+                            for (const [qId, optIds] of Object.entries(state.answers)) {
+                                optIds.forEach(optId => {
+                                    const input = document.querySelector(`.test-option-input[value="${optId}"]`);
+                                    if (input) {
+                                        input.checked = true;
+                                        // Вызываем событие change, чтобы подсветить кнопки в сайдбаре
+                                        input.dispatchEvent(new Event('change'));
+                                    }
+                                });
+                            }
+                        }
+
+                        // Восстанавливаем шаг
+                        if (state.activeStep && state.activeStep <= totalSteps) {
+                            activeStep = state.activeStep;
+                            updateWizardUI();
+                        }
+                    } catch (e) {
+                        console.error("Ошибка восстановления прогресса:", e);
+                    }
+                }
+
+                // 1. УВЕДОМЛЕНИЯ
+                function showToast(message, type = 'success') {
+                    const container = document.getElementById('toastContainer');
+                    const toast = document.createElement('div');
+                    toast.className = `custom-toast ${type}`;
+                    let iconClass = 'bi-check-circle-fill text-success';
+                    if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill text-danger';
+                    if (type === 'warning') iconClass = 'bi-info-circle-fill text-warning';
         
-        toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
-        container.appendChild(toast);
+                    toast.innerHTML = `<i class="bi ${iconClass} fs-4 me-3"></i><div class="fw-bold text-dark" style="font-size: 0.9rem; line-height: 1.4;">${message}</div>`;
+                    container.appendChild(toast);
         
-        setTimeout(() => {
-            toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
-    }
+                    setTimeout(() => {
+                        toast.style.animation = 'fadeOutRight 0.3s ease-in forwards';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 3500);
+                }
 
-    // 2. ГЕНЕРАЦИЯ БОКОВОГО МЕНЮ
-    const questionGrid = document.getElementById('questionGrid');
-    for (let i = 1; i <= totalSteps; i++) {
-        const btn = document.createElement('button');
-        btn.className = `q-btn ${i === 1 ? 'active' : ''}`;
-        btn.textContent = i;
-        btn.setAttribute('data-step', i);
-        btn.addEventListener('click', () => {
-            activeStep = i;
-            updateWizardUI();
-            saveProgressToStorage();
-        });
-        questionGrid.appendChild(btn);
-    }
+                // 2. ГЕНЕРАЦИЯ БОКОВОГО МЕНЮ
+                const questionGrid = document.getElementById('questionGrid');
+                for (let i = 1; i <= totalSteps; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = `q-btn ${i === 1 ? 'active' : ''}`;
+                    btn.textContent = i;
+                    btn.setAttribute('data-step', i);
+                    btn.addEventListener('click', () => {
+                        activeStep = i;
+                        updateWizardUI();
+                        saveProgressToStorage();
+                    });
+                    questionGrid.appendChild(btn);
+                }
 
-    // Сворачивание/разворачивание сайдбара
-    const sidebar = document.getElementById('testSidebar');
-    document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
-        sidebar.classList.toggle('collapsed');
-        const icon = this.querySelector('i');
-        if (sidebar.classList.contains('collapsed')) {
-            icon.className = 'bi bi-layout-sidebar-inset fs-5';
-        } else {
-            icon.className = 'bi bi-layout-sidebar-reverse fs-5';
-        }
-    });
+                // Сворачивание/разворачивание сайдбара
+                const sidebar = document.getElementById('testSidebar');
+                document.getElementById('toggleSidebarBtn').addEventListener('click', function () {
+                    sidebar.classList.toggle('collapsed');
+                    const icon = this.querySelector('i');
+                    if (sidebar.classList.contains('collapsed')) {
+                        icon.className = 'bi bi-layout-sidebar-inset fs-5';
+                    } else {
+                        icon.className = 'bi bi-layout-sidebar-reverse fs-5';
+                    }
+                });
 
-    // 3. НАВИГАЦИЯ ПО ШАГАМ
-    function updateWizardUI() {
-        steps.forEach(step => step.classList.remove('active'));
-        document.querySelector(`.question-wizard-step[data-step="${activeStep}"]`).classList.add('active');
-        stepDisplay.textContent = activeStep;
-        progressBar.style.width = `${((activeStep - 1) / totalSteps) * 100}%`;
-        prevBtn.disabled = activeStep === 1;
+                // 3. НАВИГАЦИЯ ПО ШАГАМ
+                function updateWizardUI() {
+                    steps.forEach(step => step.classList.remove('active'));
+                    document.querySelector(`.question-wizard-step[data-step="${activeStep}"]`).classList.add('active');
+                    stepDisplay.textContent = activeStep;
+                    progressBar.style.width = `${((activeStep - 1) / totalSteps) * 100}%`;
+                    prevBtn.disabled = activeStep === 1;
         
-        // ПРОВЕРКА НА ПОСЛЕДНИЙ ВОПРОС
-        if (activeStep === totalSteps) {
-            nextBtn.classList.add('d-none');       // Прячем "Далее"
-            finishBtn.classList.remove('d-none');  // Показываем "Завершить"
-        } else {
-            nextBtn.classList.remove('d-none');    // Показываем "Далее"
-            finishBtn.classList.add('d-none');     // Прячем "Завершить"
-        }
+                    // ПРОВЕРКА НА ПОСЛЕДНИЙ ВОПРОС
+                    if (activeStep === totalSteps) {
+                        nextBtn.classList.add('d-none');       // Прячем "Далее"
+                        finishBtn.classList.remove('d-none');  // Показываем "Завершить"
+                    } else {
+                        nextBtn.classList.remove('d-none');    // Показываем "Далее"
+                        finishBtn.classList.add('d-none');     // Прячем "Завершить"
+                    }
 
-        // Обновляем активную кнопку в сайдбаре
-        document.querySelectorAll('.q-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.q-btn[data-step="${activeStep}"]`).classList.add('active');
+                    // Обновляем активную кнопку в сайдбаре
+                    document.querySelectorAll('.q-btn').forEach(btn => btn.classList.remove('active'));
+                    document.querySelector(`.q-btn[data-step="${activeStep}"]`).classList.add('active');
         
-        // Прокручиваем страницу наверх, чтобы видеть начало вопроса
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+                    // Прокручиваем страницу наверх, чтобы видеть начало вопроса
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
 
-    nextBtn.addEventListener('click', () => { if (activeStep < totalSteps) { activeStep++; updateWizardUI(); saveProgressToStorage(); } });
-    prevBtn.addEventListener('click', () => { if (activeStep > 1) { activeStep--; updateWizardUI(); saveProgressToStorage(); } });
+                nextBtn.addEventListener('click', () => { if (activeStep < totalSteps) { activeStep++; updateWizardUI(); saveProgressToStorage(); } });
+                prevBtn.addEventListener('click', () => { if (activeStep > 1) { activeStep--; updateWizardUI(); saveProgressToStorage(); } });
 
-    // 4. ОТСЛЕЖИВАНИЕ ОТВЕТОВ
-    document.querySelectorAll('.test-option-input').forEach(input => {
-        input.addEventListener('change', function() {
-            const step = this.closest('.question-wizard-step');
-            const stepNum = parseInt(step.getAttribute('data-step'));
-            const isAnswered = step.querySelectorAll('.test-option-input:checked').length > 0;
+                // 4. ОТСЛЕЖИВАНИЕ ОТВЕТОВ
+                document.querySelectorAll('.test-option-input').forEach(input => {
+                    input.addEventListener('change', function () {
+                        const step = this.closest('.question-wizard-step');
+                        const stepNum = parseInt(step.getAttribute('data-step'));
+                        const isAnswered = step.querySelectorAll('.test-option-input:checked').length > 0;
             
-            const navBtn = document.querySelector(`.q-btn[data-step="${stepNum}"]`);
-            if (isAnswered) {
-                navBtn.classList.add('answered');
-            } else {
-                navBtn.classList.remove('answered');
-            }
+                        const navBtn = document.querySelector(`.q-btn[data-step="${stepNum}"]`);
+                        if (isAnswered) {
+                            navBtn.classList.add('answered');
+                        } else {
+                            navBtn.classList.remove('answered');
+                        }
 
-            saveProgressToStorage(); // Сохраняем при каждом изменении ответа
-        });
-    });
+                        saveProgressToStorage(); // Сохраняем при каждом изменении ответа
+                    });
+                });
 
-    // 5. ПРОВЕРКА ПЕРЕД ЗАВЕРШЕНИЕМ
-    function attemptFinishTest() {
-        const unanswered = [];
-        steps.forEach((step, index) => {
-            const answered = step.querySelectorAll('.test-option-input:checked').length > 0;
-            if (!answered) {
-                unanswered.push(index + 1);
-            }
-        });
+                // 5. ПРОВЕРКА ПЕРЕД ЗАВЕРШЕНИЕМ
+                function attemptFinishTest() {
+                    const unanswered = [];
+                    steps.forEach((step, index) => {
+                        const answered = step.querySelectorAll('.test-option-input:checked').length > 0;
+                        if (!answered) {
+                            unanswered.push(index + 1);
+                        }
+                    });
 
-        if (unanswered.length > 0) {
-            document.getElementById('unansweredList').textContent = `№ ${unanswered.join(', ')}`;
-            new bootstrap.Modal(document.getElementById('unansweredWarningModal')).show();
-        } else {
-            new bootstrap.Modal(document.getElementById('finishTestConfirmModal')).show();
-        }
-    }
-
-    // Привязка кнопок "Завершить" (в сайдбаре и на последнем вопросе)
-    document.getElementById('sidebarFinishBtn').addEventListener('click', attemptFinishTest);
-    finishBtn.addEventListener('click', attemptFinishTest);
-    
-    // Кнопка "Все равно сдать" в окне предупреждения
-    document.getElementById('confirmFinishWithUnanswered').addEventListener('click', function() {
-        bootstrap.Modal.getInstance(document.getElementById('unansweredWarningModal')).hide();
-        new bootstrap.Modal(document.getElementById('finishTestConfirmModal')).show();
-    });
-
-    // 6. ОТПРАВКА РЕЗУЛЬТАТОВ
-    async function sendResultsToServer() {
-        document.body.style.pointerEvents = "none";
-        document.body.style.opacity = "0.6";
-        
-        const finishModal = bootstrap.Modal.getInstance(document.getElementById('finishTestConfirmModal'));
-        if (finishModal) finishModal.hide();
-
-        const answersPayload = {};
-        steps.forEach(step => {
-            const qId = step.getAttribute('data-question-id');
-            const checkedOptions = Array.from(step.querySelectorAll('.test-option-input:checked')).map(input => parseInt(input.value));
-            answersPayload[qId] = checkedOptions;
-        });
-
-        try {
-            const response = await fetch('/StudentTest/SubmitAnswers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    testId: @ViewBag.TestId,
-                    courseId: @ViewBag.CourseId,
-                    groupId: @ViewBag.GroupId,
-                    studentAnswers: answersPayload
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // ОЧИЩАЕМ ПАМЯТЬ БРАУЗЕРА, ТАК КАК ТЕСТ СДАН
-                localStorage.removeItem(storageKey); 
-                
-                // Сразу редирект на страницу результатов
-                window.location.href = result.redirectUrl;
-            } else {
-                showToast(result.message, 'danger');
-                document.body.style.pointerEvents = "auto";
-                document.body.style.opacity = "1";
-                
-                if (result.redirectUrl) {
-                    setTimeout(() => window.location.href = result.redirectUrl, 2000);
+                    if (unanswered.length > 0) {
+                        document.getElementById('unansweredList').textContent = `№ ${unanswered.join(', ')}`;
+                        new bootstrap.Modal(document.getElementById('unansweredWarningModal')).show();
+                    } else {
+                        new bootstrap.Modal(document.getElementById('finishTestConfirmModal')).show();
+                    }
                 }
-            }
-        } catch {
-            showToast("Критический сбой сети при отправке ответов.", 'danger');
-            document.body.style.pointerEvents = "auto";
-            document.body.style.opacity = "1";
-        }
-    }
 
-    document.getElementById('confirmFinishTestBtn').addEventListener('click', sendResultsToServer);
+                // Привязка кнопок "Завершить" (в сайдбаре и на последнем вопросе)
+                document.getElementById('sidebarFinishBtn').addEventListener('click', attemptFinishTest);
+                finishBtn.addEventListener('click', attemptFinishTest);
+    
+                // Кнопка "Все равно сдать" в окне предупреждения
+                document.getElementById('confirmFinishWithUnanswered').addEventListener('click', function () {
+                    this.blur();
+                    bootstrap.Modal.getInstance(document.getElementById('unansweredWarningModal')).hide();
+                    new bootstrap.Modal(document.getElementById('finishTestConfirmModal')).show();
+                });
 
-    // 7. ТАЙМЕР
-    document.addEventListener("DOMContentLoaded", function () {
-        // ВОССТАНАВЛИВАЕМ ОТВЕТЫ И ШАГ ИЗ ПАМЯТИ БРАУЗЕРА
-        restoreProgressFromStorage();
+                // 6. ОТПРАВКА РЕЗУЛЬТАТОВ
+                async function sendResultsToServer() {
+                    if (document.activeElement) document.activeElement.blur();
+        
+                    document.body.style.pointerEvents = "none";
+                    document.body.style.opacity = "0.6";
+        
+                    const finishModal = bootstrap.Modal.getInstance(document.getElementById('finishTestConfirmModal'));
+                    if (finishModal) finishModal.hide();
 
-        let totalSecondsLeft = parseInt("@remainingSeconds") || 0;
-        const display = document.getElementById("countdownDisplay");
-        const timerContainer = document.getElementById("timerContainer");
+                    const answersPayload = {};
+                    steps.forEach(step => {
+                        const qId = step.getAttribute('data-question-id');
+                        const checkedOptions = Array.from(step.querySelectorAll('.test-option-input:checked')).map(input => parseInt(input.value));
+                        answersPayload[qId] = checkedOptions;
+                    });
 
-        if (totalSecondsLeft <= 0 || !display || !timerContainer) return;
+                    try {
+                        const response = await fetch('/StudentTest/SubmitAnswers', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                testId: @ViewBag.TestId,
+                                courseId: @ViewBag.CourseId,
+                                groupId: @ViewBag.GroupId,
+                                studentAnswers: answersPayload
+                            })
+                        });
 
-        function updateTimer() {
-            if (totalSecondsLeft <= 0) {
-                clearInterval(timerInterval);
-                display.textContent = "00:00";
-                showToast("Время истекло! Ответы отправляются автоматически.", 'warning');
-                setTimeout(() => { sendResultsToServer(); }, 1500);
-                return;
-            }
+                        const result = await response.json();
 
-            totalSecondsLeft--;
+                        if (result.success) {
+                            // ОЧИЩАЕМ ПАМЯТЬ БРАУЗЕРА, ТАК КАК ТЕСТ СДАН
+                            localStorage.removeItem(storageKey);
+                
+                            // Сразу редирект на страницу результатов
+                            window.location.href = result.redirectUrl;
+                        } else {
+                            showToast(result.message, 'danger');
+                            document.body.style.pointerEvents = "auto";
+                            document.body.style.opacity = "1";
+                
+                            if (result.redirectUrl) {
+                                setTimeout(() => window.location.href = result.redirectUrl, 2000);
+                            }
+                        }
+                    } catch {
+                        showToast("Критический сбой сети при отправке ответов.", 'danger');
+                        document.body.style.pointerEvents = "auto";
+                        document.body.style.opacity = "1";
+                    }
+                }
 
-            const minutes = Math.floor(totalSecondsLeft / 60);
-            const seconds = totalSecondsLeft % 60;
+                document.getElementById('confirmFinishTestBtn').addEventListener('click', sendResultsToServer);
 
-            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                // 7. ТАЙМЕР
+                document.addEventListener("DOMContentLoaded", function () {
+                    // ВОССТАНАВЛИВАЕМ ОТВЕТЫ И ШАГ ИЗ ПАМЯТИ БРАУЗЕРА
+                    restoreProgressFromStorage();
 
-            if (totalSecondsLeft < 60) {
-                timerContainer.classList.add("danger");
-            }
-        }
+                    let totalSecondsLeft = parseInt("@remainingSeconds") || 0;
+                    const display = document.getElementById("countdownDisplay");
+                    const timerContainer = document.getElementById("timerContainer");
 
-        updateTimer();
-        const timerInterval = setInterval(updateTimer, 1000);
-    });
-</script>
+                    if (totalSecondsLeft <= 0 || !display || !timerContainer) return;
+
+                    function updateTimer() {
+                        if (totalSecondsLeft <= 0) {
+                            clearInterval(timerInterval);
+                            display.textContent = "00:00";
+                            showToast("Время истекло! Ответы отправляются автоматически.", 'warning');
+                            setTimeout(() => { sendResultsToServer(); }, 1500);
+                            return;
+                        }
+
+                        totalSecondsLeft--;
+
+                        const minutes = Math.floor(totalSecondsLeft / 60);
+                        const seconds = totalSecondsLeft % 60;
+
+                        display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                        if (totalSecondsLeft < 60) {
+                            timerContainer.classList.add("danger");
+                        }
+                    }
+
+                    updateTimer();
+                    const timerInterval = setInterval(updateTimer, 1000);
+                });
+            </script>

@@ -525,6 +525,34 @@
     </h3>
 </div>
 
+@{
+    var courseFiles = ViewBag.CourseFiles as List<SdoApp.Models.GroupCourseConfigFile> ?? new
+List<SdoApp.Models.GroupCourseConfigFile>();
+}
+@if (courseFiles.Any())
+{
+    <div class="alert alert-warning border-warning shadow-sm mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3"
+         style="border-radius: 12px; background-color: #fffbeb;">
+        <div class="d-flex align-items-start align-items-md-center gap-3">
+            <i class="bi bi-paperclip fs-3 text-warning"></i>
+            <div>
+                <h6 class="fw-bold text-dark mb-1">К этому курсу прикреплены материалы от преподавателя</h6>
+                <p class="text-muted small mb-0">Ознакомьтесь с документами и скачайте их для заполнения.</p>
+            </div>
+        </div>
+        <div class="d-flex flex-column gap-2 text-md-end flex-shrink-0">
+            @foreach (var f in courseFiles)
+            {
+                <a href="@f.FilePath" download="@f.FileName"
+                   class="btn btn-sm btn-light border-warning fw-bold rounded-3 text-start text-truncate shadow-sm"
+                   style="max-width: 300px;">
+                    <i class="bi bi-download text-warning me-1"></i> @f.FileName
+                </a>
+            }
+        </div>
+    </div>
+}
+
 <div class="course-layout mb-5">
     <div class="course-sidebar" id="courseSidebar">
         <div class="p-3 bg-light border-bottom fw-bold text-secondary small text-uppercase tracking-wider">
@@ -743,18 +771,37 @@
             else if (mType === 3) { // Картинка
                 bodyContainer.innerHTML = `<div class="text-center p-3 border rounded shadow-sm bg-white image-preview-wrapper"><img src="${fileUrl}" class="img-fluid rounded" style="max-height:550px;" onclick="openImageFullscreen(this.src)" title="Кликните для увеличения" /></div>`;
             }
-            else if (mType === 5) { // Практика
+                        else if (mType === 5) { // Практика
+                // Формируем красивый список файлов, если они есть
+                let filesHtml = "";
+                if (data.files && data.files.length > 0) {
+                    filesHtml = `
+                        <div class="mb-4 p-3 bg-light border rounded-3">
+                            <span class="text-muted small fw-bold d-block mb-2">Файлы к заданию (скачайте и заполните):</span>
+                            <div class="d-flex flex-wrap gap-2">
+                                ${data.files.map(f => `
+                                    <a href="${f.url}" class="btn btn-sm btn-outline-secondary bg-white fw-bold rounded-3" download="${f.name}">
+                                        <i class="bi bi-download me-1"></i> ${f.name}
+                                    </a>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
                 bodyContainer.innerHTML = `
                     <div class="p-4 border rounded shadow-sm bg-white">
                         <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-clipboard-check me-1"></i> Инструкция к выполнению задания:</h6>
                         <p class="text-dark mb-4" style="white-space: pre-line;">${textContent || "Инструкция отсутствует."}</p>
 
+                        ${filesHtml} <!-- Вставляем файлы отдельным блоком выше -->
+
                         <div id="studentAssignmentArea" class="mb-4">
                             <div class="spinner-border spinner-border-sm text-secondary"></div> Проверка статуса выполнения...
                         </div>
 
+                        <!-- Оставляем только кнопку в этом блоке -->
                         <div class="d-flex gap-2 flex-column flex-sm-row" id="assignmentActionsBlock">
-                            ${fileUrl ? `<a href="${fileUrl}" class="btn btn-outline-secondary fw-bold rounded-3 w-100 w-sm-auto" download><i class="bi bi-download me-1"></i> Скачать файл задания</a>` : ""}
                             <a id="mainSubmitWorkBtn" href="/Assignments/SubmitPage?materialId=${id}&groupId=@ViewBag.GroupId" class="btn btn-warning fw-bold px-4 rounded-3 w-100 w-sm-auto d-none">
                                 <i class="bi bi-send me-1"></i> Сдать готовую работу
                             </a>
@@ -773,44 +820,30 @@
                         const actionBtn = document.getElementById('mainSubmitWorkBtn');
 
                         if (!state.hasSubmission) {
-                            area.innerHTML = `<div class="alert alert-light border small text-muted">Вы еще не отправляли решение по этому практическому заданию.</div>`;
-                            actionBtn.textContent = "Сдать готовую работу";
+                            area.innerHTML = `<div class="alert alert-light border small text-muted mb-0">Вы еще не отправляли решение по этому практическому заданию.</div>`;
+                            actionBtn.innerHTML = '<i class="bi bi-send me-1"></i> Сдать готовую работу';
                             actionBtn.classList.remove('d-none');
                             return;
                         }
 
-                        // ГЕНЕРАЦИЯ КРАСИВОГО ЧАТА
-                        let chatHtml = `<div class="chat-container">`;
-                        state.messages.forEach(msg => {
-                            const bubbleClass = msg.isStudent ? 'me' : 'teacher';
-                            const senderName = msg.isStudent ? 'Вы' : 'Преподаватель';
-                            
-                            chatHtml += `
-                                <div class="chat-bubble ${bubbleClass}">
-                                    <div class="chat-sender">${senderName}</div>
-                                    <div>${msg.text}</div>
-                                    ${msg.file ? `
-                                        <a href="${msg.file}" class="chat-file-link" download>
-                                            <i class="bi bi-paperclip"></i> Скачать файл
-                                        </a>` : ''}
-                                    <div class="chat-time">${msg.date}</div>
-                                </div>`;
-                        });
-                        chatHtml += `</div>`;
-
+                        let statusBadge = '';
                         if (state.status === "OnReview") {
-                            area.innerHTML = chatHtml + `<div class="alert alert-info border small m-0 fw-bold"><i class="bi bi-hourglass-split me-1"></i> Работа ожидает проверки преподавателем.</div>`;
-                            actionBtn.classList.add('d-none');
+                            statusBadge = '<span class="badge bg-info text-dark"><i class="bi bi-hourglass-split me-1"></i> На проверке</span>';
+                        } else if (state.status === "NeedFix") {
+                            statusBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-arrow-counterclockwise me-1"></i> На доработке</span>';
+                        } else if (state.status === "Completed") {
+                            statusBadge = `<span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Завершено ${state.grade ? `(Оценка: ${state.grade})` : ''}</span>`;
                         }
-                        else if (state.status === "NeedFix") {
-                            area.innerHTML = chatHtml + `<div class="alert alert-warning border small m-0"><i class="bi bi-arrow-counterclockwise me-1"></i> <b>Задание возвращено на доработку!</b> Пришлите исправленный вариант.</div>`;
-                            actionBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise me-1"></i> Отправить исправленный вариант';
-                            actionBtn.classList.remove('d-none');
-                        }
-                        else if (state.status === "Completed") {
-                            area.innerHTML = chatHtml + `<div class="alert alert-success border d-flex justify-content-between align-items-center m-0"><span><i class="bi bi-check-circle-fill me-1"></i> <b>Проверка завершена!</b></span><h4 class="m-0 fw-bold text-success">Балл: ${state.grade}</h4></div>`;
-                            actionBtn.classList.add('d-none');
-                        }
+
+                        area.innerHTML = `<div class="alert alert-light border d-flex justify-content-between align-items-center mb-0 flex-wrap gap-2">
+                            <span class="fw-bold text-dark"><i class="bi bi-chat-text text-primary me-1"></i> У вас есть диалог с преподавателем</span>
+                            ${statusBadge}
+                        </div>`;
+                        
+                        actionBtn.innerHTML = '<i class="bi bi-chat-dots-fill me-1"></i> Открыть чат';
+                        actionBtn.classList.remove('btn-warning');
+                        actionBtn.classList.add('btn-primary');
+                        actionBtn.classList.remove('d-none');
                     })
                     .catch(err => {
                         const area = document.getElementById('studentAssignmentArea');

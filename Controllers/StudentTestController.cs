@@ -353,6 +353,7 @@ public class StudentTestController : Controller
         var vm = new TestResultViewModel
         {
             AttemptId = attempt.Id,
+            MaterialId = material.Id,
             GroupId = attempt.GroupId,
             TestTitle = material.Title,
             CourseTitle = material.Course?.Title ?? "",

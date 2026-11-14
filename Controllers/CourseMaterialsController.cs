@@ -64,7 +64,7 @@ public class CourseMaterialsController : Controller
         _context.CourseThemes.Add(theme);
         await _auditService.LogAsync("Create", "Theme", theme.Id, $"Создана тема: {theme.Title} (Курс ID: {courseId})");
         await _context.SaveChangesAsync();
-        return Json(new { success = true });
+        return Json(new { success = true, id = theme.Id, title = theme.Title, order = theme.Order });
     }
 
     [HttpPost]
@@ -82,7 +82,7 @@ public class CourseMaterialsController : Controller
         return Json(new { success = true });
     }
 
-        // POST: /CourseMaterials/EditTheme
+    // POST: /CourseMaterials/EditTheme
     [HttpPost]
     [Authorize(Roles = "Админ")]
     public async Task<IActionResult> EditTheme(int id, string title)
@@ -140,37 +140,36 @@ public class CourseMaterialsController : Controller
         return Json(new { success = false, message = "Перемещение невозможно!" });
     }
 
+    // POST: /CourseMaterials/Create
     [HttpPost]
     [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Create(
-    int courseId, int? themeId, string title, MaterialType type,
-    string? textContent, IFormFile? uploadedFile,
-    int? timeLimit, bool shuffleQuestions, int? passPercentage,
-    TestStatus testKind, int? questionsCountToUse,
-    bool isExternalLink = false, string? externalFileUrl = null)
+        int courseId, int? themeId, string title, MaterialType type,
+        string? textContent, IFormFile? uploadedFile, List<IFormFile>? assignmentFiles,
+        int? timeLimit, bool shuffleQuestions, int? passPercentage,
+        TestStatus testKind, int? questionsCountToUse,
+        bool isExternalLink = false, string? externalFileUrl = null)
     {
         if (string.IsNullOrWhiteSpace(title))
             return Json(new { success = false, message = "Название элемента обязательно!" });
 
         string? contentOrPath = null;
+        List<CourseMaterialFile> newFiles = new List<CourseMaterialFile>();
 
         if (type == MaterialType.Text) { contentOrPath = textContent ?? ""; }
         else if (type == MaterialType.Pdf || type == MaterialType.Video || type == MaterialType.Image)
         {
             if (isExternalLink && !string.IsNullOrWhiteSpace(externalFileUrl))
-            {
-                // Внешняя ссылка вместо загрузки файла
                 contentOrPath = externalFileUrl.Trim();
-            }
             else
             {
                 if (uploadedFile == null || uploadedFile.Length == 0)
-                    return Json(new { success = false, message = "Прикрепите файл или укажите внешнюю ссылку!" });
+                    return Json(new { success = false, message = "Прикрепите файл!" });
 
                 var extension = Path.GetExtension(uploadedFile.FileName).ToLower();
                 if (type == MaterialType.Pdf && extension != ".pdf") return Json(new { success = false, message = "Только .pdf!" });
-                if (type == MaterialType.Video && !new[] { ".mp4", ".webm" }.Contains(extension)) return Json(new { success = false, message = "Только .mp4 или .webm!" });
-                if (type == MaterialType.Image && !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension)) return Json(new { success = false, message = "Только .jpg, .png, .webp!" });
+                if (type == MaterialType.Video && !new[] { ".mp4", ".webm" }.Contains(extension)) return Json(new { success = false, message = "Только .mp4/.webm!" });
+                if (type == MaterialType.Image && !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension)) return Json(new { success = false, message = "Только картинки!" });
 
                 string subFolder = type == MaterialType.Pdf ? "pdfs" : type == MaterialType.Video ? "videos" : "images";
                 string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", subFolder);
@@ -184,26 +183,36 @@ public class CourseMaterialsController : Controller
         }
         else if (type == MaterialType.Assignment)
         {
-            string fileUrl = "";
-            if (uploadedFile != null && uploadedFile.Length > 0)
+            contentOrPath = textContent ?? ""; // Только текст, файлы отдельно
+
+            if (assignmentFiles != null && assignmentFiles.Any())
             {
+                if (assignmentFiles.Count > 3) return Json(new { success = false, message = "Максимум 3 файла!" });
+                if (assignmentFiles.Sum(f => f.Length) > 75 * 1024 * 1024) return Json(new { success = false, message = "Общий вес более 75 МБ!" });
+
                 string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", "assignments");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-                string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(uploadedFile.FileName);
-                using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create))
-                { await uploadedFile.CopyToAsync(fileStream); }
-                fileUrl = $"/uploads/materials/assignments/{uniqueFileName}";
+
+                foreach (var file in assignmentFiles)
+                {
+                    string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create))
+                    { await file.CopyToAsync(fileStream); }
+
+                    newFiles.Add(new CourseMaterialFile
+                    {
+                        FilePath = $"/uploads/materials/assignments/{uniqueFileName}",
+                        FileName = file.FileName
+                    });
+                }
             }
-            contentOrPath = $"{fileUrl}|||{textContent ?? ""}";
         }
         else if (type == MaterialType.Scorm)
         {
             if (uploadedFile == null || uploadedFile.Length == 0)
                 return Json(new { success = false, message = "Прикрепите ZIP-архив SCORM!" });
-
             if (Path.GetExtension(uploadedFile.FileName).ToLower() != ".zip")
-                return Json(new { success = false, message = "Для SCORM требуется файл .zip!" });
-
+                return Json(new { success = false, message = "Для SCORM требуется .zip!" });
             contentOrPath = ExtractScormPackage(uploadedFile);
         }
 
@@ -223,13 +232,26 @@ public class CourseMaterialsController : Controller
             ShuffleQuestions = type == MaterialType.Test && shuffleQuestions,
             PassPercentage = type == MaterialType.Test ? (passPercentage ?? 80) : 80,
             TestKind = type == MaterialType.Test ? testKind : TestStatus.Промежуточный,
-            QuestionsCountToUse = type == MaterialType.Test ? (questionsCountToUse ?? 0) : 0
+            QuestionsCountToUse = type == MaterialType.Test ? (questionsCountToUse ?? 0) : 0,
+            Files = newFiles
         };
 
         _context.CourseMaterials.Add(newMaterial);
         await _auditService.LogAsync("Create", "Material", newMaterial.Id, $"Добавлен материал: {newMaterial.Title} (Тип: {newMaterial.Type})");
         await _context.SaveChangesAsync();
-        return Json(new { success = true });
+        return Json(new
+        {
+            success = true,
+            id = newMaterial.Id,
+            title = newMaterial.Title,
+            type = (int)newMaterial.Type,
+            themeId = newMaterial.ThemeId,
+            order = newMaterial.Order,
+            testKind = (int)newMaterial.TestKind,
+            timeLimit = newMaterial.TimeLimit,
+            passPercentage = newMaterial.PassPercentage,
+            shuffleQuestions = newMaterial.ShuffleQuestions
+        });
     }
 
 
@@ -289,7 +311,11 @@ public class CourseMaterialsController : Controller
     [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Delete(int id)
     {
-        var material = await _context.CourseMaterials.FindAsync(id);
+        // ВАЖНО: Подгружаем связанные файлы, чтобы удалить их с диска
+        var material = await _context.CourseMaterials
+            .Include(m => m.Files)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
         if (material == null)
         {
             return Json(new { success = false, message = "Элемент курса не найден!" });
@@ -307,13 +333,11 @@ public class CourseMaterialsController : Controller
                 && !string.IsNullOrEmpty(material.ContentOrPath)
                 && material.ContentOrPath.StartsWith("/uploads/materials/scorm/"))
             {
-                // Путь: /uploads/materials/scorm/{folderName}/{entryPoint...}
                 var parts = material.ContentOrPath.Split('/');
                 if (parts.Length > 4)
                 {
                     string folderName = parts[4];
 
-                    // Защита от path traversal
                     if (!string.IsNullOrEmpty(folderName)
                         && !folderName.Contains("..")
                         && !folderName.Contains("\\")
@@ -328,18 +352,18 @@ public class CourseMaterialsController : Controller
                             }
                             catch
                             {
-                                // Файл занят (например, открыт в iframe кем-то ещё) — не роняем удаление материала
+                                // Файл занят — не роняем удаление
                             }
                         }
                     }
                 }
             }
             // ============================================================
-            // 2. Обычные файлы (PDF, Видео, Картинка, Задание)
+            // 2. Обычные файлы (PDF, Видео, Картинка)
             // ============================================================
             else if (!string.IsNullOrEmpty(material.ContentOrPath) && material.ContentOrPath.StartsWith("/uploads/"))
             {
-                // Для заданий отсекаем путь к файлу перед разделителем |||
+                // Для старых заданий (до внедрения новой таблицы файлов) отсекаем путь перед |||
                 string filePath = material.Type == MaterialType.Assignment
                     ? material.ContentOrPath.Split("|||")[0]
                     : material.ContentOrPath;
@@ -352,7 +376,27 @@ public class CourseMaterialsController : Controller
             }
 
             // ============================================================
-            // 3. Картинки вариантов ответов теста (иначе копятся на диске)
+            // 3. НОВОЕ: Удаление файлов задания (из таблицы CourseMaterialFile)
+            // ============================================================
+            if (material.Type == MaterialType.Assignment && material.Files != null && material.Files.Any())
+            {
+                foreach (var file in material.Files)
+                {
+                    if (!string.IsNullOrEmpty(file.FilePath) && file.FilePath.StartsWith("/uploads/"))
+                    {
+                        string absolutePath = Path.Combine(_env.WebRootPath, file.FilePath.TrimStart('/'));
+                        if (System.IO.File.Exists(absolutePath))
+                        {
+                            try { System.IO.File.Delete(absolutePath); } catch { }
+                        }
+                    }
+                }
+                // Удаляем записи из БД
+                _context.CourseMaterialFiles.RemoveRange(material.Files);
+            }
+
+            // ============================================================
+            // 4. Картинки вариантов ответов теста (иначе копятся на диске)
             // ============================================================
             if (material.Type == MaterialType.Test)
             {
@@ -377,8 +421,7 @@ public class CourseMaterialsController : Controller
                 }
             }
 
-            // Удаление из БД (каскадно удалятся TestQuestions / TestAnswerOptions,
-            // т.к. они привязаны к CourseMaterialId и являются зависимыми)
+            // Удаление из БД (каскадно удалятся TestQuestions / TestAnswerOptions)
             _context.CourseMaterials.Remove(material);
             await _context.SaveChangesAsync();
 
@@ -405,23 +448,12 @@ public class CourseMaterialsController : Controller
 
     // GET: /CourseMaterials/GetMaterialData/5
     [HttpGet]
-    public async Task<IActionResult> GetMaterialData(int id, int? groupId = null)
+    public async Task<IActionResult> GetMaterialData(int id)
     {
-        // Админ/Главный_Админ — без проверки доступа
-        if (!User.IsInRole("Админ") && !User.IsInRole("Главный_Админ"))
-        {
-            var userIdClaim = User.FindFirst("UserId")?.Value;
-            if (!int.TryParse(userIdClaim, out int studentId))
-                return this.ForbidSmart("Авторизация истекла.");
+        var m = await _context.CourseMaterials
+            .Include(x => x.Files)
+            .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (groupId == null)
-                return this.ForbidSmart("Не передан ID группы.");
-
-            if (!await AccessService.HasAccessToMaterialAsync(_context, studentId, id, groupId.Value))
-                return this.ForbidSmart("Нет доступа к этому материалу.");
-        }
-
-        var m = await _context.CourseMaterials.FindAsync(id);
         if (m == null) return NotFound();
 
         string textContent = "";
@@ -434,20 +466,22 @@ public class CourseMaterialsController : Controller
         }
         else if (m.Type == MaterialType.Assignment)
         {
+            // Если это старые данные с |||, разбиваем их. Если новые — там только текст.
             var parts = m.ContentOrPath?.Split("|||") ?? new string[] { "", "" };
-            fileUrl = parts.Length > 0 ? parts[0] : "";
-            textContent = parts.Length > 1 ? parts[1] : "";
+            if (parts.Length > 1) textContent = parts[1];
+            else textContent = m.ContentOrPath ?? "";
         }
         else if (m.Type == MaterialType.Pdf || m.Type == MaterialType.Video || m.Type == MaterialType.Image)
         {
             fileUrl = m.ContentOrPath ?? "";
-            // Внешняя ссылка = всё, что не начинается с /uploads/
             isExternal = !string.IsNullOrEmpty(fileUrl) && !fileUrl.StartsWith("/uploads/");
         }
         else if (m.Type == MaterialType.Scorm)
         {
             fileUrl = m.ContentOrPath ?? "";
         }
+
+        var filesData = m.Files.Select(f => new { id = f.Id, name = f.FileName, url = f.FilePath }).ToList();
 
         return Json(new
         {
@@ -456,6 +490,7 @@ public class CourseMaterialsController : Controller
             type = (int)m.Type,
             textContent = textContent,
             fileUrl = fileUrl,
+            files = filesData, // <-- НОВОЕ: отдаем файлы
             isExternal = isExternal,
             timeLimit = m.TimeLimit,
             shuffleQuestions = m.ShuffleQuestions,
@@ -554,27 +589,25 @@ public class CourseMaterialsController : Controller
     [HttpPost]
     [Authorize(Roles = "Админ")]
     public async Task<IActionResult> Edit(
-    int id, int? themeId, string title, string? textContent, IFormFile? uploadedFile,
-    int? timeLimit, bool shuffleQuestions, int? passPercentage,
-    TestStatus testKind, int? questionsCountToUse,
-    bool isExternalLink = false, string? externalFileUrl = null)
+        int id, int? themeId, string title, string? textContent, IFormFile? uploadedFile, List<IFormFile>? assignmentFiles,
+        int? timeLimit, bool shuffleQuestions, int? passPercentage,
+        TestStatus testKind, int? questionsCountToUse,
+        bool isExternalLink = false, string? externalFileUrl = null,
+        List<int>? keptFileIds = null)
     {
-        var material = await _context.CourseMaterials.FindAsync(id);
+        var material = await _context.CourseMaterials.Include(m => m.Files).FirstOrDefaultAsync(m => m.Id == id);
         if (material == null) return Json(new { success = false, message = "Элемент не найден!" });
         if (string.IsNullOrWhiteSpace(title)) return Json(new { success = false, message = "Название обязательно!" });
 
         material.Title = title.Trim();
         material.ThemeId = themeId;
 
-        if (material.Type == MaterialType.Text)
-        {
-            material.ContentOrPath = textContent ?? "";
-        }
+        if (material.Type == MaterialType.Text) { material.ContentOrPath = textContent ?? ""; }
         else if (material.Type == MaterialType.Pdf || material.Type == MaterialType.Video || material.Type == MaterialType.Image)
         {
+            // ... (стандартная логика для одного файла как была) ...
             if (isExternalLink && !string.IsNullOrWhiteSpace(externalFileUrl))
             {
-                // Удаляем старый локальный файл, если он был (URL не трогаем)
                 if (!string.IsNullOrEmpty(material.ContentOrPath) && material.ContentOrPath.StartsWith("/uploads/"))
                 {
                     string oldAbsolute = Path.Combine(_env.WebRootPath, material.ContentOrPath.TrimStart('/'));
@@ -585,9 +618,8 @@ public class CourseMaterialsController : Controller
             else if (uploadedFile != null && uploadedFile.Length > 0)
             {
                 var extension = Path.GetExtension(uploadedFile.FileName).ToLower();
-
                 if (material.Type == MaterialType.Pdf && extension != ".pdf") return Json(new { success = false, message = "Только .pdf!" });
-                if (material.Type == MaterialType.Video && !new[] { ".mp4", ".webm" }.Contains(extension)) return Json(new { success = false, message = "Только .mp4 или .webm!" });
+                if (material.Type == MaterialType.Video && !new[] { ".mp4", ".webm" }.Contains(extension)) return Json(new { success = false, message = "Только .mp4/.webm!" });
                 if (material.Type == MaterialType.Image && !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension)) return Json(new { success = false, message = "Только картинки!" });
 
                 if (!string.IsNullOrEmpty(material.ContentOrPath) && material.ContentOrPath.StartsWith("/uploads/"))
@@ -595,40 +627,50 @@ public class CourseMaterialsController : Controller
                     string oldAbsolute = Path.Combine(_env.WebRootPath, material.ContentOrPath.TrimStart('/'));
                     if (System.IO.File.Exists(oldAbsolute)) System.IO.File.Delete(oldAbsolute);
                 }
-
                 string subFolder = material.Type == MaterialType.Pdf ? "pdfs" : material.Type == MaterialType.Video ? "videos" : "images";
                 string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", subFolder);
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-
                 string uniqueFileName = Guid.NewGuid().ToString() + extension;
                 using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create))
                 { await uploadedFile.CopyToAsync(fileStream); }
                 material.ContentOrPath = $"/uploads/materials/{subFolder}/{uniqueFileName}";
             }
-            // иначе — ничего не пришло, оставляем старое значение
         }
         else if (material.Type == MaterialType.Assignment)
         {
-            if (uploadedFile != null && uploadedFile.Length > 0)
+            material.ContentOrPath = textContent ?? "";
+
+            // 1. Удаляем те файлы, которые админ убрал (не передал в keptFileIds)
+            keptFileIds ??= new List<int>();
+            var filesToRemove = material.Files.Where(f => !keptFileIds.Contains(f.Id)).ToList();
+            foreach (var oldFile in filesToRemove)
             {
+                string path = Path.Combine(_env.WebRootPath, oldFile.FilePath.TrimStart('/'));
+                if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+                _context.CourseMaterialFiles.Remove(oldFile);
+            }
+
+            // 2. Добавляем новые файлы (если есть)
+            if (assignmentFiles != null && assignmentFiles.Any())
+            {
+                if (material.Files.Count(f => keptFileIds.Contains(f.Id)) + assignmentFiles.Count > 3)
+                    return Json(new { success = false, message = "Максимум 3 файла!" });
+
                 string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "materials", "assignments");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-                string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(uploadedFile.FileName);
-                using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create))
-                { await uploadedFile.CopyToAsync(fileStream); }
 
-                string oldFile = material.ContentOrPath?.Split("|||")[0] ?? "";
-                if (!string.IsNullOrEmpty(oldFile) && oldFile.StartsWith("/uploads/"))
+                foreach (var file in assignmentFiles)
                 {
-                    string oldAbsolute = Path.Combine(_env.WebRootPath, oldFile.TrimStart('/'));
-                    if (System.IO.File.Exists(oldAbsolute)) System.IO.File.Delete(oldAbsolute);
+                    string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    using (var fileStream = new FileStream(Path.Combine(uploadsFolder, uniqueFileName), FileMode.Create))
+                    { await file.CopyToAsync(fileStream); }
+
+                    material.Files.Add(new CourseMaterialFile
+                    {
+                        FilePath = $"/uploads/materials/assignments/{uniqueFileName}",
+                        FileName = file.FileName
+                    });
                 }
-                material.ContentOrPath = $"/uploads/materials/assignments/{uniqueFileName}|||{textContent ?? ""}";
-            }
-            else
-            {
-                string currentFile = material.ContentOrPath?.Split("|||")[0] ?? "";
-                material.ContentOrPath = $"{currentFile}|||{textContent ?? ""}";
             }
         }
         else if (material.Type == MaterialType.Test)
@@ -728,6 +770,10 @@ public class CourseMaterialsController : Controller
             .Include(c => c.Materials)
             .FirstOrDefaultAsync(c => c.Id == courseId);
 
+        var groupConfig = await _context.GroupCourseConfigs
+            .Include(c => c.Files)
+            .FirstOrDefaultAsync(c => c.GroupId == groupId && c.CourseId == courseId);
+
         if (course == null) return NotFound();
 
         var userIdClaim = User.FindFirst("UserId")?.Value;
@@ -741,6 +787,7 @@ public class CourseMaterialsController : Controller
         ViewBag.CourseTitle = course.Title;
         ViewBag.GroupId = groupId;
         ViewBag.ActiveId = activeId;
+        ViewBag.CourseFiles = groupConfig?.Files ?? new List<GroupCourseConfigFile>();
 
         return View(course);
     }
@@ -809,5 +856,65 @@ public class CourseMaterialsController : Controller
 
         // Возвращаем путь для БД (относительно wwwroot)
         return $"/uploads/materials/scorm/{folderName}/{entryPoint}";
+    }
+
+    // DTO для сохранения нового порядка
+    public class DragDropItem { public int Id { get; set; } public int? ThemeId { get; set; } public int Order { get; set; } }
+
+    [HttpPost]
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> UpdateStructure([FromBody] List<DragDropItem> items)
+    {
+        if (items == null || !items.Any()) return Json(new { success = false });
+
+        try
+        {
+            foreach (var item in items)
+            {
+                var material = await _context.CourseMaterials.FindAsync(item.Id);
+                if (material != null)
+                {
+                    material.ThemeId = item.ThemeId; // Если перетащили в другую тему
+                    material.Order = item.Order;     // Новый порядковый номер
+                    _context.CourseMaterials.Update(material);
+                }
+            }
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // DTO для перетаскивания тем
+    public class ThemeDragDropItem { public int Id { get; set; } public int Order { get; set; } }
+
+    [HttpPost]
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> UpdateThemeStructure([FromBody] List<ThemeDragDropItem> items)
+    {
+        if (items == null || !items.Any())
+            return Json(new { success = false, message = "Нет данных для сохранения." });
+
+        try
+        {
+            foreach (var item in items)
+            {
+                var theme = await _context.CourseThemes.FindAsync(item.Id);
+                if (theme != null)
+                {
+                    theme.Order = item.Order;
+                    _context.CourseThemes.Update(theme);
+                }
+            }
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Ошибка БД: {ex.Message}" });
+        }
     }
 }

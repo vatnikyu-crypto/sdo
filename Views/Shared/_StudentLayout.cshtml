@@ -186,8 +186,10 @@
                     </li>
                 </ul>
                 
-                <!-- Блок пользователя и выход -->
+                <!-- Блок пользователя, уведомлений и выхода -->
                 <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
+                    
+                    <!-- 1. ФИО и Должность -->
                     <div class="user-profile d-flex flex-column align-items-lg-end text-lg-end">
                         <span class="fw-bold" style="font-size: 0.95rem;">@User.FindFirst("FullName")?.Value</span>
                         @if (!string.IsNullOrEmpty(User.FindFirst("Position")?.Value))
@@ -197,8 +199,47 @@
                             </span>
                         }
                     </div>
+
+                    <!-- 2. КОЛОКОЛЬЧИК УВЕДОМЛЕНИЙ -->
+                    <div class="dropdown mx-lg-2 text-center">
+                        <a href="#" class="text-white position-relative text-decoration-none" id="notifBell"
+                           data-bs-toggle="dropdown" aria-expanded="false" style="display: inline-block;">
+                            <i class="bi bi-bell-fill fs-5"></i>
+                            <!-- Счетчик непрочитанных -->
+                            <span id="notifBadge"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                  style="font-size: 0.65rem; 
+                                padding: 3px 6px; 
+                                min-width: 20px; 
+                                height: 20px; 
+                                display: inline-flex; 
+                                align-items: center; 
+                                justify-content: center;
+                                box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);">
+                                0
+                            </span>
+                        </a>
+                        
+                        <!-- Выпадающее окно -->
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-0 mt-2"
+                             aria-labelledby="notifBell" style="width: 320px; overflow: hidden; left: auto; right: 0;">
+                            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                                <h6 class="fw-bold m-0 text-dark">Уведомления</h6>
+                                <button type="button" id="markAllReadBtn"
+                                        class="btn btn-sm btn-link text-primary text-decoration-none fw-bold p-0"
+                                        style="font-size: 0.75rem;">Прочитать все</button>
+                            </div>
+                            <div id="notifListContainer" class="d-flex flex-column text-start"
+                                 style="max-height: 300px; overflow-y: auto;">
+                                <!-- Уведомления будут здесь -->
+                                <div class="text-center text-muted small py-4">Загрузка...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Кнопка Выйти -->
                     <a href="/Auth/Logout"
-                       class="btn btn-sm btn-outline-light btn-logout fw-bold px-3 rounded-3 d-flex align-items-center gap-2">
+                       class="btn btn-sm btn-outline-light btn-logout fw-bold px-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
                         <i class="bi bi-box-arrow-right"></i> Выйти
                     </a>
                 </div>
@@ -240,6 +281,75 @@
             window.updateStudentSupportBadge = updateStudentSupportMenuBadge;
 
             document.addEventListener("DOMContentLoaded", updateStudentSupportMenuBadge);
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const badge = document.getElementById('notifBadge');
+                const listContainer = document.getElementById('notifListContainer');
+                const markAllBtn = document.getElementById('markAllReadBtn');
+
+                // 1. Обновление счетчика
+                async function updateNotifCount() {
+                    try {
+                        const res = await fetch('/Notifications/GetUnreadCount');
+                        const data = await res.json();
+                
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    } catch (e) { console.error('Ошибка счетчика', e); }
+                }
+
+                // 2. Загрузка последних 5 уведомлений
+                async function loadLatestNotifications() {
+                    try {
+                        const res = await fetch('/Notifications/GetLatest');
+                        const data = await res.json();
+
+                        if (data.length === 0) {
+                            listContainer.innerHTML = '<div class="text-center text-muted small py-4"><i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Нет новых уведомлений</div>';
+                            return;
+                        }
+
+                        listContainer.innerHTML = data.map(n => `
+                                    <a href="${n.link || '#'}" class="text-decoration-none p-3 border-bottom notif-item ${n.isRead ? 'bg-white' : 'bg-light'}" style="transition: 0.2s;">
+                                        <div class="d-flex gap-2">
+                                            <div class="text-primary mt-1"><i class="bi bi-info-circle-fill"></i></div>
+                                            <div>
+                                                <div class="text-dark small fw-bold" style="line-height: 1.3;">${n.message}</div>
+                                                <small class="text-muted" style="font-size: 0.7rem;">${n.date}</small>
+                                            </div>
+                                        </div>
+                                    </a>
+                                `).join('');
+                    } catch (e) {
+                        listContainer.innerHTML = '<div class="text-center text-danger small py-4">Ошибка загрузки</div>';
+                    }
+                }
+
+                // 3. Обработка кнопки "Прочитать все"
+                markAllBtn.addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+            
+                    try {
+                        await fetch('/Notifications/MarkAllAsRead', { method: 'POST' });
+                        updateNotifCount();
+                        loadLatestNotifications();
+                    } catch (e) { console.error(e); }
+                });
+
+                // При клике на колокольчик — загружаем список
+                document.getElementById('notifBell').addEventListener('click', loadLatestNotifications);
+
+                // Инициализация при загрузке
+                updateNotifCount();
+        
+                // Автообновление счетчика каждые 30 секунд
+                setInterval(updateNotifCount, 30000);
+            });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
